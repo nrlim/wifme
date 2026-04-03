@@ -15,9 +15,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({ 
+    const user = await prisma.user.findUnique({
       where: { email },
-      include: { profile: true } 
+      include: { profile: true }
     });
     if (!user) {
       return NextResponse.json(
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (error) {
     return NextResponse.json(
-      { error: "Terjadi kesalahan server." },
+      { error: "Terjadi kesalahan server saat login." },
       { status: 500 }
     );
   }
