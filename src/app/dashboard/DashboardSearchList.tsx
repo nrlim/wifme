@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useUI } from "@/components/UIProvider";
 
 export default function DashboardSearchList({ muthawifs, startDate, duration }: { muthawifs: any[]; startDate: string; duration: string }) {
@@ -73,6 +74,7 @@ export default function DashboardSearchList({ muthawifs, startDate, duration }: 
                 <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
                   {m.rating > 0 ? m.rating.toFixed(1) : "Baru"}
+                  {m.totalReviews > 0 && <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>({m.totalReviews})</span>}
                 </span>
                 <span style={{ display: "flex", alignItems: "center", gap: "0.25rem", color: "var(--brown)" }}>
                   {m.experience} th pengalaman
@@ -117,10 +119,16 @@ export default function DashboardSearchList({ muthawifs, startDate, duration }: 
                 onClick={() => handleBook(m.user.id, m.user.name, m.basePrice * parseInt(duration))} 
                 className="btn btn-primary" 
                 disabled={bookingId === m.user.id}
-                style={{ padding: "0.5rem 1rem", fontSize: "0.875rem", minWidth: "140px", justifyContent: "center" }}
+                style={{ padding: "0.5rem 1rem", fontSize: "0.875rem", minWidth: "140px", justifyContent: "center", marginBottom: "0.5rem" }}
               >
                 {bookingId === m.user.id ? <span className="spinner" style={{ width: 16, height: 16, borderTopColor: "white", borderColor: "rgba(255,255,255,0.4)", borderWidth: 2 }} /> : "Book Sekarang"}
               </button>
+              <Link
+                href={`/muthawif/${m.user.id}`}
+                style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textDecoration: "underline", textAlign: "center", display: "block" }}
+              >
+                Lihat Profil & Ulasan
+              </Link>
             </div>
           </div>
         );

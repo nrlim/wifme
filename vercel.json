@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/auto-status",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

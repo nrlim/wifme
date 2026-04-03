@@ -7,6 +7,8 @@ import { AmirHeaderPanel } from "./AmirHeaderPanel";
 import DashboardSearchForm from "./DashboardSearchForm";
 import DashboardSearchList from "./DashboardSearchList";
 import PaymentSimulationButton from "./PaymentSimulationButton";
+import ReviewButton from "@/components/ReviewButton";
+import BookingStatusButton from "./BookingStatusButton";
 
 // Types corresponding to Next.js 15/16 App Router
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -41,7 +43,8 @@ async function getBookingsForUser(userId: string, role: string) {
     where: whereClause,
     include: {
       jamaah: { select: { name: true, email: true } },
-      muthawif: { select: { name: true, photoUrl: true, profile: { select: { location: true, rating: true, basePrice: true } } } },
+      muthawif: { select: { id: true, name: true, photoUrl: true, profile: { select: { location: true, rating: true, basePrice: true } } } },
+      review: { select: { id: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -216,125 +219,404 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
 
     if (session.role === "AMIR") {
+      const totalRevenue = bookings.filter(b => b.paymentStatus === "PAID").reduce((s, b) => s + b.totalFee, 0);
+      const totalConfirmed = bookings.filter(b => b.status === "CONFIRMED").length;
+      const totalPending = bookings.filter(b => b.status === "PENDING").length;
+      const totalPaid = bookings.filter(b => b.paymentStatus === "PAID").length;
+      const totalCompleted = bookings.filter(b => b.status === "COMPLETED").length;
+
       return (
-        /* ── AMIR: Admin Dashboard View ──────────────────────────── */
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          {/* Summary Stats */}
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", 
-            gap: "1rem", 
-            marginBottom: "0.5rem" 
+        /* ── AMIR: Full-Width Admin Dashboard ──────────────────────────── */
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
+
+          {/* ── KPI Cards Row ── */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 160px), 1fr))",
+            gap: "1rem",
           }}>
             {[
-              { label: "Total Transaksi", value: bookings.length, icon: "📋", color: "var(--charcoal)" },
-              { label: "Terkonfirmasi", value: bookings.filter(b => b.status === "CONFIRMED").length, icon: "✅", color: "var(--emerald)" },
-              { label: "Menunggu", value: bookings.filter(b => b.status === "PENDING").length, icon: "⏳", color: "var(--gold)" },
-              { label: "Sudah Lunas", value: bookings.filter(b => b.paymentStatus === "PAID").length, icon: "💰", color: "#2563EB" },
-              { label: "Total Revenue", value: "Rp " + bookings.filter(b => b.paymentStatus === "PAID").reduce((s, b) => s + b.totalFee, 0).toLocaleString("id-ID"), icon: "📈", color: "var(--emerald)", full: true },
-            ].map(stat => (
-              <div 
-                key={stat.label} 
-                style={{ 
-                  background: "white", 
-                  borderRadius: "16px", 
-                  padding: "1.25rem", 
-                  border: "1px solid var(--border)", 
-                  boxShadow: "var(--shadow-sm)",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  minHeight: "100px",
-                  gridColumn: stat.full ? "1 / -1" : "auto"
-                }}
-              >
-                <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>{stat.icon}</div>
+              {
+                label: "Total Booking",
+                value: bookings.length,
+                sub: "Semua waktu",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+                  </svg>
+                ),
+                accentColor: "#6366F1",
+                bgAccent: "#EEF2FF",
+                valueColor: "var(--charcoal)",
+              },
+              {
+                label: "Dikonfirmasi",
+                value: totalConfirmed,
+                sub: `${bookings.length ? Math.round((totalConfirmed/bookings.length)*100) : 0}% dari total`,
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                ),
+                accentColor: "var(--emerald)",
+                bgAccent: "var(--emerald-pale)",
+                valueColor: "var(--emerald)",
+              },
+              {
+                label: "Menunggu",
+                value: totalPending,
+                sub: "Perlu tindakan",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                ),
+                accentColor: "var(--gold)",
+                bgAccent: "rgba(196,151,59,0.1)",
+                valueColor: "var(--gold)",
+              },
+              {
+                label: "Selesai",
+                value: totalCompleted,
+                sub: "Layanan tuntas",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
+                  </svg>
+                ),
+                accentColor: "#0EA5E9",
+                bgAccent: "#F0F9FF",
+                valueColor: "#0EA5E9",
+              },
+              {
+                label: "Sudah Lunas",
+                value: totalPaid,
+                sub: `${bookings.length ? Math.round((totalPaid/bookings.length)*100) : 0}% konversi`,
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+                  </svg>
+                ),
+                accentColor: "#10B981",
+                bgAccent: "#F0FDF4",
+                valueColor: "#10B981",
+              },
+            ].map(card => (
+              <div key={card.label} style={{
+                background: "white",
+                borderRadius: 18,
+                border: "1px solid var(--border)",
+                boxShadow: "var(--shadow-sm)",
+                padding: "1.25rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.875rem",
+                position: "relative",
+                overflow: "hidden",
+              }}>
+                {/* Left color accent bar */}
+                <div style={{
+                  position: "absolute", left: 0, top: 0, bottom: 0,
+                  width: 4, background: card.accentColor, borderRadius: "4px 0 0 4px",
+                }} />
+                {/* Icon */}
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  background: card.bgAccent,
+                  color: card.accentColor,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {card.icon}
+                </div>
+                {/* Value */}
                 <div>
-                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>{stat.label}</div>
-                  <div style={{ fontVariantNumeric: "tabular-nums", fontWeight: 800, fontSize: "1.25rem", color: stat.color, overflow: "hidden", textOverflow: "ellipsis" }}>{stat.value}</div>
+                  <div style={{
+                    fontSize: "clamp(1.375rem, 3vw, 1.875rem)",
+                    fontWeight: 900,
+                    color: card.valueColor,
+                    lineHeight: 1,
+                    marginBottom: "0.375rem",
+                    letterSpacing: "-0.02em",
+                  }}>
+                    {card.value.toLocaleString("id-ID")}
+                  </div>
+                  <div style={{ fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    {card.label}
+                  </div>
+                  <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+                    {card.sub}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Transactions List */}
-          <div style={{ background: "white", borderRadius: "18px", border: "1px solid var(--border)", overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
-            <div style={{ padding: "1.25rem 1.5rem", background: "var(--ivory-dark)", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ fontSize: "0.9375rem", fontWeight: 800 }}>Daftar Transaksi Terbaru</h3>
-              <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)" }}>{bookings.length} Data</span>
+          {/* ── Revenue Hero Card ── */}
+          <div style={{
+            background: "linear-gradient(135deg, var(--emerald) 0%, #1a8f62 50%, #27956A 100%)",
+            borderRadius: 20,
+            padding: "1.5rem 2rem",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "1rem",
+            position: "relative",
+            overflow: "hidden",
+          }}>
+            {/* Background decoration */}
+            <div style={{
+              position: "absolute", right: -30, top: -30,
+              width: 160, height: 160, borderRadius: "50%",
+              background: "rgba(255,255,255,0.07)",
+            }} />
+            <div style={{
+              position: "absolute", right: 60, bottom: -40,
+              width: 100, height: 100, borderRadius: "50%",
+              background: "rgba(255,255,255,0.05)",
+            }} />
+            <div style={{ position: "relative" }}>
+              <div style={{ fontSize: "0.75rem", fontWeight: 700, opacity: 0.7, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.375rem" }}>
+                Total Revenue Lunas
+              </div>
+              <div style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1 }}>
+                Rp {totalRevenue.toLocaleString("id-ID")}
+              </div>
+              <div style={{ fontSize: "0.8125rem", opacity: 0.65, marginTop: "0.5rem" }}>
+                Dari {totalPaid} transaksi lunas
+              </div>
             </div>
-            
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {bookings.length === 0 ? (
-                <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Tidak ada data transaksi.</div>
-              ) : (
-                bookings.map((booking, idx) => {
-                  const color = STATUS_COLORS[booking.status] || { bg: "var(--ivory-dark)", color: "var(--text-muted)" };
+            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", position: "relative" }}>
+              {[
+                { label: "Rata-rata", value: totalPaid > 0 ? "Rp " + Math.round(totalRevenue / totalPaid).toLocaleString("id-ID") : "—" },
+                { label: "Pending Bayar", value: (bookings.length - totalPaid) + " transaksi" },
+              ].map(m => (
+                <div key={m.label} style={{
+                  background: "rgba(255,255,255,0.12)",
+                  borderRadius: 12,
+                  padding: "0.75rem 1rem",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  backdropFilter: "blur(4px)",
+                  minWidth: 120,
+                }}>
+                  <div style={{ fontSize: "0.625rem", fontWeight: 800, opacity: 0.65, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.3rem" }}>{m.label}</div>
+                  <div style={{ fontSize: "0.9375rem", fontWeight: 800 }}>{m.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Transactions Table ── */}
+          <div style={{
+            background: "white",
+            borderRadius: 20,
+            border: "1px solid var(--border)",
+            boxShadow: "var(--shadow-sm)",
+            overflow: "hidden",
+          }}>
+            {/* Table Header */}
+            <div style={{
+              padding: "1.125rem 1.5rem",
+              borderBottom: "1px solid var(--border)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: "white",
+            }}>
+              <div>
+                <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "0.125rem" }}>
+                  Daftar Transaksi
+                </h3>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+                  {bookings.length} total transaksi terdaftar
+                </p>
+              </div>
+              <div style={{
+                display: "flex", alignItems: "center", gap: "0.5rem",
+                background: "var(--emerald-pale)", color: "var(--emerald)",
+                padding: "0.375rem 0.875rem", borderRadius: 99,
+                fontSize: "0.75rem", fontWeight: 800,
+              }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--emerald)" }} />
+                Live Data
+              </div>
+            </div>
+
+            {/* Table — Desktop: full columns / Mobile: card-style */}
+            {bookings.length === 0 ? (
+              <div style={{ padding: "4rem", textAlign: "center", color: "var(--text-muted)" }}>
+                Belum ada data transaksi.
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table Header row */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1.5fr 1.5fr 120px 100px 110px",
+                  padding: "0.75rem 1.5rem",
+                  background: "var(--ivory)",
+                  borderBottom: "1px solid var(--border)",
+                  gap: "1rem",
+                }} className="amir-table-header">
+                  {["Order ID", "Jamaah", "Muthawif", "Tanggal", "Total", "Status"].map(h => (
+                    <div key={h} style={{ fontSize: "0.625rem", fontWeight: 900, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                      {h}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Rows */}
+                {bookings.map((booking, idx) => {
+                  const statusColor = STATUS_COLORS[booking.status] || { bg: "var(--ivory-dark)", color: "var(--text-muted)" };
                   const location = booking.muthawif.profile?.location || "—";
+                  const shortId = booking.id.includes("-") ? booking.id.split("-")[0].toUpperCase() : booking.id.slice(0, 8).toUpperCase();
+                  const isPaid = booking.paymentStatus === "PAID";
+
                   return (
-                    <div 
-                      key={booking.id} 
-                      style={{ 
-                        padding: "1.25rem 1.5rem", 
+                    <div
+                      key={booking.id}
+                      className="amir-row"
+                      style={{
                         borderBottom: idx === bookings.length - 1 ? "none" : "1px solid var(--border)",
-                        background: idx % 2 === 0 ? "white" : "var(--ivory-pale)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "1rem"
                       }}
                     >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontFamily: "monospace", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", background: "var(--ivory-dark)", padding: "0.2rem 0.5rem", borderRadius: "6px" }}>
-                          #{(booking.id.includes("-") ? booking.id.split("-")[0] : booking.id.slice(0, 8)).toUpperCase()}
-                        </span>
-                        <span style={{ padding: "0.375rem 0.75rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 700, background: color.bg, color: color.color }}>
-                          {STATUS_LABELS[booking.status] || booking.status}
-                        </span>
-                      </div>
-
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+                      {/* Desktop row */}
+                      <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1.5fr 1.5fr 120px 100px 110px",
+                        padding: "1rem 1.5rem",
+                        gap: "1rem",
+                        alignItems: "center",
+                      }} className="amir-table-row">
+                        {/* Order ID */}
                         <div>
-                          <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Jamaah & Muthawif</div>
-                          <div style={{ fontWeight: 700, fontSize: "0.9375rem" }}>{booking.jamaah.name}</div>
-                          <div style={{ fontSize: "0.8125rem", color: "var(--emerald)", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.25rem", marginTop: "0.125rem" }}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"/></svg>
+                          <span style={{
+                            fontFamily: "monospace", fontSize: "0.75rem", fontWeight: 800,
+                            color: "var(--charcoal)", background: "var(--ivory-dark)",
+                            padding: "0.2rem 0.5rem", borderRadius: 6, border: "1px solid var(--border)",
+                          }}>
+                            #{shortId}
+                          </span>
+                        </div>
+                        {/* Jamaah */}
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {booking.jamaah.name}
+                          </div>
+                          <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {booking.jamaah.email}
+                          </div>
+                        </div>
+                        {/* Muthawif */}
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {booking.muthawif.name}
                           </div>
+                          <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                            {location === "BOTH" ? "Makkah & Madinah" : location}
+                          </div>
                         </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Total Bayar</div>
-                          <div style={{ fontWeight: 800, fontSize: "1.0625rem", color: booking.paymentStatus === "PAID" ? "var(--emerald)" : "var(--charcoal)" }}>
+                        {/* Tanggal */}
+                        <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-body)" }}>
+                          {new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" })}
+                        </div>
+                        {/* Total */}
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: "0.875rem", color: isPaid ? "var(--emerald)" : "var(--charcoal)" }}>
                             Rp {booking.totalFee.toLocaleString("id-ID")}
                           </div>
-                          <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: booking.paymentStatus === "PAID" ? "var(--emerald)" : "var(--gold)", marginTop: "0.125rem" }}>
-                            {booking.paymentStatus === "PAID" ? "LUNAS" : "BELUM BAYAR"}
+                          <div style={{
+                            fontSize: "0.5625rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em",
+                            color: isPaid ? "var(--emerald)" : "var(--gold)",
+                          }}>
+                            {isPaid ? "LUNAS" : "BELUM BAYAR"}
                           </div>
+                        </div>
+                        {/* Status */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", alignItems: "flex-start" }}>
+                          <span style={{
+                            display: "inline-block",
+                            padding: "0.3rem 0.75rem", borderRadius: 99,
+                            fontSize: "0.6875rem", fontWeight: 800,
+                            background: statusColor.bg, color: statusColor.color,
+                            whiteSpace: "nowrap",
+                          }}>
+                            {STATUS_LABELS[booking.status] || booking.status}
+                          </span>
+                          <BookingStatusButton
+                            bookingId={booking.id}
+                            currentStatus={booking.status}
+                            endDate={booking.endDate.toISOString()}
+                          />
                         </div>
                       </div>
 
-                      <div style={{ display: "flex", gap: "1.5rem", paddingTop: "0.75rem", borderTop: "1px dashed var(--border)", fontSize: "0.8125rem" }}>
-                        <div>
-                          <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Lokasi:</span> <span style={{ fontWeight: 700 }}>{location === "BOTH" ? "Makkah & Madinah" : location}</span>
+                      {/* Mobile card row (hidden on desktop via CSS) */}
+                      <div style={{ padding: "1rem 1.25rem" }} className="amir-mobile-row">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                          <span style={{ fontFamily: "monospace", fontSize: "0.75rem", fontWeight: 800, color: "var(--text-muted)", background: "var(--ivory-dark)", padding: "0.2rem 0.5rem", borderRadius: 6 }}>
+                            #{shortId}
+                          </span>
+                          <span style={{ padding: "0.275rem 0.7rem", borderRadius: 99, fontSize: "0.6875rem", fontWeight: 800, background: statusColor.bg, color: statusColor.color }}>
+                            {STATUS_LABELS[booking.status] || booking.status}
+                          </span>
                         </div>
-                        <div>
-                          <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Tanggal:</span> <span style={{ fontWeight: 700 }}>{new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div>
+                            <div style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--charcoal)" }}>{booking.jamaah.name}</div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--emerald)", fontWeight: 600 }}>→ {booking.muthawif.name}</div>
+                            <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                              {new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} · {location === "BOTH" ? "Makkah & Madinah" : location}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: isPaid ? "var(--emerald)" : "var(--charcoal)" }}>
+                              Rp {booking.totalFee.toLocaleString("id-ID")}
+                            </div>
+                            <div style={{ fontSize: "0.5625rem", fontWeight: 800, color: isPaid ? "var(--emerald)" : "var(--gold)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "0.125rem" }}>
+                              {isPaid ? "LUNAS" : "BELUM BAYAR"}
+                            </div>
+                          </div>
+                        </div>
+                        {/* Mobile action CTA */}
+                        <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px dashed var(--border)" }}>
+                          <BookingStatusButton
+                            bookingId={booking.id}
+                            currentStatus={booking.status}
+                            endDate={booking.endDate.toISOString()}
+                          />
                         </div>
                       </div>
                     </div>
                   );
-                })
-              )}
-            </div>
+                })}
+              </>
+            )}
 
-            <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid var(--border)", background: "var(--ivory-dark)", textAlign: "center" }}>
-              <span style={{ fontSize: "0.8125rem", fontWeight: 800, color: "var(--emerald)" }}>
-                Total Revenue Lunas: Rp {bookings.filter(b => b.paymentStatus === "PAID").reduce((s, b) => s + b.totalFee, 0).toLocaleString("id-ID")}
+            {/* Table Footer */}
+            <div style={{
+              padding: "1rem 1.5rem",
+              borderTop: "1px solid var(--border)",
+              background: "var(--ivory)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "0.5rem",
+            }}>
+              <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600 }}>
+                Menampilkan {bookings.length} transaksi
+              </span>
+              <span style={{ fontSize: "0.875rem", fontWeight: 900, color: "var(--emerald)" }}>
+                Revenue Lunas: Rp {totalRevenue.toLocaleString("id-ID")}
               </span>
             </div>
           </div>
         </div>
       );
     }
+
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -470,6 +752,18 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                 {session.role === "JAMAAH" && isUnpaidActive && (
                   <div style={{ marginTop: "0.5rem" }}>
                     <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} />
+                  </div>
+                )}
+
+                {/* Review CTA — JAMAAH on COMPLETED bookings */}
+                {session.role === "JAMAAH" && booking.status === "COMPLETED" && (
+                  <div style={{ marginTop: "0.875rem" }}>
+                    <ReviewButton
+                      bookingId={booking.id}
+                      muthawifId={booking.muthawif.id}
+                      muthawifName={booking.muthawif.name}
+                      hasReview={!!booking.review}
+                    />
                   </div>
                 )}
               </div>

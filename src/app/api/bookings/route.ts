@@ -45,6 +45,9 @@ export async function POST(req: NextRequest) {
 
     const totalFee = profile ? profile.basePrice * parseInt(duration) : 0;
 
+    const hours = parseInt(process.env.AUTO_CANCEL_HOURS || "24");
+    const paymentDeadline = new Date(Date.now() + hours * 60 * 60 * 1000);
+
     const booking = await prisma.booking.create({
       data: {
         jamaahId: session.id,
@@ -55,6 +58,7 @@ export async function POST(req: NextRequest) {
         notes,
         status: "PENDING",
         paymentStatus: "UNPAID",
+        paymentDeadline,
       },
     });
 

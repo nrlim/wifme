@@ -681,3 +681,19 @@ img {
   }
 }
 
+/* ── AMIR Admin Table — Responsive ──────────────── */
+/* Desktop: show table rows, hide mobile cards */
+.amir-table-header { display: grid !important; }
+.amir-table-row    { display: grid !important; }
+.amir-mobile-row   { display: none !important; }
+
+/* Row hover — pure CSS, no JS needed */
+.amir-row { transition: background 0.15s; }
+.amir-row:hover { background: var(--ivory); }
+
+/* Mobile ≤ 768px: hide table cols, show card rows */
+@media (max-width: 768px) {
+  .amir-table-header { display: none !important; }
+  .amir-table-row    { display: none !important; }
+  .amir-mobile-row   { display: block !important; }
+}

@@ -7,6 +7,7 @@ import Link from "next/link";
 interface MuthawifProfile {
   id: string;
   rating: number;
+  totalReviews: number;
   basePrice: number;
   location: string;
   experience: number;
@@ -33,6 +34,32 @@ const LOCATION_LABELS: Record<string, string> = {
   BOTH: "Makkah & Madinah",
 };
 
+function StarRating({ rating, count }: { rating: number; count: number }) {
+  const filled = Math.round(rating);
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+      <div style={{ display: "flex", gap: 1 }}>
+        {[1, 2, 3, 4, 5].map((v) => (
+          <svg key={v} width="11" height="11" viewBox="0 0 24 24"
+            fill={v <= filled ? "#F1C40F" : "none"}
+            stroke={v <= filled ? "#F1C40F" : "#D1D5DB"}
+            strokeWidth="1.5">
+            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+          </svg>
+        ))}
+      </div>
+      <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--charcoal)" }}>
+        {rating > 0 ? rating.toFixed(1) : "—"}
+      </span>
+      {count > 0 && (
+        <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontWeight: 500 }}>
+          ({count})
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn }: MuthawifCardProps) {
   const router = useRouter();
   const [booking, setBooking] = useState(false);
@@ -41,16 +68,13 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
 
   const handleBook = async () => {
     if (!isLoggedIn) {
-      let searchPath = "/search";
-      if (startDate && duration) {
-        searchPath += `?startDate=${startDate}&duration=${duration}`;
-      }
-      router.push(`/auth/register?redirect=${encodeURIComponent(searchPath)}`);
+      let redirect = "/search";
+      if (startDate && duration) redirect += `?startDate=${startDate}&duration=${duration}`;
+      router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
       return;
     }
-
     if (!startDate || !duration) {
-      setError("Silakan lengkapi pencarian tanggal dan durasi terlebih dahulu.");
+      setError("Silakan lengkapi tanggal dan durasi terlebih dahulu.");
       return;
     }
 
@@ -61,19 +85,14 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          muthawifId: muthawif.user.id,
-          startDate,
-          duration,
-          notes: "",
-        }),
+        body: JSON.stringify({ muthawifId: muthawif.user.id, startDate, duration, notes: "" }),
       });
 
       if (res.ok) {
         setBooked(true);
       } else {
         const data = await res.json();
-        setError(data.error || "Gagal melakukan booking.");
+        setError(data.error || "Gagal melakukan pemesanan.");
       }
     } catch {
       setError("Terjadi kesalahan jaringan.");
@@ -82,80 +101,123 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
     }
   };
 
-  const totalFee = muthawif.basePrice * parseInt(duration || "1");
+  const durationNum = parseInt(duration || "1");
+  const totalFee = muthawif.basePrice * durationNum;
   const initials = muthawif.user.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+    .split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
     <div
-      className="card"
+      id={`muthawif-card-${muthawif.id}`}
       style={{
+        background: "white",
+        borderRadius: 20,
+        border: "1px solid var(--border)",
+        boxShadow: "0 2px 8px rgba(44,44,44,0.06)",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
-        borderRadius: "var(--radius-lg)",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 24px rgba(27,107,74,0.12), 0 2px 8px rgba(0,0,0,0.06)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLDivElement).style.transform = "none";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 8px rgba(44,44,44,0.06)";
       }}
     >
-      {/* Card Header */}
-      <div className="bg-gradient-to-br from-[#E0F2E9] to-[rgba(235,245,239,0.5)] p-6 flex gap-4 items-start border-b border-[#E0D8CC]">
+      {/* ── Header ── */}
+      <div style={{
+        padding: "1.125rem 1.25rem",
+        background: "linear-gradient(135deg, #F8FBF9 0%, #EEF7F2 100%)",
+        borderBottom: "1px solid rgba(224,216,204,0.5)",
+        display: "flex",
+        gap: "0.875rem",
+        alignItems: "center",
+      }}>
         {/* Avatar */}
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1B6B4A] to-[#2A8A60] flex items-center justify-center text-white text-[1.25rem] font-bold shrink-0 border-3 border-white shadow-sm overflow-hidden">
-          {muthawif.user.photoUrl ? (
-            <img src={muthawif.user.photoUrl} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            initials
-          )}
+        <div style={{
+          width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
+          background: "linear-gradient(135deg, var(--emerald), var(--emerald-light))",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "white", fontSize: "1.0625rem", fontWeight: 800,
+          border: "2px solid white",
+          boxShadow: "0 2px 8px rgba(27,107,74,0.25)",
+          overflow: "hidden",
+          position: "relative",
+        }}>
+          {muthawif.user.photoUrl
+            ? <img src={muthawif.user.photoUrl} alt={muthawif.user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : initials}
+          {/* Online dot */}
+          <div style={{
+            position: "absolute", bottom: 1, right: 1,
+            width: 10, height: 10, borderRadius: "50%",
+            background: "#2ECC71", border: "1.5px solid white",
+          }} />
         </div>
 
+        {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ fontSize: "1.0625rem", fontWeight: 700, marginBottom: "0.25rem" }}>
+          <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: "var(--charcoal)", marginBottom: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {muthawif.user.name}
-          </h3>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-            <span className="badge badge-emerald">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem", alignItems: "center" }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: "0.2rem",
+              fontSize: "0.6875rem", fontWeight: 700,
+              color: "var(--emerald)", background: "var(--emerald-pale)",
+              padding: "0.175rem 0.5rem", borderRadius: 99,
+            }}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
                 <circle cx="12" cy="9" r="2.5"/>
               </svg>
               {LOCATION_LABELS[muthawif.location] || muthawif.location}
             </span>
             {muthawif.experience > 0 && (
-              <span className="badge badge-sand">
-                {muthawif.experience} th pengalaman
+              <span style={{
+                fontSize: "0.6875rem", fontWeight: 700,
+                color: "var(--brown)", background: "var(--ivory-dark)",
+                padding: "0.175rem 0.5rem", borderRadius: 99,
+              }}>
+                {muthawif.experience} th
               </span>
             )}
           </div>
         </div>
 
         {/* Rating */}
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", justifyContent: "flex-end" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--gold)" stroke="none">
-              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
-            </svg>
-            <span style={{ fontWeight: 700, fontSize: "0.9375rem", color: "var(--charcoal)" }}>
-              {muthawif.rating > 0 ? muthawif.rating.toFixed(1) : "Baru"}
+        <Link href={`/muthawif/${muthawif.user.id}`} style={{ textDecoration: "none", flexShrink: 0, textAlign: "right" }}>
+          {muthawif.rating > 0 ? (
+            <StarRating rating={muthawif.rating} count={muthawif.totalReviews} />
+          ) : (
+            <span style={{
+              fontSize: "0.625rem", fontWeight: 800, color: "var(--emerald)",
+              background: "var(--emerald-pale)", padding: "0.2rem 0.5rem",
+              borderRadius: 99, letterSpacing: "0.05em",
+            }}>
+              BARU ✨
             </span>
-          </div>
-        </div>
+          )}
+        </Link>
       </div>
 
-      {/* Card Body */}
-      <div style={{ padding: "1.25rem 1.5rem", flex: 1 }}>
+      {/* ── Body ── */}
+      <div style={{ padding: "1rem 1.25rem", flex: 1, display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+        {/* Bio */}
         {muthawif.bio && (
           <p style={{
-            fontSize: "0.875rem",
+            fontSize: "0.8125rem",
             color: "var(--text-body)",
-            lineHeight: 1.65,
-            marginBottom: "1rem",
+            lineHeight: 1.6,
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
+            margin: 0,
           }}>
             {muthawif.bio}
           </p>
@@ -163,71 +225,177 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
 
         {/* Languages */}
         {muthawif.languages.length > 0 && (
-          <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-            {muthawif.languages.map((lang) => (
+          <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
+            {muthawif.languages.slice(0, 4).map((lang) => (
               <span key={lang} style={{
-                fontSize: "0.75rem",
-                background: "var(--ivory-dark)",
-                color: "var(--brown)",
-                padding: "0.2rem 0.625rem",
-                borderRadius: "99px",
-                fontWeight: 500,
+                fontSize: "0.625rem", fontWeight: 700,
+                background: "var(--ivory)",
+                color: "var(--text-muted)",
+                border: "1px solid var(--border)",
+                padding: "0.175rem 0.5rem", borderRadius: 6,
+                letterSpacing: "0.02em",
               }}>
                 {lang}
               </span>
             ))}
+            {muthawif.languages.length > 4 && (
+              <span style={{ fontSize: "0.625rem", color: "var(--text-muted)", padding: "0.175rem 0.25rem" }}>
+                +{muthawif.languages.length - 4}
+              </span>
+            )}
           </div>
         )}
 
-        {/* Price */}
+        {/* Price Row */}
         <div style={{
-          borderTop: "1px solid var(--border)",
-          paddingTop: "1rem",
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-end",
           justifyContent: "space-between",
+          paddingTop: "0.75rem",
+          borderTop: "1px solid var(--border)",
+          marginTop: "auto",
         }}>
           <div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.125rem" }}>
-              {duration ? `Total ${duration} hari` : "Per hari"}
+            <div style={{ fontSize: "0.5625rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>
+              {duration ? `Paket ${duration} hari` : "Per hari"}
             </div>
-            <div style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--emerald)" }}>
-              Rp {(duration ? totalFee : muthawif.basePrice).toLocaleString("id-ID")}
+            <div style={{ display: "flex", alignItems: "baseline", gap: "0.2rem" }}>
+              <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--emerald)" }}>Rp</span>
+              <span style={{ fontSize: "1.1875rem", fontWeight: 900, color: "var(--emerald)", letterSpacing: "-0.02em" }}>
+                {(duration ? totalFee : muthawif.basePrice).toLocaleString("id-ID")}
+              </span>
             </div>
           </div>
+          <Link
+            href={`/muthawif/${muthawif.user.id}`}
+            style={{
+              display: "flex", alignItems: "center", gap: "0.25rem",
+              fontSize: "0.75rem", fontWeight: 700,
+              color: "var(--emerald)",
+              textDecoration: "none",
+              opacity: 0.85,
+            }}
+          >
+            Profil
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </Link>
         </div>
       </div>
 
-      {/* Card Footer */}
-      <div style={{ padding: "0 1.5rem 1.5rem" }}>
+      {/* ── Footer ── */}
+      <div style={{ padding: "0 1.25rem 1.25rem" }}>
         {error && (
-          <div className="alert alert-error" style={{ marginBottom: "0.75rem", fontSize: "0.8125rem" }}>
+          <div style={{
+            display: "flex", alignItems: "flex-start", gap: "0.375rem",
+            background: "#FEF2F2", color: "var(--error)",
+            border: "1px solid #FECACA",
+            padding: "0.625rem 0.75rem", borderRadius: 10,
+            fontSize: "0.75rem", fontWeight: 600,
+            marginBottom: "0.75rem", lineHeight: 1.4,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0, marginTop: 1 }}>
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
             {error}
           </div>
         )}
+
         {booked ? (
-          <div className="alert alert-success" style={{ textAlign: "center" }}>
-            Booking berhasil dikirim!{" "}
-            <Link href="/dashboard" style={{ fontWeight: 700, textDecoration: "underline" }}>
-              Lihat pesanan
+          <div style={{
+            background: "var(--emerald-pale)",
+            border: "1px solid rgba(27,107,74,0.2)",
+            borderRadius: 12,
+            padding: "0.875rem",
+            textAlign: "center",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem", marginBottom: "0.375rem" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              <span style={{ fontWeight: 800, fontSize: "0.875rem", color: "var(--emerald)" }}>Pesanan Berhasil Dikirim!</span>
+            </div>
+            <Link href="/dashboard" style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--emerald)", textDecoration: "underline" }}>
+              Cek Status di Dashboard →
             </Link>
           </div>
-        ) : (
+        ) : isLoggedIn ? (
+          /* Logged-in CTA */
           <button
             onClick={handleBook}
-            className="btn btn-primary"
-            style={{ width: "100%", justifyContent: "center" }}
             disabled={booking}
             id={`book-btn-${muthawif.id}`}
+            style={{
+              width: "100%",
+              padding: "0.8125rem",
+              borderRadius: 12,
+              background: booking ? "var(--emerald-light)" : "var(--emerald)",
+              color: "white",
+              border: "none",
+              fontFamily: "inherit",
+              fontSize: "0.875rem",
+              fontWeight: 800,
+              cursor: booking ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              boxShadow: "0 4px 16px rgba(27,107,74,0.2)",
+              transition: "background 0.2s, transform 0.15s",
+            }}
+            onMouseEnter={(e) => !booking && ((e.currentTarget as HTMLButtonElement).style.background = "var(--emerald-light)")}
+            onMouseLeave={(e) => !booking && ((e.currentTarget as HTMLButtonElement).style.background = "var(--emerald)")}
           >
             {booking ? (
-              <span className="spinner" style={{ borderColor: "rgba(255,255,255,0.4)", borderTopColor: "white" }} />
-            ) : !isLoggedIn ? (
-              "Masuk untuk Book"
+              <span className="spinner" style={{ width: 18, height: 18, borderColor: "rgba(255,255,255,0.35)", borderTopColor: "white" }} />
             ) : (
-              "Book Sekarang"
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+                Pesan Sekarang
+              </>
             )}
           </button>
+        ) : (
+          /* Guest CTA */
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <button
+              onClick={handleBook}
+              style={{
+                width: "100%",
+                padding: "0.8125rem",
+                borderRadius: 12,
+                background: "linear-gradient(135deg, var(--gold), #D4A843)",
+                color: "white",
+                border: "none",
+                fontFamily: "inherit",
+                fontSize: "0.875rem",
+                fontWeight: 800,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                boxShadow: "0 4px 16px rgba(196,151,59,0.25)",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              Masuk untuk Memesan
+            </button>
+            <p style={{
+              fontSize: "0.6875rem", textAlign: "center",
+              color: "var(--text-muted)", margin: 0, lineHeight: 1.4,
+            }}>
+              Belum punya akun?{" "}
+              <Link href="/auth/register" style={{ color: "var(--emerald)", fontWeight: 700, textDecoration: "underline" }}>
+                Daftar gratis
+              </Link>
+            </p>
+          </div>
         )}
       </div>
     </div>

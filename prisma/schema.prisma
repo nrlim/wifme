@@ -56,6 +56,7 @@ model User {
   profile            MuthawifProfile?
   bookingsAsJamaah   Booking[]        @relation("JamaahBookings")
   bookingsAsMuthawif Booking[]        @relation("MuthawifBookings")
+  reviewsGiven       Review[]         @relation("ReviewsGiven")
 }
 
 model MuthawifProfile {
@@ -77,6 +78,7 @@ model MuthawifProfile {
   updatedAt          DateTime           @updatedAt
 
   availability Availability[]
+  reviews      Review[]
 }
 
 model Availability {
@@ -92,18 +94,35 @@ model Availability {
 }
 
 model Booking {
-  id            String        @id @default(cuid())
-  jamaahId      String
-  muthawifId    String
-  jamaah        User          @relation("JamaahBookings", fields: [jamaahId], references: [id])
-  muthawif      User          @relation("MuthawifBookings", fields: [muthawifId], references: [id])
-  startDate     DateTime
-  endDate       DateTime
-  status        BookingStatus @default(PENDING)
-  totalFee      Float
-  notes         String?
-  paymentRef    String?
-  paymentStatus String?       @default("UNPAID")
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  jamaahId        String
+  muthawifId      String
+  jamaah          User          @relation("JamaahBookings", fields: [jamaahId], references: [id])
+  muthawif        User          @relation("MuthawifBookings", fields: [muthawifId], references: [id])
+  startDate       DateTime
+  endDate         DateTime
+  status          BookingStatus @default(PENDING)
+  totalFee        Float
+  notes           String?
+  paymentRef      String?
+  paymentStatus   String?       @default("UNPAID")
+  paymentDeadline DateTime?     // auto-cancel if UNPAID past this
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  review          Review?
+}
+
+model Review {
+  id              String          @id @default(cuid())
+  bookingId       String          @unique
+  booking         Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  profileId       String
+  profile         MuthawifProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  reviewerId      String
+  reviewer        User            @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  rating          Int             // 1–5
+  comment         String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
