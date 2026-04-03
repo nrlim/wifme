@@ -1,0 +1,110 @@
+// This is your Prisma schema file
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  JAMAAH
+  MUTHAWIF
+  AMIR
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum Location {
+  MAKKAH
+  MADINAH
+  BOTH
+}
+
+enum VerificationStatus {
+  PENDING
+  REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BOOKED
+  OFF
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  photoUrl  String?
+  role      Role     @default(JAMAAH)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile            MuthawifProfile?
+  bookingsAsJamaah   Booking[]        @relation("JamaahBookings")
+  bookingsAsMuthawif Booking[]        @relation("MuthawifBookings")
+}
+
+model MuthawifProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio                String?
+  basePrice          Float              @default(500000)
+  location           Location           @default(MAKKAH)
+  experience         Int                @default(0)
+  languages          String[]           @default(["Indonesia"])
+  specializations    String[]           @default([])
+  rating             Float              @default(0)
+  totalReviews       Int                @default(0)
+  documentsUrl       String[]           @default([])
+  isAvailable        Boolean            @default(false)
+  verificationStatus VerificationStatus @default(PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  availability Availability[]
+}
+
+model Availability {
+  id        String             @id @default(cuid())
+  profileId String
+  profile   MuthawifProfile    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  date      DateTime           @db.Date
+  status    AvailabilityStatus @default(AVAILABLE)
+  timeSlots String[]           @default([])
+  createdAt DateTime           @default(now())
+
+  @@unique([profileId, date])
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  jamaahId      String
+  muthawifId    String
+  jamaah        User          @relation("JamaahBookings", fields: [jamaahId], references: [id])
+  muthawif      User          @relation("MuthawifBookings", fields: [muthawifId], references: [id])
+  startDate     DateTime
+  endDate       DateTime
+  status        BookingStatus @default(PENDING)
+  totalFee      Float
+  notes         String?
+  paymentRef    String?
+  paymentStatus String?       @default("UNPAID")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
