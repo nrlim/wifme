@@ -13,120 +13,157 @@ const LOCATIONS = [
 export default function SearchForm() {
   const router = useRouter();
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  const today = `${year}-${month}-${day}`;
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  const [form, setForm] = useState({
-    startDate: "",
-    duration: "7",
-    location: "ALL",
-  });
-
+  const [form, setForm] = useState({ startDate: "", duration: "7", location: "ALL" });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    const params = new URLSearchParams({
-      startDate: form.startDate,
-      duration: form.duration,
-      location: form.location,
-    });
-
+    const params = new URLSearchParams({ startDate: form.startDate, duration: form.duration, location: form.location });
     router.push(`/search?${params.toString()}`);
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.75rem 1rem",
+    border: "1.5px solid rgba(255,255,255,0.3)",
+    borderRadius: "12px",
+    fontSize: "0.9375rem",
+    fontFamily: "inherit",
+    color: "#2C2C2C",
+    background: "white",
+    outline: "none",
+    transition: "border-color 0.2s",
+    boxSizing: "border-box",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "0.8125rem",
+    fontWeight: 700,
+    color: "#4A4A4A",
+    marginBottom: "0.375rem",
   };
 
   return (
     <form
       onSubmit={handleSubmit}
       style={{
-        background: "rgba(255,255,255,0.96)",
+        background: "rgba(255,255,255,0.97)",
         backdropFilter: "blur(16px)",
-        borderRadius: "var(--radius-xl)",
-        padding: "1.75rem",
-        boxShadow: "var(--shadow-lg)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderRadius: "24px",
+        padding: "clamp(1.25rem, 5vw, 1.75rem)",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.1)",
         border: "1px solid rgba(255,255,255,0.8)",
         width: "100%",
-        maxWidth: 620,
+        maxWidth: 500,
+        boxSizing: "border-box",
       }}
     >
-      <div style={{ marginBottom: "1.125rem" }}>
-        <h3 style={{ fontSize: "1.0625rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "0.25rem" }}>
-          Cari Muthawif Tersedia
-        </h3>
-        <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-          Temukan pembimbing terbaik sesuai jadwal Anda
-        </p>
+      {/* Header */}
+      <div style={{ marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <div style={{ width: 40, height: 40, borderRadius: "10px", background: "linear-gradient(135deg, #1B6B4A, #27AE60)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+          </svg>
+        </div>
+        <div>
+          <div style={{ fontSize: "1rem", fontWeight: 800, color: "#2C2C2C", lineHeight: 1.2 }}>Cari Muthawif</div>
+          <div style={{ fontSize: "0.75rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Temukan pembimbing sesuai jadwal Anda</div>
+        </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem", marginBottom: "0.875rem" }}>
-        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-          <label className="form-label" htmlFor="startDate">
-            Tanggal Keberangkatan
+      {/* Fields */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", marginBottom: "1rem" }}>
+        <div>
+          <label htmlFor="sf-date" style={labelStyle}>
+            📅 Tanggal Pelaksanaan
           </label>
           <input
-            id="startDate"
+            id="sf-date"
             type="date"
-            className="form-input"
             min={today}
             value={form.startDate}
             onChange={(e) => setForm({ ...form, startDate: e.target.value })}
             required
+            style={inputStyle}
+            onFocus={(e) => (e.target.style.borderColor = "#1B6B4A")}
+            onBlur={(e) => (e.target.style.borderColor = "rgba(0,0,0,0.12)")}
           />
         </div>
 
-        <div className="form-group">
-          <label className="form-label" htmlFor="duration">
-            Durasi (Hari)
-          </label>
-          <input
-            id="duration"
-            type="number"
-            className="form-input"
-            min="1"
-            max="60"
-            placeholder="misal: 10"
-            value={form.duration}
-            onChange={(e) => setForm({ ...form, duration: e.target.value })}
-            required
-          />
-        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+          <div>
+            <label htmlFor="sf-duration" style={labelStyle}>
+              ⏱ Durasi (Hari)
+            </label>
+            <input
+              id="sf-duration"
+              type="number"
+              min="1"
+              max="60"
+              placeholder="7"
+              value={form.duration}
+              onChange={(e) => setForm({ ...form, duration: e.target.value })}
+              required
+              style={inputStyle}
+              onFocus={(e) => (e.target.style.borderColor = "#1B6B4A")}
+              onBlur={(e) => (e.target.style.borderColor = "rgba(0,0,0,0.12)")}
+            />
+          </div>
 
-        <div className="form-group">
-          <label className="form-label" htmlFor="location">
-            Lokasi
-          </label>
-          <select
-            id="location"
-            className="form-input form-select"
-            value={form.location}
-            onChange={(e) => setForm({ ...form, location: e.target.value })}
-          >
-            {LOCATIONS.map((loc) => (
-              <option key={loc.value} value={loc.value}>
-                {loc.label}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label htmlFor="sf-location" style={labelStyle}>
+              📍 Lokasi
+            </label>
+            <select
+              id="sf-location"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              style={{ ...inputStyle, appearance: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238A8A8A' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.75rem center", paddingRight: "2.25rem" }}
+            >
+              {LOCATIONS.map((loc) => (
+                <option key={loc.value} value={loc.value}>{loc.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
+      {/* Submit */}
       <button
         type="submit"
-        className="btn btn-primary w-full"
-        style={{ width: "100%", justifyContent: "center", padding: "0.9375rem" }}
         disabled={loading}
+        style={{
+          width: "100%",
+          padding: "1rem",
+          borderRadius: "14px",
+          background: loading ? "#9CA3AF" : "linear-gradient(135deg, #1B6B4A, #27AE60)",
+          color: "white",
+          fontWeight: 800,
+          fontSize: "1rem",
+          fontFamily: "inherit",
+          border: "none",
+          cursor: loading ? "not-allowed" : "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "0.5rem",
+          boxShadow: loading ? "none" : "0 4px 16px rgba(27,107,74,0.4)",
+          transition: "all 0.2s",
+        }}
+        onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = "translateY(-1px)")}
+        onMouseLeave={(e) => !loading && (e.currentTarget.style.transform = "translateY(0)")}
       >
         {loading ? (
-          <span className="spinner" />
+          <span className="spinner" style={{ width: 20, height: 20, borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white", borderWidth: 2.5 }} />
         ) : (
           <>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
             </svg>
             Cari Muthawif
           </>

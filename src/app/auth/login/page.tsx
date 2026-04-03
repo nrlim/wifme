@@ -44,14 +44,15 @@ function LoginForm() {
 
   return (
     <div style={{
-      height: "100dvh",
+      minHeight: "100dvh",
       background: "linear-gradient(160deg, #0f3d28 0%, #1B6B4A 45%, #2A8A60 100%)",
       display: "flex",
+      flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      padding: "2rem 1.25rem",
+      padding: "5rem 1.25rem 2rem",
       position: "relative",
-      overflow: "hidden",
+      overflowX: "hidden",
     }}>
       {/* Decorative geometric pattern */}
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
@@ -68,8 +69,8 @@ function LoginForm() {
 
       <Link href="/" style={{
         position: "absolute",
-        top: "2rem",
-        left: "2rem",
+        top: "1.25rem",
+        left: "1.25rem",
         display: "flex",
         alignItems: "center",
         gap: "0.5rem",
@@ -77,14 +78,15 @@ function LoginForm() {
         textDecoration: "none",
         fontWeight: 600,
         zIndex: 10,
+        fontSize: "0.9375rem",
       }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         Kembali
       </Link>
 
-      <div style={{ width: "100%", maxWidth: 440, position: "relative", zIndex: 2, display: "flex", flexDirection: "column", maxHeight: "100%" }}>
+      <div style={{ width: "100%", maxWidth: 440, position: "relative", zIndex: 2 }}>
         {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: "2rem", flexShrink: 0 }}>
+        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.625rem", marginBottom: "1.5rem" }}>
             <div style={{
               width: 40,
@@ -105,7 +107,7 @@ function LoginForm() {
               Wif<span style={{ color: "var(--gold)" }}>-Me</span>
             </span>
           </Link>
-          <h1 style={{ fontSize: "1.625rem", fontWeight: 800, marginBottom: "0.375rem", color: "white" }}>Selamat Datang</h1>
+          <h1 style={{ fontSize: "clamp(1.375rem, 4vw, 1.625rem)", fontWeight: 800, marginBottom: "0.375rem", color: "white" }}>Selamat Datang</h1>
           <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.9375rem" }}>
             Masuk untuk melanjutkan booking Muthawif
           </p>
@@ -114,10 +116,9 @@ function LoginForm() {
         <div style={{
           background: "var(--white)",
           borderRadius: "var(--radius-xl)",
-          padding: "2.25rem",
+          padding: "clamp(1.5rem, 5vw, 2.25rem)",
           boxShadow: "var(--shadow-md)",
           border: "1px solid var(--border)",
-          overflowY: "auto",
         }}>
           {error && (
             <div className="alert alert-error" style={{ marginBottom: "1.25rem" }}>

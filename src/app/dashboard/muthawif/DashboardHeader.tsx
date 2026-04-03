@@ -86,19 +86,19 @@ export function DashboardHeader({
 
   return (
     <>
-      <header className="muthawif-header">
+      <header className="muthawif-header" style={{ background: "linear-gradient(135deg, #0d2818 0%, #1B6B4A 100%)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
         {/* LEFT */}
         <div className="muthawif-header-left">
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, var(--emerald), var(--emerald-light))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #1B6B4A, #27956A)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
               <circle cx="12" cy="9" r="2.5" />
             </svg>
           </div>
-          <div style={{ width: 1, height: 28, background: "var(--border)", flexShrink: 0 }} className="header-divider-left" />
+          <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} className="header-divider-left" />
           <div>
-            <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", lineHeight: 1 }}>Wif-Me</p>
-            <h2 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--charcoal)", lineHeight: 1.2, marginTop: "0.2rem" }}>
+            <p style={{ fontSize: "0.5875rem", color: "rgba(255,255,255,0.45)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", lineHeight: 1 }}>Wif–Me</p>
+            <h2 style={{ fontSize: "0.9375rem", fontWeight: 800, color: "white", lineHeight: 1.2, marginTop: "0.2rem" }}>
               {title || "Panel Muthawif"}
             </h2>
           </div>
@@ -106,15 +106,15 @@ export function DashboardHeader({
 
         {/* RIGHT */}
         <div className="muthawif-header-right">
-          <button onClick={() => setPanelOpen(true)} className="header-avatar-btn" title="Profil Saya">
-            <div style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--emerald-pale)", color: "var(--emerald)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.875rem", overflow: "hidden", border: "2px solid var(--border)" }}>
+          <button onClick={() => setPanelOpen(true)} className="header-avatar-btn" title="Profil Saya" style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "99px", padding: "0.375rem 0.875rem 0.375rem 0.375rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #C4973B, #E4B55A)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.8125rem", overflow: "hidden", flexShrink: 0 }}>
               {avatarUrl ? <img src={avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
             </div>
             <div className="header-user-text">
-              <div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--charcoal)", lineHeight: 1.2, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
-              <div style={{ fontSize: "0.6875rem", color: "var(--emerald)", marginTop: "0.1rem", fontWeight: 600 }}>● Aktif</div>
+              <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: "white", lineHeight: 1.2, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+              <div style={{ fontSize: "0.625rem", color: "rgba(228,181,90,0.9)", marginTop: "0.1rem", fontWeight: 600 }}>● Aktif</div>
             </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" className="header-user-text">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" className="header-user-text">
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>

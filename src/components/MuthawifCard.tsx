@@ -101,35 +101,14 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
       }}
     >
       {/* Card Header */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, var(--emerald-pale) 0%, rgba(235, 245, 239, 0.5) 100%)",
-          padding: "1.5rem",
-          display: "flex",
-          gap: "1rem",
-          alignItems: "flex-start",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+      <div className="bg-gradient-to-br from-[#E0F2E9] to-[rgba(235,245,239,0.5)] p-6 flex gap-4 items-start border-b border-[#E0D8CC]">
         {/* Avatar */}
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, var(--emerald), var(--emerald-light))",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "white",
-            fontSize: "1.25rem",
-            fontWeight: 700,
-            flexShrink: 0,
-            border: "3px solid white",
-            overflow: "hidden"
-          }}
-        >
-          {muthawif.user.photoUrl ? <img src={muthawif.user.photoUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1B6B4A] to-[#2A8A60] flex items-center justify-center text-white text-[1.25rem] font-bold shrink-0 border-3 border-white shadow-sm overflow-hidden">
+          {muthawif.user.photoUrl ? (
+            <img src={muthawif.user.photoUrl} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            initials
+          )}
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>

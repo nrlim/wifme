@@ -64,14 +64,15 @@ function RegisterForm() {
 
   return (
     <div style={{
-      height: "100dvh",
+      minHeight: "100dvh",
       background: "linear-gradient(160deg, #0f3d28 0%, #1B6B4A 45%, #2A8A60 100%)",
       display: "flex",
+      flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      padding: "2rem 1.25rem",
+      padding: "5rem 1.25rem 2rem",
       position: "relative",
-      overflow: "hidden",
+      overflowX: "hidden",
     }}>
       {/* Decorative geometric pattern */}
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
@@ -88,23 +89,24 @@ function RegisterForm() {
 
       <Link href="/" style={{
         position: "absolute",
-        top: "2rem",
-        left: "2rem",
+        top: "1.25rem",
+        left: "1.25rem",
         display: "flex",
         alignItems: "center",
         gap: "0.5rem",
         color: "white",
         textDecoration: "none",
         fontWeight: 600,
+        fontSize: "0.9375rem",
         zIndex: 10,
       }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         Kembali
       </Link>
 
-      <div style={{ width: "100%", maxWidth: 480, position: "relative", zIndex: 2, display: "flex", flexDirection: "column", maxHeight: "100%" }}>
+      <div style={{ width: "100%", maxWidth: 480, position: "relative", zIndex: 2 }}>
         {/* Logo Header */}
-        <div style={{ textAlign: "center", marginBottom: "1rem", flexShrink: 0 }}>
+        <div style={{ textAlign: "center", marginBottom: "1rem" }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.625rem", marginBottom: "0.75rem" }}>
             <div style={{
               width: 40,
@@ -125,7 +127,7 @@ function RegisterForm() {
               Wif<span style={{ color: "var(--gold)" }}>-Me</span>
             </span>
           </Link>
-          <h1 style={{ fontSize: "1.625rem", fontWeight: 800, marginBottom: "0.375rem", color: "white" }}>Buat Akun Baru</h1>
+          <h1 style={{ fontSize: "clamp(1.375rem, 4vw, 1.625rem)", fontWeight: 800, marginBottom: "0.375rem", color: "white" }}>Buat Akun Baru</h1>
           <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.9375rem" }}>
             Bergabung dan mulai perjalanan spiritual Anda
           </p>
@@ -135,10 +137,9 @@ function RegisterForm() {
         <div style={{
           background: "var(--white)",
           borderRadius: "var(--radius-xl)",
-          padding: "1.5rem 1.75rem",
+          padding: "clamp(1.25rem, 5vw, 1.75rem)",
           boxShadow: "var(--shadow-md)",
           border: "1px solid var(--border)",
-          overflowY: "auto",
         }}>
           {/* Role Toggle */}
           <div style={{
@@ -304,7 +305,7 @@ function RegisterForm() {
           </p>
         </div>
 
-        <p style={{ textAlign: "center", marginTop: "1rem", fontSize: "0.8rem", color: "rgba(255,255,255,0.8)", flexShrink: 0 }}>
+        <p style={{ textAlign: "center", marginTop: "1rem", fontSize: "0.8rem", color: "rgba(255,255,255,0.8)" }}>
           Dengan mendaftar, Anda menyetujui{" "}
           <Link href="#" style={{ color: "var(--gold)" }}>Syarat & Ketentuan</Link>{" "}
           kami.

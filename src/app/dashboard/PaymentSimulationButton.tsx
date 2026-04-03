@@ -46,30 +46,35 @@ export default function PaymentSimulationButton({ bookingId, amount }: { booking
     <button
       onClick={handlePay}
       disabled={loading}
-      className="btn btn-primary btn-sm"
       style={{
-        padding: "0.5rem 1rem",
-        fontSize: "0.75rem",
+        width: "100%",
+        padding: "0.75rem 1.25rem",
+        fontSize: "0.875rem",
+        fontWeight: 700,
+        fontFamily: "inherit",
         justifyContent: "center",
-        borderRadius: "8px",
-        background: "var(--charcoal)",
-        borderColor: "var(--charcoal)",
-        display: "inline-flex",
+        borderRadius: "10px",
+        background: "var(--emerald)",
+        border: "none",
+        color: "white",
+        display: "flex",
         alignItems: "center",
-        gap: "0.375rem",
+        gap: "0.5rem",
         opacity: loading ? 0.7 : 1,
         cursor: loading ? "not-allowed" : "pointer",
-        transition: "opacity 0.2s",
+        transition: "opacity 0.2s, background 0.2s",
       }}
+      onMouseEnter={e => !loading && (e.currentTarget.style.background = "var(--emerald-light)")}
+      onMouseLeave={e => !loading && (e.currentTarget.style.background = "var(--emerald)")}
     >
       {loading ? (
         <span
           className="spinner"
-          style={{ width: 14, height: 14, borderColor: "rgba(255,255,255,0.4)", borderTopColor: "white", borderWidth: 2 }}
+          style={{ width: 16, height: 16, borderColor: "rgba(255,255,255,0.4)", borderTopColor: "white", borderWidth: 2 }}
         />
       ) : (
         <>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <rect x="2" y="5" width="20" height="14" rx="2"></rect>
             <line x1="2" y1="10" x2="22" y2="10"></line>
           </svg>

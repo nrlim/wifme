@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap');
+@import "tailwindcss";
 
 :root {
   --ivory: #FAF7F2;
@@ -430,12 +430,16 @@ img {
 }
 
 .dashboard-sidebar-fixed {
-  width: 260px;
-  background: white;
-  border-right: 1px solid var(--border);
+  width: 240px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+}
+
+/* nav link hover in dark sidebar */
+.dsb-nav-lnk:hover {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.15) !important;
 }
 
 .dashboard-main-area {
@@ -470,21 +474,43 @@ img {
   .dashboard-fullscreen {
     flex-direction: column;
     height: auto;
-    min-height: 100vh;
-    overflow: auto;
+    min-height: 100dvh;
+    overflow: visible;
   }
   .dashboard-sidebar-fixed {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    max-height: none;
+  }
+  /* On mobile: collapse sidebar into a compact nav strip */
+  .dashboard-sidebar-fixed > *:not(.sidebar-scrollable):not(:first-child):not(:last-child) {
+    display: none;
+  }
+  .sidebar-scrollable {
+    padding: 0.5rem 0.75rem !important;
+  }
+  .dashboard-main-area {
+    overflow: visible;
+    min-height: 0;
+    flex: unset;
+  }
+  .dashboard-header {
+    height: auto;
+    min-height: 56px;
+    padding: 0.625rem 1rem;
   }
   .dashboard-nav-flex {
     flex-direction: row;
     overflow-x: auto;
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    padding: 0.5rem 1rem 0.5rem;
   }
   .dashboard-nav-flex::-webkit-scrollbar {
-    height: 4px;
+    height: 3px;
   }
   .hide-mobile {
     display: none !important;

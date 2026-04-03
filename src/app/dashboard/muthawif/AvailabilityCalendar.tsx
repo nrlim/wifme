@@ -168,10 +168,10 @@ export function AvailabilityCalendar({ availability }: Props) {
 
   /* ──────────────────────────── RENDER ────────────────────────────────── */
   return (
-    <div style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:"1.25rem",alignItems:"start"}}>
+    <div className="avail-cal-root">
 
       {/* ─── LEFT: CALENDAR ─── */}
-      <div style={{background:"white",borderRadius:"18px",border:"1px solid var(--border)",overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.05)"}}>
+      <div className="avail-cal-left" style={{background:"white",borderRadius:"18px",border:"1px solid var(--border)",overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.05)"}}>
 
         {/* Month nav */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"1rem 1.25rem",
@@ -249,7 +249,7 @@ export function AvailabilityCalendar({ availability }: Props) {
       </div>
 
       {/* ─── RIGHT: PANEL ─── */}
-      <div style={{display:"flex",flexDirection:"column",borderRadius:"18px",
+      <div className="avail-cal-right" style={{display:"flex",flexDirection:"column",borderRadius:"18px",
         border:"1px solid var(--border)",overflow:"hidden",
         boxShadow:"0 2px 12px rgba(0,0,0,0.05)"}}>
 
@@ -717,6 +717,26 @@ export function AvailabilityCalendar({ availability }: Props) {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideUp { from { transform: translateX(-50%) translateY(16px); opacity:0; } to { transform: translateX(-50%) translateY(0); opacity:1; } }
+        
+        /* ── Desktop: side-by-side ── */
+        .avail-cal-root {
+          display: grid;
+          grid-template-columns: 1fr 360px;
+          gap: 1.25rem;
+          align-items: start;
+        }
+        .avail-cal-left { order: 1; }
+        .avail-cal-right { order: 2; }
+
+        /* ── Mobile: stacked ── */
+        @media (max-width: 640px) {
+          .avail-cal-root {
+            grid-template-columns: 1fr;
+            gap: 0.875rem;
+          }
+          .avail-cal-left { order: 2; }
+          .avail-cal-right { order: 1; }
+        }
       `}</style>
     </div>
   );

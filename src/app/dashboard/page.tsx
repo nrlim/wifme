@@ -190,204 +190,391 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
   }
 
   const renderBookings = () => {
-    return (
-      <>
-      {dbError ? (
-        <div className="alert alert-error">Database belum terhubung. Silakan konfigurasi DATABASE_URL di .env</div>
-      ) : bookings.length === 0 ? (
-        <div style={{ background: "white", borderRadius: "12px", padding: "3rem", textAlign: "center", border: "1px solid var(--border)" }}>
+    if (dbError) {
+      return <div className="alert alert-error">Database belum terhubung. Silakan konfigurasi DATABASE_URL di .env</div>;
+    }
+
+    if (bookings.length === 0) {
+      return (
+        <div style={{ background: "white", borderRadius: "16px", padding: "3rem 1.5rem", textAlign: "center", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}>
           <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--ivory-dark)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem" }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" /></svg>
           </div>
           <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: "0.5rem" }}>Belum Ada Pesanan</h3>
-          <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>Belum ada data pesanan saat ini.</p>
+          <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9375rem" }}>Belum ada data pesanan saat ini.</p>
           {session.role === "JAMAAH" && (
-            <Link href="/#search" className="btn btn-primary">Cari Muthawif</Link>
+            <Link href="/#search" className="btn btn-primary" style={{ display: "inline-flex" }}>
+              🔍 Cari Muthawif
+            </Link>
+          )}
+          {session.role === "MUTHAWIF" && (
+            <p style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>Pesanan dari Jamaah akan muncul di sini setelah akun Anda diverifikasi.</p>
           )}
         </div>
-      ) : session.role === "AMIR" ? (
-        /* ── AMIR: Wide admin dashboard view ──────────────────────────── */
-        <>
+      );
+    }
+
+
+    if (session.role === "AMIR") {
+      return (
+        /* ── AMIR: Admin Dashboard View ──────────────────────────── */
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Summary Stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(155px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", 
+            gap: "1rem", 
+            marginBottom: "0.5rem" 
+          }}>
             {[
               { label: "Total Transaksi", value: bookings.length, icon: "📋", color: "var(--charcoal)" },
               { label: "Terkonfirmasi", value: bookings.filter(b => b.status === "CONFIRMED").length, icon: "✅", color: "var(--emerald)" },
               { label: "Menunggu", value: bookings.filter(b => b.status === "PENDING").length, icon: "⏳", color: "var(--gold)" },
               { label: "Sudah Lunas", value: bookings.filter(b => b.paymentStatus === "PAID").length, icon: "💰", color: "#2563EB" },
-              { label: "Total Revenue", value: "Rp " + bookings.filter(b => b.paymentStatus === "PAID").reduce((s, b) => s + b.totalFee, 0).toLocaleString("id-ID"), icon: "📈", color: "var(--emerald)" },
+              { label: "Total Revenue", value: "Rp " + bookings.filter(b => b.paymentStatus === "PAID").reduce((s, b) => s + b.totalFee, 0).toLocaleString("id-ID"), icon: "📈", color: "var(--emerald)", full: true },
             ].map(stat => (
-              <div key={stat.label} style={{ background: "white", borderRadius: "14px", padding: "1.125rem 1.25rem", border: "1px solid var(--border)", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-                <div style={{ fontSize: "1.25rem", marginBottom: "0.375rem" }}>{stat.icon}</div>
-                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.25rem" }}>{stat.label}</div>
-                <div style={{ fontWeight: 800, fontSize: "1.25rem", color: stat.color }}>{stat.value}</div>
+              <div 
+                key={stat.label} 
+                style={{ 
+                  background: "white", 
+                  borderRadius: "16px", 
+                  padding: "1.25rem", 
+                  border: "1px solid var(--border)", 
+                  boxShadow: "var(--shadow-sm)",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  minHeight: "100px",
+                  gridColumn: stat.full ? "1 / -1" : "auto"
+                }}
+              >
+                <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>{stat.icon}</div>
+                <div>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>{stat.label}</div>
+                  <div style={{ fontVariantNumeric: "tabular-nums", fontWeight: 800, fontSize: "1.25rem", color: stat.color, overflow: "hidden", textOverflow: "ellipsis" }}>{stat.value}</div>
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Wide Data Table */}
-          <div style={{ background: "white", borderRadius: "16px", border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.8fr 0.9fr 1fr 1fr 0.9fr", gap: "0.75rem", padding: "0.875rem 1.5rem", background: "var(--ivory-dark)", borderBottom: "1px solid var(--border)", alignItems: "center" }}>
-              {["Order ID", "Jamaah → Muthawif", "Lokasi", "Tanggal", "Total", "Status"].map(h => (
-                <div key={h} style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{h}</div>
-              ))}
+          {/* Transactions List */}
+          <div style={{ background: "white", borderRadius: "18px", border: "1px solid var(--border)", overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
+            <div style={{ padding: "1.25rem 1.5rem", background: "var(--ivory-dark)", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 800 }}>Daftar Transaksi Terbaru</h3>
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)" }}>{bookings.length} Data</span>
             </div>
-            {bookings.map((booking, idx) => {
-              const color = STATUS_COLORS[booking.status] || { bg: "var(--ivory-dark)", color: "var(--text-muted)" };
-              const location = booking.muthawif.profile?.location || "—";
-              return (
-                <div key={booking.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 1.8fr 0.9fr 1fr 1fr 0.9fr", gap: "0.75rem", padding: "1rem 1.5rem", borderBottom: idx < bookings.length - 1 ? "1px solid var(--border)" : "none", alignItems: "center", background: idx % 2 === 0 ? "white" : "var(--ivory)" }}>
-                  <span style={{ fontFamily: "monospace", fontSize: "0.8125rem", fontWeight: 700, color: "var(--charcoal)", background: "var(--ivory-dark)", padding: "0.2rem 0.5rem", borderRadius: "6px", border: "1px solid var(--border)" }}>#{booking.id.split("-")[0].toUpperCase()}</span>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>{booking.jamaah.name}</div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.125rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                      {booking.muthawif.name}
+            
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {bookings.length === 0 ? (
+                <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Tidak ada data transaksi.</div>
+              ) : (
+                bookings.map((booking, idx) => {
+                  const color = STATUS_COLORS[booking.status] || { bg: "var(--ivory-dark)", color: "var(--text-muted)" };
+                  const location = booking.muthawif.profile?.location || "—";
+                  return (
+                    <div 
+                      key={booking.id} 
+                      style={{ 
+                        padding: "1.25rem 1.5rem", 
+                        borderBottom: idx === bookings.length - 1 ? "none" : "1px solid var(--border)",
+                        background: idx % 2 === 0 ? "white" : "var(--ivory-pale)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "1rem"
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontFamily: "monospace", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", background: "var(--ivory-dark)", padding: "0.2rem 0.5rem", borderRadius: "6px" }}>
+                          #{(booking.id.includes("-") ? booking.id.split("-")[0] : booking.id.slice(0, 8)).toUpperCase()}
+                        </span>
+                        <span style={{ padding: "0.375rem 0.75rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 700, background: color.bg, color: color.color }}>
+                          {STATUS_LABELS[booking.status] || booking.status}
+                        </span>
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+                        <div>
+                          <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Jamaah & Muthawif</div>
+                          <div style={{ fontWeight: 700, fontSize: "0.9375rem" }}>{booking.jamaah.name}</div>
+                          <div style={{ fontSize: "0.8125rem", color: "var(--emerald)", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.25rem", marginTop: "0.125rem" }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"/></svg>
+                            {booking.muthawif.name}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Total Bayar</div>
+                          <div style={{ fontWeight: 800, fontSize: "1.0625rem", color: booking.paymentStatus === "PAID" ? "var(--emerald)" : "var(--charcoal)" }}>
+                            Rp {booking.totalFee.toLocaleString("id-ID")}
+                          </div>
+                          <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: booking.paymentStatus === "PAID" ? "var(--emerald)" : "var(--gold)", marginTop: "0.125rem" }}>
+                            {booking.paymentStatus === "PAID" ? "LUNAS" : "BELUM BAYAR"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "1.5rem", paddingTop: "0.75rem", borderTop: "1px dashed var(--border)", fontSize: "0.8125rem" }}>
+                        <div>
+                          <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Lokasi:</span> <span style={{ fontWeight: 700 }}>{location === "BOTH" ? "Makkah & Madinah" : location}</span>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Tanggal:</span> <span style={{ fontWeight: 700 }}>{new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 500 }}>{location === "BOTH" ? "Makkah & Madinah" : location}</div>
-                  <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--charcoal)" }}>{new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</div>
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: booking.paymentStatus === "PAID" ? "var(--emerald)" : "var(--charcoal)" }}>Rp {booking.totalFee.toLocaleString("id-ID")}</div>
-                    <div style={{ fontSize: "0.6875rem", fontWeight: 600, marginTop: "0.125rem", color: booking.paymentStatus === "PAID" ? "var(--emerald)" : "var(--gold)" }}>{booking.paymentStatus === "PAID" ? "Lunas" : "Belum Bayar"}</div>
-                  </div>
-                  <span style={{ padding: "0.25rem 0.625rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 700, background: color.bg, color: color.color, whiteSpace: "nowrap" }}>{STATUS_LABELS[booking.status] || booking.status}</span>
-                </div>
-              );
-            })}
-            <div style={{ padding: "0.875rem 1.5rem", borderTop: "1px solid var(--border)", background: "var(--ivory-dark)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600 }}>{bookings.length} transaksi ditemukan</span>
-              <span style={{ fontSize: "0.8125rem", fontWeight: 800, color: "var(--emerald)" }}>Revenue Lunas: Rp {bookings.filter(b => b.paymentStatus === "PAID").reduce((s, b) => s + b.totalFee, 0).toLocaleString("id-ID")}</span>
+                  );
+                })
+              )}
+            </div>
+
+            <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid var(--border)", background: "var(--ivory-dark)", textAlign: "center" }}>
+              <span style={{ fontSize: "0.8125rem", fontWeight: 800, color: "var(--emerald)" }}>
+                Total Revenue Lunas: Rp {bookings.filter(b => b.paymentStatus === "PAID").reduce((s, b) => s + b.totalFee, 0).toLocaleString("id-ID")}
+              </span>
             </div>
           </div>
-        </>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {bookings.map((booking) => {
-            const status = STATUS_LABELS[booking.status] || booking.status;
-            const color = STATUS_COLORS[booking.status] || { bg: "var(--ivory-dark)", color: "var(--text-muted)" };
-            const location = booking.muthawif.profile?.location || "";
-            const initials = booking.muthawif.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-            
-            const startDateStr = new Date(booking.startDate);
-            const endDateStr = new Date(booking.endDate);
-            const durationDays = Math.max(1, Math.round((endDateStr.getTime() - startDateStr.getTime()) / (1000 * 60 * 60 * 24)));
+        </div>
+      );
+    }
 
-            let displayName = booking.muthawif.name;
-            if (session.role === "MUTHAWIF") displayName = "Jamaah: " + booking.jamaah.name;
-            else if (session.role === "AMIR") displayName = booking.jamaah.name + " ➔ " + booking.muthawif.name;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        {bookings.map((booking) => {
+          const status = STATUS_LABELS[booking.status] || booking.status;
+          const color = STATUS_COLORS[booking.status] || { bg: "#F0EBE1", color: "#8A8A8A" };
+          const location = booking.muthawif.profile?.location || "";
+          const initials = booking.muthawif.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+          // Handle both UUID (hyphenated) and CUID (no hyphens)
+          const shortId = booking.id.includes("-")
+            ? booking.id.split("-")[0].toUpperCase()
+            : booking.id.slice(0, 8).toUpperCase();
+          
+          const startDate = new Date(booking.startDate);
+          const endDate = new Date(booking.endDate);
+          const durationDays = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
 
-            return (
-              <div key={booking.id} style={{ display: "flex", flexDirection: "column", background: "white", borderRadius: "16px", border: "1px solid var(--border)", boxShadow: "0 2px 8px rgba(0,0,0,0.02)", overflow: "hidden" }}>
-                {/* Header (Booking ID & Status) */}
-                <div style={{ padding: "0.875rem 1.5rem", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--ivory)", flexWrap: "wrap", gap: "1rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "1px" }}>ORDER ID</span>
-                    <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--charcoal)", fontFamily: "monospace" }}>#{booking.id.split('-')[0].toUpperCase()}</span>
-                  </div>
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.8125rem", fontWeight: 600, background: color.bg, color: color.color }}>
-                      {status}
-                    </span>
-                    {booking.paymentStatus === "PAID" && (
-                      <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.8125rem", fontWeight: 700, background: "var(--emerald-pale)", color: "var(--emerald)" }}>
-                        Lunas
-                      </span>
-                    )}
-                  </div>
+          let displayName = booking.muthawif.name;
+          let nameLabel = "Muthawif";
+          if (session.role === "MUTHAWIF") {
+            displayName = booking.jamaah.name;
+            nameLabel = "Jamaah";
+          }
+
+          const isPaid = booking.paymentStatus === "PAID";
+          const isUnpaidActive = booking.paymentStatus === "UNPAID" && booking.status !== "CANCELLED";
+
+          return (
+            <div key={booking.id} style={{ 
+              background: "white", 
+              borderRadius: "18px", 
+              border: "1px solid var(--border)", 
+              boxShadow: "var(--shadow-sm)", 
+              overflow: "hidden" 
+            }}>
+              {/* Header bar */}
+              <div style={{ 
+                padding: "0.875rem 1.25rem", 
+                background: "var(--ivory-dark)", 
+                borderBottom: "1px solid var(--border)", 
+                display: "flex", 
+                justifyContent: "space-between", 
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "0.5rem"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Order</span>
+                  <span style={{ fontFamily: "monospace", fontSize: "0.8125rem", fontWeight: 800, color: "var(--charcoal)", background: "white", padding: "0.15rem 0.5rem", borderRadius: "6px", border: "1px solid var(--border)" }}>
+                    #{shortId}
+                  </span>
                 </div>
-
-                {/* Body */}
-                <div style={{ padding: "1.5rem", display: "flex", flexWrap: "wrap", gap: "1.5rem", alignItems: "center" }}>
-                  {/* Profile Info */}
-                  <div style={{ display: "flex", gap: "1rem", alignItems: "center", flex: "1 1 250px" }}>
-                    <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, var(--emerald), var(--emerald-light))", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "1.25rem", flexShrink: 0, overflow: "hidden" }}>
-                      {booking.muthawif.photoUrl ? <img src={booking.muthawif.photoUrl} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} /> : initials}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600, marginBottom: "0.25rem" }}>
-                        {session.role === "MUTHAWIF" ? "Pesanan dari Jamaah" : session.role === "AMIR" ? "Transaksi" : "Muthawif"}
-                      </div>
-                      <h4 style={{ fontWeight: 800, fontSize: "1.125rem", color: "var(--charcoal)" }}>{displayName}</h4>
-                      <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.375rem", marginTop: "0.25rem" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-                        {location}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Schedule Info */}
-                  <div style={{ flex: "1 1 200px", display: "flex", gap: "2rem" }}>
-                    <div>
-                      <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600, marginBottom: "0.375rem" }}>Tanggal Berangkat</div>
-                      <div style={{ fontWeight: 700, color: "var(--charcoal)", fontSize: "1rem" }}>{new Date(booking.startDate).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600, marginBottom: "0.375rem" }}>Durasi</div>
-                      <div style={{ fontWeight: 700, color: "var(--charcoal)", fontSize: "1rem" }}>{durationDays} Hari</div>
-                    </div>
-                  </div>
-
-                  {/* Pricing & Action */}
-                  <div style={{ flex: "1 1 200px", textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "center", borderLeft: "1px dashed var(--border)", paddingLeft: "1.5rem" }}>
-                    <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600, marginBottom: "0.25rem" }}>Total Pembayaran</div>
-                    <div style={{ fontSize: "1.375rem", fontWeight: 800, color: "var(--charcoal)" }}>{booking.paymentStatus === "UNPAID" && booking.status !== "CANCELLED" && session.role === "JAMAAH" ? "Belum Lunas" : `Rp ${booking.totalFee.toLocaleString("id-ID")}`}</div>
-                    
-                    {session.role === "JAMAAH" && booking.paymentStatus === "UNPAID" && booking.status !== "CANCELLED" && (
-                      <div style={{ marginTop: "0.75rem" }}>
-                        <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} />
-                      </div>
-                    )}
-                  </div>
+                <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+                  <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 700, background: color.bg, color: color.color }}>
+                    {status}
+                  </span>
+                  {isPaid && (
+                    <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 700, background: "var(--emerald-pale)", color: "var(--emerald)" }}>
+                      Lunas ✓
+                    </span>
+                  )}
+                  {isUnpaidActive && (
+                    <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 700, background: "#FEF9C3", color: "#A16207" }}>
+                      Belum Bayar
+                    </span>
+                  )}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
-    </>
+
+              {/* Body */}
+              <div style={{ padding: "1.25rem" }}>
+                {/* Profile row */}
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.25rem" }}>
+                  <div style={{ 
+                    width: 52, height: 52, borderRadius: "50%", 
+                    background: "linear-gradient(135deg, var(--emerald), var(--emerald-light))", 
+                    color: "white", display: "flex", alignItems: "center", justifyContent: "center", 
+                    fontWeight: 800, fontSize: "1.125rem", flexShrink: 0, overflow: "hidden",
+                    border: "2px solid var(--emerald-pale)"
+                  }}>
+                    {booking.muthawif.photoUrl 
+                      ? <img src={booking.muthawif.photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> 
+                      : initials}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.2rem" }}>
+                      {nameLabel}
+                    </div>
+                    <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {displayName}
+                    </div>
+                    {location && (
+                      <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.25rem", marginTop: "0.2rem" }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                        {location === "BOTH" ? "Makkah & Madinah" : location}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Info grid: 3 columns on mobile */}
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: "1fr 1fr 1fr", 
+                  gap: "0.75rem",
+                  padding: "1rem",
+                  background: "var(--ivory)",
+                  borderRadius: "12px",
+                  marginBottom: "1rem"
+                }}>
+                  <div>
+                    <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.3rem" }}>Berangkat</div>
+                    <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>
+                      {startDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                      {startDate.getFullYear()}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.3rem" }}>Durasi</div>
+                    <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>{durationDays} Hari</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.3rem" }}>Total</div>
+                    <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: isPaid ? "var(--emerald)" : "var(--charcoal)" }}>
+                      Rp {booking.totalFee.toLocaleString("id-ID")}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment CTA */}
+                {session.role === "JAMAAH" && isUnpaidActive && (
+                  <div style={{ marginTop: "0.5rem" }}>
+                    <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} />
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     );
   };
 
+  const sidebarNavItems = [
+    {
+      href: "/dashboard?tab=beranda",
+      label: "Riwayat Pesanan",
+      desc: "Semua pesanan umrah",
+      emoji: "📋",
+      tab: "beranda",
+      show: true,
+    },
+    {
+      href: "/dashboard?tab=cari",
+      label: "Cari Muthawif",
+      desc: "Temukan muthawif tersedia",
+      emoji: "🔍",
+      tab: "cari",
+      show: session.role === "JAMAAH",
+    },
+    {
+      href: "/dashboard?tab=muthawif",
+      label: "Manajemen Muthawif",
+      desc: "Kelola & verifikasi akun",
+      emoji: "👥",
+      tab: "muthawif",
+      show: session.role === "AMIR",
+    },
+  ].filter((item) => item.show);
+
+
   return (
     <div className="dashboard-fullscreen">
-      {/* Sidebar Menu */}
-      <aside className="dashboard-sidebar-fixed">
-        <div style={{ padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, var(--emerald), var(--emerald-light))", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" /><circle cx="12" cy="9" r="2.5" /></svg>
+      {/* ══ SIDEBAR ══ */}
+      <aside className="dashboard-sidebar-fixed" style={{ background: "linear-gradient(170deg, #0d2818 0%, #1B6B4A 70%, #27956A 100%)", borderRight: "none" }}>
+
+        {/* Brand header */}
+        <div style={{ padding: "1.25rem 1.375rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.625rem" }}>
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #1B6B4A, #27956A)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
+            </svg>
           </div>
           <div>
-            <h1 style={{ fontSize: "1.0625rem", fontWeight: 800, lineHeight: 1.2, color: "var(--charcoal)" }}>Wif-Me</h1>
-            <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Panel Manajemen</p>
+            <div style={{ color: "white", fontWeight: 900, fontSize: "1rem", letterSpacing: "-0.02em", lineHeight: 1 }}>
+              Wif<span style={{ color: "#E4B55A" }}>–Me</span>
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.5625rem", fontWeight: 700, letterSpacing: "0.07em", marginTop: 2 }}>
+              MARKETPLACE MUTHAWIF
+            </div>
           </div>
         </div>
 
-        <div className="sidebar-scrollable" style={{ padding: "1.5rem", flex: 1, overflowY: "auto" }}>
-          <p style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.05em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
-            Menu Utama
-          </p>
-          <nav className="dashboard-nav-flex">
-            <Link href="/dashboard?tab=beranda" className={`sidebar-link ${currentTab === "beranda" ? "active" : ""}`}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: "0.625rem" }}><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-              Riwayat Pesanan
-            </Link>
 
-            {session.role === "JAMAAH" && (
-              <Link href="/dashboard?tab=cari" className={`sidebar-link ${currentTab === "cari" ? "active" : ""}`}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: "0.625rem" }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                Cari Muthawif
-              </Link>
-            )}
 
-            {session.role === "AMIR" && (
-              <Link href="/dashboard?tab=muthawif" className={`sidebar-link ${currentTab === "muthawif" ? "active" : ""}`}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: "0.625rem" }}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-                Manajemen Muthawif
-              </Link>
-            )}
+        {/* Nav links */}
+        <div className="sidebar-scrollable" style={{ padding: "0.875rem 0.75rem", flex: 1, overflowY: "auto" }}>
+          <div style={{ fontSize: "0.5875rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", marginBottom: "0.375rem", padding: "0 0.25rem" }}>
+            NAVIGASI
+          </div>
+          <nav style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            {sidebarNavItems.map((item) => {
+              const isActive = currentTab === item.tab;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="dsb-nav-lnk"
+                  style={{
+                    display: "flex", alignItems: "center", gap: "0.75rem",
+                    padding: "0.6875rem 0.75rem",
+                    borderRadius: "12px",
+                    textDecoration: "none",
+                    background: isActive ? "rgba(255,255,255,0.14)" : "transparent",
+                    border: isActive ? "1px solid rgba(255,255,255,0.18)" : "1px solid transparent",
+                    transition: "background 0.15s, border-color 0.15s",
+                  }}
+                >
+                  <div style={{ width: 34, height: 34, borderRadius: 9, background: isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>
+                    {item.emoji}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: isActive ? "white" : "rgba(255,255,255,0.8)", fontWeight: isActive ? 700 : 600, fontSize: "0.875rem", lineHeight: 1.2 }}>
+                      {item.label}
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.625rem", marginTop: "0.125rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {item.desc}
+                    </div>
+                  </div>
+                  {isActive && (
+                    <div style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: "#E4B55A", flexShrink: 0 }} />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
         </div>
+
       </aside>
 
       {/* Main Content Area */}
@@ -401,7 +588,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
           <AmirHeaderPanel name={session.name} email={session.email} role={session.role} avatarUrl={userRecord?.photoUrl} />
         </header>
 
-        <main style={{ padding: "2rem", overflowY: "auto", flex: 1, minHeight: 0 }}>
+        <main style={{ padding: "clamp(1rem, 4vw, 2rem)", overflowY: "auto", flex: 1, minHeight: 0 }}>
           <div style={{ padding: 0, width: "100%" }}>
             {/* Alerts */}
             {session.role === "MUTHAWIF" && currentMuthawifProfile?.verificationStatus === "PENDING" && (
@@ -448,20 +635,39 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
                   {/* Compact metric strip */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", 
+                    gap: "1rem", 
+                    marginBottom: "1.5rem" 
+                  }}>
                     {[
                       { label: "Total", value: countTotal, color: "var(--charcoal)", accent: "var(--ivory-dark)" },
-                      { label: "Menunggu Review", value: countReview, color: "#A16207", accent: "#FEF9C3", dot: countReview > 0 },
+                      { label: "Review", value: countReview, color: "var(--gold)", accent: "#FEF9C3", dot: countReview > 0 },
                       { label: "Aktif", value: countActive, color: "var(--emerald)", accent: "var(--emerald-pale)" },
-                      { label: "Belum Lengkap", value: countIncomplete, color: "#6B7280", accent: "#F3F4F6" },
+                      { label: "Draft", value: countIncomplete, color: "var(--text-muted)", accent: "#F3F4F6" },
                     ].map(m => (
-                      <div key={m.label} style={{ background: "white", borderRadius: "12px", border: "1px solid var(--border)", padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: "0.875rem", position: "relative", overflow: "hidden" }}>
-                        <div style={{ width: 8, height: 44, borderRadius: "99px", background: m.accent, flexShrink: 0 }} />
+                      <div 
+                        key={m.label} 
+                        style={{ 
+                          background: "white", 
+                          borderRadius: "14px", 
+                          border: "1px solid var(--border)", 
+                          padding: "1.25rem", 
+                          display: "flex", 
+                          alignItems: "center", 
+                          gap: "1rem", 
+                          position: "relative", 
+                          overflow: "hidden",
+                          boxShadow: "var(--shadow-sm)"
+                        }}
+                      >
+                        <div style={{ width: "6px", height: "40px", borderRadius: "99px", background: m.accent, flexShrink: 0 }} />
                         <div>
-                          <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", lineHeight: 1 }}>{m.label}</div>
-                          <div style={{ fontSize: "1.625rem", fontWeight: 800, color: m.color, lineHeight: 1.1, marginTop: "0.25rem" }}>{m.value}</div>
+                          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>{m.label}</div>
+                          <div style={{ fontSize: "1.5rem", fontWeight: 800, color: m.color, lineHeight: 1.1 }}>{m.value}</div>
                         </div>
-                        {m.dot && <div style={{ position: "absolute", top: "0.75rem", right: "0.75rem", width: 8, height: 8, borderRadius: "50%", background: "var(--error)" }} />}
+                        {m.dot && <div style={{ position: "absolute", top: "0.75rem", right: "0.75rem", width: "8px", height: "8px", borderRadius: "50%", background: "var(--error)" }} />}
                       </div>
                     ))}
                   </div>

@@ -167,36 +167,20 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <>
       <Navbar user={session} />
-      <div style={{
-        minHeight: "100vh",
-        background: "var(--ivory)",
-        paddingTop: "6rem",
-        paddingBottom: "4rem",
-      }}>
+      <div className="min-h-screen bg-[var(--ivory)] pt-20 md:pt-24 pb-16">
         <div className="container">
           {/* Header */}
-          <div style={{ 
-            marginBottom: "3rem", 
-            padding: "2.5rem 2rem", 
-            background: "linear-gradient(135deg, white 0%, var(--emerald-pale) 100%)", 
-            borderRadius: "24px", 
-            border: "1px solid var(--border)", 
-            boxShadow: "0 10px 40px rgba(27, 107, 74, 0.05)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            textAlign: "center"
-          }}>
-            <h1 style={{ fontSize: "clamp(1.75rem, 4vw, 2.25rem)", fontWeight: 800, marginBottom: "1rem", color: "var(--charcoal)", letterSpacing: "-0.02em" }}>
-              Rekomendasi <span style={{ color: "var(--emerald)" }}>Muthawif</span> Anda
+          <div className="mb-8 md:mb-12 p-6 md:p-10 bg-gradient-to-br from-white to-[var(--emerald-pale)] rounded-[24px] border border-[var(--border)] shadow-[0_10px_40px_rgba(27,107,74,0.05)] flex flex-col items-center text-center">
+            <h1 className="text-[clamp(1.75rem,4vw,2.25rem)] font-extrabold mb-4 text-[var(--charcoal)] tracking-tight">
+              Rekomendasi <span className="text-[var(--emerald)]">Muthawif</span> Anda
             </h1>
-            <p style={{ color: "var(--text-muted)", marginBottom: "1.75rem", maxWidth: "600px", lineHeight: "1.6", fontSize: "0.9375rem" }}>
+            <p className="text-[var(--text-muted)] mb-7 max-w-[600px] leading-relaxed text-[0.9375rem]">
               Berikut adalah daftar Muthawif berlisensi dengan ulasan terbaik yang siap mendampingi ibadah Anda berdasarkan kriteria pencarian yang Anda tentukan.
             </p>
 
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
+            <div className="flex flex-wrap gap-3 items-center justify-center">
               {startDate && (
-                <span style={{ background: "white", padding: "0.625rem 1.25rem", borderRadius: "14px", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 700, color: "var(--charcoal)", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+                <span className="bg-white px-4 py-2.5 rounded-[14px] border border-[var(--border)] flex items-center gap-2 text-[0.875rem] font-bold text-[var(--charcoal)] shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5">
                     <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
                   </svg>
@@ -204,7 +188,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </span>
               )}
               {duration && (
-                <span style={{ background: "white", padding: "0.625rem 1.25rem", borderRadius: "14px", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 700, color: "var(--charcoal)", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+                <span className="bg-white px-4 py-2.5 rounded-[14px] border border-[var(--border)] flex items-center gap-2 text-[0.875rem] font-bold text-[var(--charcoal)] shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                   </svg>
@@ -212,7 +196,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </span>
               )}
               {location && location !== "ALL" && (
-                <span style={{ background: "white", padding: "0.625rem 1.25rem", borderRadius: "14px", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 700, color: "var(--charcoal)", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+                <span className="bg-white px-4 py-2.5 rounded-[14px] border border-[var(--border)] flex items-center gap-2 text-[0.875rem] font-bold text-[var(--charcoal)] shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                   </svg>
@@ -224,15 +208,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
           {/* Results */}
           <Suspense fallback={
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.5rem" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((n) => (
-                <div key={n} style={{
-                  background: "var(--white)",
-                  borderRadius: "var(--radius-lg)",
-                  height: 280,
-                  border: "1px solid var(--border)",
-                  animation: "pulse 1.5s ease-in-out infinite",
-                }} />
+                <div key={n} className="bg-white rounded-[var(--radius-lg)] h-[280px] border border-[var(--border)] animate-pulse" />
               ))}
             </div>
           }>
