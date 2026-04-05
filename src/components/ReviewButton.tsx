@@ -11,9 +11,11 @@ interface ReviewButtonProps {
   muthawifId: string;
   muthawifName: string;
   hasReview: boolean;
+  /** Redirect destination setelah review/navigasi — disesuaikan dengan role user */
+  dashboardHref: string;
 }
 
-export default function ReviewButton({ bookingId, muthawifId, muthawifName, hasReview }: ReviewButtonProps) {
+export default function ReviewButton({ bookingId, muthawifId, muthawifName, hasReview, dashboardHref }: ReviewButtonProps) {
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(hasReview);
 
@@ -26,16 +28,13 @@ export default function ReviewButton({ bookingId, muthawifId, muthawifName, hasR
         padding: "1rem 1.25rem",
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
-        gap: "0.75rem",
-        flexWrap: "wrap",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
           {/* Stars decoration */}
           <div style={{ display: "flex", gap: 2 }}>
-            {[1,2,3,4,5].map(v => (
+            {[1, 2, 3, 4, 5].map(v => (
               <svg key={v} width="14" height="14" viewBox="0 0 24 24" fill="var(--gold)" stroke="none">
-                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
               </svg>
             ))}
           </div>
@@ -46,19 +45,6 @@ export default function ReviewButton({ bookingId, muthawifId, muthawifName, hasR
             </div>
           </div>
         </div>
-        <Link
-          href={`/muthawif/${muthawifId}`}
-          style={{
-            fontSize: "0.75rem", fontWeight: 700, color: "var(--emerald)",
-            textDecoration: "none", display: "flex", alignItems: "center", gap: "0.25rem",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Lihat Semua Ulasan
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </Link>
       </div>
     );
   }
@@ -84,7 +70,7 @@ export default function ReviewButton({ bookingId, muthawifId, muthawifName, hasR
           flexShrink: 0,
         }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.75">
-            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
           </svg>
         </div>
 
@@ -126,7 +112,7 @@ export default function ReviewButton({ bookingId, muthawifId, muthawifName, hasR
           }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none">
-            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
           </svg>
           Beri Ulasan
         </button>

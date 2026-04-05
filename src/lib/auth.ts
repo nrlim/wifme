@@ -1,7 +1,10 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const JWT_SECRET = process.env.JWT_SECRET || "wifme-fallback-secret";
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
+  throw new Error("FATAL: JWT_SECRET environment variable is not set in production.");
+}
+const JWT_SECRET = process.env.JWT_SECRET || "wifme-dev-secret-do-not-use-in-production";
 const secret = new TextEncoder().encode(JWT_SECRET);
 
 export interface JWTPayload {

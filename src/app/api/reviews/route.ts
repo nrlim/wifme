@@ -89,7 +89,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ review }, { status: 201 });
   } catch (error) {
-    console.error("[POST /api/reviews]", error);
     return NextResponse.json({ error: "Terjadi kesalahan server." }, { status: 500 });
   }
 }

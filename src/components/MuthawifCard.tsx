@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import type { FeeConfig } from "@/lib/fee";
+import { calcTotalWithFee } from "@/lib/fee";
 
 interface MuthawifProfile {
   id: string;
   rating: number;
   totalReviews: number;
   basePrice: number;
-  location: string;
+  operatingAreas: string[];
   experience: number;
   bio: string | null;
   languages: string[];
@@ -26,13 +28,14 @@ interface MuthawifCardProps {
   startDate?: string;
   duration?: string;
   isLoggedIn: boolean;
+  /** Href dashboard untuk post-booking navigation — sesuai role user */
+  dashboardHref?: string;
+  /** Lokasi dari parameter pencarian (MAKKAH/MADINAH/BOTH/ALL) */
+  searchLocation?: string;
+  /** Fee configuration from globalSetting — used to compute total including service fee */
+  feeConfig?: FeeConfig;
 }
 
-const LOCATION_LABELS: Record<string, string> = {
-  MAKKAH: "Makkah",
-  MADINAH: "Madinah",
-  BOTH: "Makkah & Madinah",
-};
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
   const filled = Math.round(rating);
@@ -60,7 +63,12 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
   );
 }
 
-export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn }: MuthawifCardProps) {
+export default function MuthawifCard({
+  muthawif, startDate, duration, isLoggedIn,
+  dashboardHref = "/dashboard",
+  searchLocation = "ALL",
+  feeConfig,
+}: MuthawifCardProps) {
   const router = useRouter();
   const [booking, setBooking] = useState(false);
   const [booked, setBooked] = useState(false);
@@ -68,9 +76,9 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
 
   const handleBook = async () => {
     if (!isLoggedIn) {
-      let redirect = "/search";
-      if (startDate && duration) redirect += `?startDate=${startDate}&duration=${duration}`;
-      router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
+      // Tidak ada session: redirect ke login, dengan return URL ke /search (public)
+      const currentSearch = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/search';
+      router.push(`/auth/login?redirect=${encodeURIComponent(currentSearch)}`);
       return;
     }
     if (!startDate || !duration) {
@@ -102,7 +110,10 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
   };
 
   const durationNum = parseInt(duration || "1");
-  const totalFee = muthawif.basePrice * durationNum;
+  const fee: FeeConfig = feeConfig ?? { feeType: "PERCENT", feeValue: 0 };
+  const totalFee = duration
+    ? calcTotalWithFee(muthawif.basePrice, durationNum, fee)
+    : muthawif.basePrice;
   const initials = muthawif.user.name
     .split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
@@ -175,7 +186,8 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
                 <circle cx="12" cy="9" r="2.5"/>
               </svg>
-              {LOCATION_LABELS[muthawif.location] || muthawif.location}
+              {muthawif.operatingAreas.slice(0, 2).join(", ")}
+              {muthawif.operatingAreas.length > 2 && "..."}
             </span>
             {muthawif.experience > 0 && (
               <span style={{
@@ -190,7 +202,7 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
         </div>
 
         {/* Rating */}
-        <Link href={`/muthawif/${muthawif.user.id}`} style={{ textDecoration: "none", flexShrink: 0, textAlign: "right" }}>
+        <Link href={`/muthawif/${muthawif.user.id}${startDate ? `?startDate=${startDate}&duration=${duration}&location=${searchLocation}` : ""}`} style={{ textDecoration: "none", flexShrink: 0, textAlign: "right" }}>
           {muthawif.rating > 0 ? (
             <StarRating rating={muthawif.rating} count={muthawif.totalReviews} />
           ) : (
@@ -267,7 +279,7 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
             </div>
           </div>
           <Link
-            href={`/muthawif/${muthawif.user.id}`}
+            href={`/muthawif/${muthawif.user.id}${startDate ? `?startDate=${startDate}&duration=${duration}&location=${searchLocation}` : ""}`}
             style={{
               display: "flex", alignItems: "center", gap: "0.25rem",
               fontSize: "0.75rem", fontWeight: 700,
@@ -316,7 +328,7 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
               </svg>
               <span style={{ fontWeight: 800, fontSize: "0.875rem", color: "var(--emerald)" }}>Pesanan Berhasil Dikirim!</span>
             </div>
-            <Link href="/dashboard" style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--emerald)", textDecoration: "underline" }}>
+            <Link href={dashboardHref} style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--emerald)", textDecoration: "underline" }}>
               Cek Status di Dashboard →
             </Link>
           </div>
@@ -358,45 +370,8 @@ export default function MuthawifCard({ muthawif, startDate, duration, isLoggedIn
               </>
             )}
           </button>
-        ) : (
-          /* Guest CTA */
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            <button
-              onClick={handleBook}
-              style={{
-                width: "100%",
-                padding: "0.8125rem",
-                borderRadius: 12,
-                background: "linear-gradient(135deg, var(--gold), #D4A843)",
-                color: "white",
-                border: "none",
-                fontFamily: "inherit",
-                fontSize: "0.875rem",
-                fontWeight: 800,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.5rem",
-                boxShadow: "0 4px 16px rgba(196,151,59,0.25)",
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              Masuk untuk Memesan
-            </button>
-            <p style={{
-              fontSize: "0.6875rem", textAlign: "center",
-              color: "var(--text-muted)", margin: 0, lineHeight: 1.4,
-            }}>
-              Belum punya akun?{" "}
-              <Link href="/auth/register" style={{ color: "var(--emerald)", fontWeight: 700, textDecoration: "underline" }}>
-                Daftar gratis
-              </Link>
-            </p>
-          </div>
-        )}
+        ) : null}
+
       </div>
     </div>
   );

@@ -9,25 +9,23 @@ interface ReviewModalProps {
   onSubmitted: () => void;
 }
 
-const STAR_LABELS: Record<number, { text: string; emoji: string; color: string }> = {
-  1: { text: "Sangat Buruk",  emoji: "😞", color: "#EF4444" },
-  2: { text: "Kurang Baik",   emoji: "😕", color: "#F97316" },
-  3: { text: "Cukup",         emoji: "😐", color: "#EAB308" },
-  4: { text: "Bagus",         emoji: "😊", color: "#22C55E" },
-  5: { text: "Luar Biasa!",   emoji: "🤩", color: "#1B6B4A" },
+const STAR_LABELS: Record<number, { text: string; emoji: string; color: string; bg: string }> = {
+  1: { text: "Sangat Buruk",  emoji: "😞", color: "#EF4444", bg: "#FEF2F2" },
+  2: { text: "Kurang Baik",   emoji: "😕", color: "#F97316", bg: "#FFF7ED" },
+  3: { text: "Cukup",         emoji: "😐", color: "#EAB308", bg: "#FEFCE8" },
+  4: { text: "Bagus",         emoji: "😊", color: "#22C55E", bg: "#F0FDF4" },
+  5: { text: "Luar Biasa!",   emoji: "🤩", color: "#1B6B4A", bg: "#ECFDF5" },
 };
 
-function StarPicker({
-  rating, onChange,
-}: { rating: number; onChange: (v: number) => void }) {
+function StarPicker({ rating, onChange }: { rating: number; onChange: (v: number) => void }) {
   const [hovered, setHovered] = useState(0);
-
   const active = hovered || rating;
   const label = STAR_LABELS[active];
 
   return (
-    <div>
-      <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginBottom: "0.625rem" }}>
+    <div style={{ textAlign: "center" }}>
+      {/* Stars row */}
+      <div style={{ display: "flex", gap: "0.625rem", justifyContent: "center", marginBottom: "1rem" }}>
         {[1, 2, 3, 4, 5].map((v) => {
           const filled = v <= active;
           return (
@@ -43,19 +41,20 @@ function StarPicker({
                 border: "none",
                 padding: "0.25rem",
                 cursor: "pointer",
-                transform: filled ? "scale(1.2)" : "scale(1)",
-                transition: "transform 0.15s cubic-bezier(0.34,1.56,0.64,1)",
+                transform: filled ? "scale(1.25)" : "scale(1)",
+                transition: "transform 0.18s cubic-bezier(0.34,1.56,0.64,1)",
                 lineHeight: 1,
+                display: "block",
               }}
             >
               <svg
-                width="40" height="40"
+                width="44" height="44"
                 viewBox="0 0 24 24"
                 fill={filled ? "#F1C40F" : "none"}
-                stroke={filled ? "#F1C40F" : "#D1D5DB"}
+                stroke={filled ? "#E2B007" : "#D1D5DB"}
                 strokeWidth="1.5"
                 style={{
-                  filter: filled ? "drop-shadow(0 2px 4px rgba(241,196,15,0.5))" : "none",
+                  filter: filled ? "drop-shadow(0 3px 6px rgba(241,196,15,0.45))" : "none",
                   display: "block",
                 }}
               >
@@ -66,19 +65,25 @@ function StarPicker({
         })}
       </div>
 
-      {/* Label */}
+      {/* Sentiment label */}
       <div style={{
-        textAlign: "center",
-        height: 28,
-        display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
+        height: 40,
+        display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         {label ? (
-          <>
-            <span style={{ fontSize: "1.125rem" }}>{label.emoji}</span>
-            <span style={{ fontSize: "0.875rem", fontWeight: 800, color: label.color, transition: "color 0.2s" }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: "0.5rem",
+            padding: "0.4rem 1.125rem",
+            borderRadius: 99,
+            background: label.bg,
+            border: `1.5px solid ${label.color}22`,
+            transition: "all 0.2s",
+          }}>
+            <span style={{ fontSize: "1.25rem", lineHeight: 1 }}>{label.emoji}</span>
+            <span style={{ fontSize: "0.9375rem", fontWeight: 800, color: label.color }}>
               {label.text}
             </span>
-          </>
+          </div>
         ) : (
           <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontStyle: "italic" }}>
             Ketuk bintang untuk memberi nilai
@@ -135,124 +140,131 @@ export default function ReviewModal({ bookingId, muthawifName, onClose, onSubmit
 
   return (
     <>
-      {/* Backdrop */}
+      {/* ── Backdrop ── */}
       <div
         ref={backdropRef}
         onClick={(e) => { if (e.target === backdropRef.current) onClose(); }}
         style={{
           position: "fixed", inset: 0,
-          background: "rgba(10, 20, 15, 0.6)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          background: "rgba(5, 15, 10, 0.65)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
           zIndex: 9000,
           display: "flex",
-          alignItems: "flex-end",   /* bottom sheet on mobile */
+          alignItems: "center",       /* center on desktop */
           justifyContent: "center",
-          padding: 0,
+          padding: "1rem",
         }}
+        className="rm-backdrop"
       >
-        {/* Modal panel */}
+        {/* ── Modal panel ── */}
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="review-modal-title"
           style={{
             background: "white",
-            borderRadius: "28px 28px 0 0",   /* bottom sheet style */
-            boxShadow: "0 -8px 40px rgba(0,0,0,0.2)",
+            borderRadius: 28,
+            boxShadow: "0 24px 80px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.04)",
             width: "100%",
-            maxWidth: 520,
-            maxHeight: "92dvh",
+            maxWidth: 500,
+            maxHeight: "90dvh",
             overflowY: "auto",
-            animation: "sheetUp 0.3s cubic-bezier(0.34,1.1,0.64,1) both",
+            animation: "rmIn 0.3s cubic-bezier(0.34,1.1,0.64,1) both",
             position: "relative",
           }}
+          className="rm-panel"
         >
-          {/* Handle bar */}
-          <div style={{ display: "flex", justifyContent: "center", paddingTop: "0.75rem", paddingBottom: "0.25rem" }}>
-            <div style={{ width: 40, height: 4, borderRadius: 99, background: "var(--border)" }} />
-          </div>
+          {/* Top accent bar */}
+          <div style={{
+            height: 5,
+            background: "linear-gradient(90deg, var(--emerald) 0%, var(--gold) 100%)",
+            borderRadius: "28px 28px 0 0",
+          }} />
 
-          {/* Header */}
-          <div style={{ padding: "1rem 1.5rem 0" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
+          {/* ── Header ── */}
+          <div style={{ padding: "1.5rem 1.75rem 0" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" }}>
               <div>
                 <h2
                   id="review-modal-title"
-                  style={{ fontSize: "1.125rem", fontWeight: 900, color: "var(--charcoal)", marginBottom: "0.25rem" }}
+                  style={{ fontSize: "1.25rem", fontWeight: 900, color: "var(--charcoal)", marginBottom: "0.3rem", lineHeight: 1.2 }}
                 >
-                  Beri Ulasan Muthawif
+                  Beri Ulasan
                 </h2>
-                <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.5, margin: 0 }}>
                   Bagaimana layanan{" "}
-                  <strong style={{ color: "var(--charcoal)", fontWeight: 700 }}>{muthawifName}</strong>{" "}
-                  selama mendampingi ibadah Anda?
+                  <strong style={{ color: "var(--charcoal)", fontWeight: 800 }}>{muthawifName}</strong>{" "}
+                  mendampingi ibadah Anda?
                 </p>
               </div>
               <button
                 id="review-modal-close"
                 onClick={onClose}
-                aria-label="Tutup"
+                aria-label="Tutup modal"
                 style={{
                   flexShrink: 0,
                   background: "var(--ivory-dark)",
-                  border: "none",
+                  border: "1px solid var(--border)",
                   borderRadius: "50%",
-                  width: 32, height: 32,
+                  width: 36, height: 36,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   cursor: "pointer",
                   color: "var(--text-muted)",
+                  transition: "background 0.15s",
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--border)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--ivory-dark)")}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M18 6 6 18M6 6l12 12"/>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M18 6 6 18M6 6l12 12" />
                 </svg>
               </button>
             </div>
-
-            {/* Divider */}
-            <div style={{ height: 1, background: "var(--border)", margin: "1rem 0" }} />
+            <div style={{ height: 1, background: "var(--border)", margin: "1.25rem 0 0" }} />
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{ padding: "0 1.5rem 2rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          {/* ── Form ── */}
+          <form onSubmit={handleSubmit} style={{ padding: "1.5rem 1.75rem 1.75rem", display: "flex", flexDirection: "column", gap: "1.75rem" }}>
 
-            {/* Step 1: Stars */}
+            {/* Step 1: Rating */}
             <div>
-              <div style={{
-                display: "flex", alignItems: "center", gap: "0.5rem",
-                marginBottom: "1rem",
-              }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", marginBottom: "1.25rem" }}>
                 <div style={{
-                  width: 22, height: 22, borderRadius: "50%",
+                  width: 24, height: 24, borderRadius: "50%",
                   background: "var(--emerald)", color: "white",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.6875rem", fontWeight: 900, flexShrink: 0,
+                  fontSize: "0.75rem", fontWeight: 900, flexShrink: 0,
                 }}>1</div>
-                <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--charcoal)" }}>
+                <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--charcoal)" }}>
                   Rating Keseluruhan <span style={{ color: "var(--error)" }}>*</span>
                 </span>
               </div>
-              <StarPicker rating={rating} onChange={setRating} />
+              {/* Star picker card */}
+              <div style={{
+                background: "var(--ivory)",
+                border: "1px solid var(--border)",
+                borderRadius: 18,
+                padding: "1.5rem 1rem",
+              }}>
+                <StarPicker rating={rating} onChange={setRating} />
+              </div>
             </div>
 
             {/* Step 2: Comment */}
             <div>
-              <div style={{
-                display: "flex", alignItems: "center", gap: "0.5rem",
-                marginBottom: "0.875rem",
-              }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", marginBottom: "0.875rem" }}>
                 <div style={{
-                  width: 22, height: 22, borderRadius: "50%",
+                  width: 24, height: 24, borderRadius: "50%",
                   background: rating > 0 ? "var(--emerald)" : "var(--border)",
                   color: rating > 0 ? "white" : "var(--text-muted)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.6875rem", fontWeight: 900, flexShrink: 0,
+                  fontSize: "0.75rem", fontWeight: 900, flexShrink: 0,
                   transition: "background 0.2s, color 0.2s",
                 }}>2</div>
-                <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--charcoal)" }}>
-                  Kritik & Saran{" "}
-                  <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>(opsional)</span>
+                <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--charcoal)" }}>
+                  Ceritakan Pengalaman Anda{" "}
+                  <span style={{ color: "var(--text-muted)", fontWeight: 500, fontSize: "0.8125rem" }}>(opsional)</span>
                 </span>
               </div>
               <textarea
@@ -265,39 +277,42 @@ export default function ReviewModal({ bookingId, muthawifName, onClose, onSubmit
                   rating === 0
                     ? "Isi rating bintang dulu, lalu ceritakan pengalaman Anda..."
                     : rating >= 4
-                    ? "Ceritakan apa yang membuat pengalaman Anda luar biasa..."
-                    : "Ceritakan apa yang bisa ditingkatkan oleh muthawif ini..."
+                    ? "Apa yang membuat pengalaman ibadah Anda begitu berkesan?"
+                    : "Apa yang bisa ditingkatkan oleh muthawif ini ke depannya?"
                 }
                 disabled={rating === 0}
                 style={{
                   width: "100%",
-                  padding: "0.875rem 1rem",
+                  padding: "0.9375rem 1.125rem",
                   border: "1.5px solid var(--border)",
                   borderRadius: 14,
-                  fontSize: "0.875rem",
+                  fontSize: "0.9rem",
                   fontFamily: "inherit",
                   color: "var(--charcoal)",
                   background: rating === 0 ? "var(--ivory)" : "white",
                   outline: "none",
                   resize: "none",
-                  lineHeight: 1.65,
+                  lineHeight: 1.7,
                   transition: "border-color 0.2s, box-shadow 0.2s, background 0.2s",
                   boxSizing: "border-box",
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = "var(--emerald)";
-                  e.target.style.boxShadow = "0 0 0 3px var(--emerald-glow)";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(27,107,74,0.1)";
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = "var(--border)";
                   e.target.style.boxShadow = "none";
                 }}
               />
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.375rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.5rem", alignItems: "center" }}>
                 <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
-                  Ulasan Anda akan ditampilkan secara publik di profil muthawif
+                  Ulasan ditampilkan publik di profil muthawif
                 </span>
-                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                <span style={{
+                  fontSize: "0.6875rem", fontWeight: 700,
+                  color: comment.length > 800 ? "var(--gold)" : "var(--text-muted)",
+                }}>
                   {comment.length}/1000
                 </span>
               </div>
@@ -306,14 +321,14 @@ export default function ReviewModal({ bookingId, muthawifName, onClose, onSubmit
             {/* Error */}
             {error && (
               <div style={{
-                display: "flex", alignItems: "center", gap: "0.5rem",
-                background: "#FEF2F2", color: "var(--error)",
+                display: "flex", alignItems: "center", gap: "0.625rem",
+                background: "#FEF2F2", color: "#B91C1C",
                 border: "1px solid #FECACA",
-                padding: "0.75rem 0.875rem", borderRadius: 10,
-                fontSize: "0.8125rem", fontWeight: 600,
+                padding: "0.875rem 1rem", borderRadius: 12,
+                fontSize: "0.875rem", fontWeight: 600,
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 {error}
               </div>
@@ -326,16 +341,19 @@ export default function ReviewModal({ bookingId, muthawifName, onClose, onSubmit
                 onClick={onClose}
                 style={{
                   flex: 1,
-                  padding: "0.875rem",
-                  borderRadius: 12,
+                  padding: "0.9375rem",
+                  borderRadius: 14,
                   background: "var(--ivory-dark)",
-                  border: "none",
+                  border: "1.5px solid var(--border)",
                   fontFamily: "inherit",
-                  fontSize: "0.875rem",
+                  fontSize: "0.9375rem",
                   fontWeight: 700,
                   color: "var(--text-muted)",
                   cursor: "pointer",
+                  transition: "background 0.15s",
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--border)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--ivory-dark)")}
               >
                 Batal
               </button>
@@ -345,9 +363,13 @@ export default function ReviewModal({ bookingId, muthawifName, onClose, onSubmit
                 disabled={loading || rating === 0}
                 style={{
                   flex: 2,
-                  padding: "0.875rem",
-                  borderRadius: 12,
-                  background: rating === 0 ? "#E5E7EB" : "var(--emerald)",
+                  padding: "0.9375rem",
+                  borderRadius: 14,
+                  background: rating === 0
+                    ? "#E5E7EB"
+                    : loading
+                    ? "var(--emerald)"
+                    : "var(--emerald)",
                   color: rating === 0 ? "var(--text-muted)" : "white",
                   border: "none",
                   fontFamily: "inherit",
@@ -358,20 +380,27 @@ export default function ReviewModal({ bookingId, muthawifName, onClose, onSubmit
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "0.5rem",
-                  transition: "background 0.2s",
-                  boxShadow: rating > 0 ? "0 4px 16px rgba(27,107,74,0.2)" : "none",
+                  transition: "background 0.2s, box-shadow 0.2s, transform 0.15s",
+                  boxShadow: rating > 0 ? "0 4px 18px rgba(27,107,74,0.3)" : "none",
+                }}
+                onMouseEnter={(e) => {
+                  if (rating > 0 && !loading) {
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                    e.currentTarget.style.boxShadow = "0 6px 22px rgba(27,107,74,0.4)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = rating > 0 ? "0 4px 18px rgba(27,107,74,0.3)" : "none";
                 }}
               >
                 {loading ? (
-                  <span
-                    className="spinner"
-                    style={{ width: 18, height: 18, borderColor: "rgba(255,255,255,0.35)", borderTopColor: "white" }}
-                  />
+                  <span className="spinner" style={{ width: 20, height: 20, borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white", borderWidth: 2.5 }} />
                 ) : (
                   <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                      <polyline points="22 4 12 14.01 9 11.01"/>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
                     </svg>
                     Kirim Ulasan
                   </>
@@ -383,7 +412,28 @@ export default function ReviewModal({ bookingId, muthawifName, onClose, onSubmit
       </div>
 
       <style>{`
-        @keyframes sheetUp {
+        @keyframes rmIn {
+          from { opacity: 0; transform: scale(0.94) translateY(16px); }
+          to   { opacity: 1; transform: scale(1)   translateY(0); }
+        }
+
+        /* Mobile: bottom-sheet style */
+        @media (max-width: 600px) {
+          .rm-backdrop {
+            align-items: flex-end !important;
+            padding: 0 !important;
+          }
+          .rm-panel {
+            border-radius: 24px 24px 0 0 !important;
+            max-height: 94dvh !important;
+            animation: rmSheet 0.3s cubic-bezier(0.34,1.1,0.64,1) both !important;
+          }
+          .rm-panel > div:first-child {
+            border-radius: 24px 24px 0 0 !important;
+          }
+        }
+
+        @keyframes rmSheet {
           from { opacity: 0; transform: translateY(60px); }
           to   { opacity: 1; transform: translateY(0); }
         }

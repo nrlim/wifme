@@ -524,22 +524,7 @@ export default function Navbar({ user }: NavbarProps) {
                   Keluar
                 </button>
               </div>
-            ) : (
-              <Link
-                href="/auth/login"
-                onClick={() => setMenuOpen(false)}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  padding: "0.875rem", borderRadius: "13px",
-                  background: "rgba(255,255,255,0.07)",
-                  border: "1.5px solid rgba(255,255,255,0.12)",
-                  color: "rgba(255,255,255,0.8)", fontWeight: 600, fontSize: "0.9375rem",
-                  textDecoration: "none",
-                }}
-              >
-                Sudah punya akun? <strong style={{ color: "white", marginLeft: "0.25rem" }}>Masuk</strong>
-              </Link>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

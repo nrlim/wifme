@@ -1,22 +1,34 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-const LOCATIONS = [
-  { value: "ALL", label: "Semua Lokasi" },
-  { value: "MAKKAH", label: "Makkah" },
-  { value: "MADINAH", label: "Madinah" },
-  { value: "BOTH", label: "Makkah & Madinah" },
-];
+interface SearchFormProps {
+  initialValues?: {
+    startDate?: string;
+    duration?: string;
+    location?: string;
+  };
+  supportedLocations?: string[];
+}
 
-export default function SearchForm() {
+export default function SearchForm({ initialValues, supportedLocations = ["Makkah", "Madinah"] }: SearchFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  const [form, setForm] = useState({ startDate: "", duration: "7", location: "ALL" });
+  const [form, setForm] = useState({
+    startDate: initialValues?.startDate || "",
+    duration: initialValues?.duration || "7",
+    location: initialValues?.location || "ALL"
+  });
   const [loading, setLoading] = useState(false);
+
+  // Fix continuous loading when route changes without page unmount
+  useEffect(() => {
+    setLoading(false);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +73,7 @@ export default function SearchForm() {
         width: "100%",
         maxWidth: 500,
         boxSizing: "border-box",
+        margin: "0 auto",
       }}
     >
       {/* Header */}
@@ -125,8 +138,9 @@ export default function SearchForm() {
               onChange={(e) => setForm({ ...form, location: e.target.value })}
               style={{ ...inputStyle, appearance: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238A8A8A' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.75rem center", paddingRight: "2.25rem" }}
             >
-              {LOCATIONS.map((loc) => (
-                <option key={loc.value} value={loc.value}>{loc.label}</option>
+              <option value="ALL">Semua Lokasi</option>
+              {supportedLocations.map((loc) => (
+                <option key={loc} value={loc}>{loc}</option>
               ))}
             </select>
           </div>

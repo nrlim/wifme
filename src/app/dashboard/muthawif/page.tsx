@@ -7,7 +7,9 @@ import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { DocumentUpload } from "./DocumentUpload";
 import { DashboardHeader } from "./DashboardHeader";
 import { AmirHeaderPanel } from "../AmirHeaderPanel";
-
+import { CopyButton } from "../CopyButton";
+import MuthawifWallet from "@/components/wallet/MuthawifWallet";
+import { getWallet } from "@/actions/finance";
 function VerificationTimeline({ currentStep }: { currentStep: number }) {
   const steps = [
     { num: 1, label: "Info Layanan", desc: "Wilayah, tarif & keahlian" },
@@ -117,7 +119,7 @@ export default async function MuthawifDashboardPage({
   const urlStep = typeof step === "string" ? parseInt(step, 10) : null;
 
   // Fetch all necessary data
-  const profile = await prisma.muthawifProfile.findUnique({
+  const profile = (await prisma.muthawifProfile.findUnique({
     where: { userId: session.id },
     include: {
       user: { select: { photoUrl: true } },
@@ -128,13 +130,25 @@ export default async function MuthawifDashboardPage({
         select: { date: true, status: true, timeSlots: true },
       },
     },
-  });
+  })) as any;
+
+  const globalSettings = (await prisma.globalSetting.findUnique({
+    where: { id: "singleton" },
+  })) as any;
+  const supportedLocations: string[] = globalSettings?.supportedLocations || ["Makkah", "Madinah"];
+  const supportedServices: string[] = globalSettings?.supportedServices || ["Umrah Reguler", "Badal Umrah", "City Tour"];
+  const supportedLanguages: string[] = globalSettings?.supportedLanguages || ["Indonesia", "Arab", "Inggris"];
 
   const bookings = await prisma.booking.findMany({
     where: { muthawifId: session.id },
     include: { jamaah: { select: { name: true, email: true } } },
     orderBy: { createdAt: "desc" },
   });
+
+  let walletData = null;
+  if (currentTab === "wallet") {
+    walletData = await getWallet(session.id);
+  }
 
   const isPending = !profile || profile.verificationStatus === "PENDING" || profile.verificationStatus === "REVIEW";
   
@@ -179,7 +193,15 @@ export default async function MuthawifDashboardPage({
                   <h3 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--charcoal)", margin: 0 }}>Lengkapi Data Layanan Anda</h3>
                   <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", marginTop: "0.375rem" }}>Isi informasi berikut untuk melanjutkan ke tahap unggah dokumen.</p>
                 </div>
-                <ProfileForm profile={profile} userName={session.name} />
+                <div className="card">
+                  <ProfileForm
+                  profile={profile as any}
+                  userName={session.name}
+                  supportedLocations={supportedLocations}
+                  supportedServices={supportedServices}
+                  supportedLanguages={supportedLanguages}
+                />
+                </div>
               </div>
             )}
 
@@ -246,6 +268,7 @@ export default async function MuthawifDashboardPage({
     schedule: "Kelola Jadwal Kesediaan",
     bookings: "Riwayat Pesanan Saya",
     profile: "Pengaturan Profil & Layanan",
+    wallet: "Dompet Muthawif",
   };
 
   return (
@@ -277,15 +300,17 @@ export default async function MuthawifDashboardPage({
           </div>
           <nav style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             {[
-              { id: "schedule", label: "Jadwal",         desc: "Kelola ketersediaan",    emoji: "📅" },
-              { id: "bookings", label: "Pesanan",         desc: "Riwayat pesanan masuk",  emoji: "📋" },
-              { id: "profile",  label: "Profil Layanan", desc: "Info, tarif & keahlian", emoji: "👤" },
+              { id: "schedule", href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",         desc: "Kelola ketersediaan",    emoji: "📅" },
+              { id: "bookings", href: "/dashboard/muthawif/bookings",     label: "Pesanan",         desc: "Riwayat pesanan masuk",  emoji: "📋" },
+              { id: "profile",  href: "/dashboard/muthawif?tab=profile",  label: "Profil Layanan", desc: "Info, tarif & keahlian", emoji: "👤" },
+              { id: "wallet",   href: "/dashboard/muthawif?tab=wallet",   label: "Dompet Muthawif", desc: "Balans Escrow",         emoji: "💰" },
             ].map((t) => {
-              const isActive = currentTab === t.id;
+              const isActive = t.id === "bookings" ? false : currentTab === t.id;
+              const href = t.href || `/dashboard/muthawif?tab=${t.id}`;
               return (
                 <Link
                   key={t.id}
-                  href={`/dashboard/muthawif?tab=${t.id}`}
+                  href={href}
                   className="dsb-nav-lnk"
                   style={{
                     display: "flex", alignItems: "center", gap: "0.75rem",
@@ -351,8 +376,15 @@ export default async function MuthawifDashboardPage({
         )}
 
         {currentTab === "profile" && (
-          <div style={{ width: "100%" }}>
-            <ProfileForm profile={profile} userName={session.name} />
+          <div className="card" style={{ padding: "1.5rem" }}>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 800, marginBottom: "1.5rem" }}>Update Informasi Layanan</h2>
+            <ProfileForm
+              profile={profile as any}
+              userName={session.name}
+              supportedLocations={supportedLocations}
+              supportedServices={supportedServices}
+              supportedLanguages={supportedLanguages}
+            />
           </div>
         )}
 
@@ -382,7 +414,10 @@ export default async function MuthawifDashboardPage({
                         <div style={{ padding: "0.875rem 1.5rem", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--ivory)", flexWrap: "wrap", gap: "1rem" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                             <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "1px" }}>ORDER ID</span>
-                            <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--charcoal)", fontFamily: "monospace" }}>#{(booking.id.includes("-") ? booking.id.split("-")[0] : booking.id.slice(0, 8)).toUpperCase()}</span>
+                            <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--charcoal)", fontFamily: "monospace", display: "flex", alignItems: "center" }}>
+                              #{(booking.id.includes("-") ? booking.id.split("-")[0] : booking.id.slice(0, 8)).toUpperCase()}
+                              <CopyButton text={booking.id} />
+                            </span>
                           </div>
                           <div style={{ display: "flex", gap: "0.5rem" }}>
                             <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.8125rem", fontWeight: 600, background: color.bg, color: color.color }}>
@@ -453,6 +488,10 @@ export default async function MuthawifDashboardPage({
               </>
             )}
           </div>
+        )}
+
+        {currentTab === "wallet" && walletData && (
+          <MuthawifWallet wallet={walletData} userId={session.id} />
         )}
         </main>
       </div>

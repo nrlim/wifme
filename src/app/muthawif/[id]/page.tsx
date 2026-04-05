@@ -7,15 +7,15 @@ import MuthawifReviewsSection from "./MuthawifReviewsSection";
 
 const PAGE_SIZE = 5;
 
-const LOCATION_LABELS: Record<string, string> = {
-  MAKKAH: "Makkah",
-  MADINAH: "Madinah",
-  BOTH: "Makkah & Madinah",
-};
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    startDate?: string;
+    duration?: string;
+    location?: string;
+  }>;
 }
 
 function StarDisplay({ rating, size = 16 }: { rating: number; size?: number }) {
@@ -52,7 +52,24 @@ export default async function MuthawifDetailPage({ params, searchParams }: PageP
   const page = Math.max(1, parseInt(sp.page ?? "1", 10));
   const skip = (page - 1) * PAGE_SIZE;
 
+  // Extract search filters to preserve them in the back link
+  const backParams = new URLSearchParams();
+  if (sp.startDate) backParams.set("startDate", sp.startDate);
+  if (sp.duration) backParams.set("duration", sp.duration);
+  if (sp.location) backParams.set("location", sp.location);
+
   const session = await getSession();
+
+  // Route back correctly based on session:
+  // - Authenticated users → dashboard search tab
+  // - Guests → public /search page
+  const backHref = session
+    ? backParams.toString()
+      ? `/dashboard?tab=cari&${backParams.toString()}`
+      : "/dashboard?tab=cari"
+    : backParams.toString()
+    ? `/search?${backParams.toString()}`
+    : "/search";
 
   const profile = await prisma.muthawifProfile.findUnique({
     where: { userId: id },
@@ -108,7 +125,7 @@ export default async function MuthawifDetailPage({ params, searchParams }: PageP
         <div className="container" style={{ maxWidth: 820 }}>
 
           {/* Back link */}
-          <Link href="/search" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "1.5rem", textDecoration: "none" }}>
+          <Link href={backHref} style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "1.5rem", textDecoration: "none" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
             Kembali ke Pencarian
           </Link>
@@ -141,7 +158,7 @@ export default async function MuthawifDetailPage({ params, searchParams }: PageP
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.875rem" }}>
                     <span className="badge badge-emerald">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" /><circle cx="12" cy="9" r="2.5" /></svg>
-                      {LOCATION_LABELS[profile.location] ?? profile.location}
+                      {profile.operatingAreas.length > 0 ? profile.operatingAreas.join(", ") : "Semua Lokasi"}
                     </span>
                     {profile.experience > 0 && (
                       <span className="badge badge-sand">{profile.experience} th pengalaman</span>

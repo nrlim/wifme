@@ -43,12 +43,15 @@ export function DocumentUpload({ documents }: { documents: string[] }) {
         formData.append("documentUrl", finalString);
         const result = await addDocumentUrl({ success: false, message: "" }, formData);
         
-        setFeedback(result);
+        if (result.success) {
+          toast("success", "Berhasil", "Dokumen telah diunggah.");
+        } else {
+          toast("error", "Gagal", result.message);
+        }
         setUploadingObj(null);
-        setTimeout(() => setFeedback(null), 3000);
       });
     } catch (err: any) {
-      setFeedback({ success: false, message: "Gagal mengunggah file. Pastikan ukuran file sesuai dan koneksi stabil." });
+      toast("error", "Kesalahan", "Gagal mengunggah file. Pastikan ukuran file sesuai dan koneksi stabil.");
       setUploadingObj(null);
     }
   };
@@ -65,9 +68,11 @@ export function DocumentUpload({ documents }: { documents: string[] }) {
 
     startTransition(async () => {
       const result = await removeDocumentUrl(docString);
-      setFeedback(result);
-      if (result.success) toast("success", "Dihapus", "Dokumen berhasil dihapus.");
-      setTimeout(() => setFeedback(null), 3000);
+      if (result.success) {
+        toast("success", "Dihapus", "Dokumen berhasil dihapus.");
+      } else {
+        toast("error", "Gagal", result.message);
+      }
     });
   };
 
@@ -115,12 +120,6 @@ export function DocumentUpload({ documents }: { documents: string[] }) {
         <strong>Tahap 2 Verifikasi:</strong> Wajib mengunggah setiap dokumen pada slot yang telah disediakan. Dokumen ini digunakan sebagai validasi keamanan oleh tim AMIR Wif-Me.
       </div>
 
-      {feedback && (
-        <div className={feedback.success ? "alert alert-success" : "alert alert-error"}>
-          {feedback.message}
-        </div>
-      )}
-
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {renderSlot("ktp", "Kartu Tanda Penduduk (KTP)", "Foto KTP asli. Pastikan tulisan dan foto wajah terlihat jelas dan tidak buram.")}
         {renderSlot("selfie", "Foto Selfie Wajah", "Foto wajah (Selfie) Anda secara jelas. Tidak perlu memegang KTP, cukup wajah yang terang.")}
@@ -138,9 +137,11 @@ export function DocumentUpload({ documents }: { documents: string[] }) {
           onClick={() => {
             startTransition(async () => {
               const result = await submitForReview();
-              setFeedback(result);
               if (result.success) {
-                window.location.reload(); 
+                toast("success", "Berhasil", "Dokumen telah dikirim ke tim AMIR.");
+                setTimeout(() => window.location.reload(), 1500); 
+              } else {
+                toast("error", "Gagal", result.message);
               }
             });
           }}

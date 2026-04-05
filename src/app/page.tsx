@@ -1,10 +1,13 @@
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import SearchForm from "@/components/SearchForm";
 import Link from "next/link";
 
 export default async function HomePage() {
   const session = await getSession();
+  const globalSet = (await prisma.globalSetting.findUnique({ where: { id: "singleton" } })) as any;
+  const supportedLocations = globalSet?.supportedLocations || ["Makkah", "Madinah"];
 
   return (
     <>
@@ -93,7 +96,7 @@ export default async function HomePage() {
 
             {/* ── Search Form ── */}
             <div id="search" className="lp-search-wrap">
-              <SearchForm />
+              <SearchForm supportedLocations={supportedLocations} />
             </div>
 
           </div>

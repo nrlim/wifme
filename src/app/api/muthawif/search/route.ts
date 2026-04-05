@@ -13,27 +13,38 @@ export async function GET(req: NextRequest) {
       const muthawifs = await prisma.muthawifProfile.findMany({
         where: { isAvailable: true, verificationStatus: "VERIFIED" },
         include: {
-          user: { select: { id: true, name: true, email: true } },
+          user: { select: { id: true, name: true } },
         },
         orderBy: { rating: "desc" },
+        take: 50, // cap results
       });
       return NextResponse.json({ muthawifs });
     }
 
+    // Validate and sanitize inputs
+    const durationInt = parseInt(String(duration), 10);
+    if (isNaN(durationInt) || durationInt < 1 || durationInt > 60) {
+      return NextResponse.json({ error: "Durasi tidak valid (1-60 hari)." }, { status: 400 });
+    }
     const start = new Date(startDate);
+    if (isNaN(start.getTime())) {
+      return NextResponse.json({ error: "Format tanggal tidak valid." }, { status: 400 });
+    }
     const end = new Date(start);
-    end.setDate(end.getDate() + parseInt(duration));
+    end.setDate(end.getDate() + durationInt);
 
-    // Build location filter
-    const locationFilter =
-      location && location !== "ALL"
-        ? {
-            OR: [
-              { location: location as "MAKKAH" | "MADINAH" | "BOTH" },
-              { location: "BOTH" as const },
-            ],
-          }
-        : {};
+    // Build location filter using the new operatingAreas array field
+    let locationFilter = {};
+    if (location && location !== "ALL") {
+      if (location === "MAKKAH") {
+        locationFilter = { operatingAreas: { has: "Makkah" } };
+      } else if (location === "MADINAH") {
+        locationFilter = { operatingAreas: { has: "Madinah" } };
+      } else if (location === "BOTH") {
+        // Find muthawif that covers both Makkah and Madinah
+        locationFilter = { operatingAreas: { hasEvery: ["Makkah", "Madinah"] } };
+      }
+    }
 
     // Query muthawif that DON'T have overlapping bookings
     const muthawifs = await prisma.muthawifProfile.findMany({
@@ -54,9 +65,11 @@ export async function GET(req: NextRequest) {
         },
       },
       include: {
-        user: { select: { id: true, name: true, email: true } },
+        // Never expose email in public search results
+        user: { select: { id: true, name: true } },
       },
       orderBy: { rating: "desc" },
+      take: 50, // Always cap results
     });
 
     return NextResponse.json({ muthawifs, startDate, endDate: end.toISOString(), duration });

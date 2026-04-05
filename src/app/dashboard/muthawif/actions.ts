@@ -14,7 +14,7 @@ const ProfileSchema = z.object({
     .number()
     .min(100000, "Harga minimum Rp 100.000")
     .max(50000000, "Harga terlalu tinggi"),
-  location: z.enum(["MAKKAH", "MADINAH", "BOTH"]),
+  operatingAreas: z.string().min(1, "Minimal satu wilayah operasi"),
   experience: z.coerce.number().min(0).max(50),
   languages: z.string().min(1, "Minimal satu bahasa"),
   specializations: z.string().optional(),
@@ -46,7 +46,7 @@ export async function updateMuthawifProfile(
   const raw = {
     bio: formData.get("bio") as string,
     basePrice: formData.get("basePrice") as string,
-    location: formData.get("location") as string,
+    operatingAreas: formData.get("operatingAreas") as string,
     experience: formData.get("experience") as string,
     languages: formData.get("languages") as string,
     specializations: formData.get("specializations") as string,
@@ -60,7 +60,7 @@ export async function updateMuthawifProfile(
     return { success: false, message: firstError || "Data tidak valid" };
   }
 
-  const { bio, basePrice, location, experience, languages, specializations } =
+  const { bio, basePrice, operatingAreas, experience, languages, specializations } =
     parsed.data;
 
   const languageArr = languages
@@ -74,15 +74,20 @@ export async function updateMuthawifProfile(
         .filter(Boolean)
     : [];
 
+  const operatingAreasArr = operatingAreas
+    .split(",")
+    .map((a) => a.trim())
+    .filter(Boolean);
+
   let shouldRedirect = false;
 
   try {
-    await prisma.muthawifProfile.upsert({
+    await (prisma.muthawifProfile.upsert as any)({
       where: { userId: session.id },
       update: {
         bio: bio || null,
         basePrice,
-        location: location as "MAKKAH" | "MADINAH" | "BOTH",
+        operatingAreas: operatingAreasArr,
         experience,
         languages: languageArr,
         specializations: specializationArr,
@@ -91,7 +96,7 @@ export async function updateMuthawifProfile(
         userId: session.id,
         bio: bio || null,
         basePrice,
-        location: location as "MAKKAH" | "MADINAH" | "BOTH",
+        operatingAreas: operatingAreasArr,
         experience,
         languages: languageArr,
         specializations: specializationArr,
@@ -115,7 +120,11 @@ export async function updateMuthawifProfile(
   }
 
   revalidatePath("/dashboard/muthawif");
-  return { success: true, message: "Draft Profil berhasil disimpan!" };
+  const isDraft = formData.get("submitActionRaw") === "DRAFT";
+  return { 
+    success: true, 
+    message: isDraft ? "Draft Profil berhasil disimpan!" : "Informasi Profil berhasil diperbarui!" 
+  };
 }
 
 export async function submitForReview(): Promise<ActionState> {
@@ -298,8 +307,15 @@ export async function addDocumentUrl(
 ): Promise<ActionState> {
   const session = await requireMuthawif();
 
-  const url = formData.get("documentUrl") as string;
-  if (!url) return { success: false, message: "URL dokumen tidak valid" };
+  const rawUrl = formData.get("documentUrl") as string;
+  if (!rawUrl) return { success: false, message: "URL dokumen tidak valid" };
+  
+  // Validate: must be a valid https URL and belong to our Supabase storage
+  const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '');
+  if (!rawUrl.startsWith('https://') || (supabaseHost && !rawUrl.includes(supabaseHost))) {
+    return { success: false, message: "URL dokumen tidak valid" };
+  }
+  const url = rawUrl.trim().slice(0, 2048);
 
   try {
     const profile = await prisma.muthawifProfile.findUnique({

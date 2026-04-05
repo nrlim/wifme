@@ -221,6 +221,20 @@ export function AmirHeaderPanel({
                       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>,
                       label: "Manajemen Muthawif",
                       sub: "Review & verifikasi akun",
+                    },
+                    {
+                      roles: ["MUTHAWIF"],
+                      href: "/dashboard/muthawif?tab=wallet",
+                      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>,
+                      label: "Dompet Muthawif",
+                      sub: "Escrow & Pencairan Dana",
+                    },
+                    {
+                      roles: ["AMIR"],
+                      href: "/dashboard?tab=simulator",
+                      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
+                      label: "Simulator Midtrans",
+                      sub: "Testing Flow Pembayaran",
                     }
                   ].filter(action => action.roles.includes(role)).map(action => (
                     <Link

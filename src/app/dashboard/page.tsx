@@ -9,6 +9,15 @@ import DashboardSearchList from "./DashboardSearchList";
 import PaymentSimulationButton from "./PaymentSimulationButton";
 import ReviewButton from "@/components/ReviewButton";
 import BookingStatusButton from "./BookingStatusButton";
+import MidtransSimulator from "@/components/wallet/MidtransSimulator";
+import PayoutManagement from "@/components/wallet/PayoutManagement";
+import FeeSettings from "@/components/wallet/FeeSettings";
+import LocationSettings from "@/components/wallet/LocationSettings";
+import ServiceSettings from "@/components/wallet/ServiceSettings";
+import LanguageSettings from "@/components/wallet/LanguageSettings";
+import { getPayouts, getGlobalSettings } from "@/actions/finance";
+import { CopyButton } from "./CopyButton";
+import { getFeeConfig, type FeeConfig } from "@/lib/fee";
 
 // Types corresponding to Next.js 15/16 App Router
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -30,7 +39,15 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
 const TAB_TITLES: Record<string, string> = {
   beranda: "Riwayat Pesanan",
   cari: "Cari Muthawif",
+  pembayaran: "Pembayaran",
+  pengaturan: "Pengaturan Akun",
   muthawif: "Manajemen Muthawif",
+  penarikan: "Manajemen Penarikan",
+  biaya: "Pengaturan Biaya",
+  master_lokasi: "Master Wilayah Operasi",
+  master_layanan: "Master Jenis Layanan",
+  master_bahasa: "Master Bahasa",
+  simulator: "Simulator Pembayaran",
 };
 
 async function getBookingsForUser(userId: string, role: string) {
@@ -43,11 +60,11 @@ async function getBookingsForUser(userId: string, role: string) {
     where: whereClause,
     include: {
       jamaah: { select: { name: true, email: true } },
-      muthawif: { select: { id: true, name: true, photoUrl: true, profile: { select: { location: true, rating: true, basePrice: true } } } },
+      muthawif: { select: { id: true, name: true, photoUrl: true, profile: { select: { basePrice: true, operatingAreas: true, rating: true, totalReviews: true, experience: true, bio: true, specializations: true, languages: true } } } },
       review: { select: { id: true } },
     },
     orderBy: { createdAt: "desc" },
-  });
+  }) as unknown as any[];
 }
 
 const PAGE_SIZE = 10;
@@ -122,12 +139,21 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
   let dbError = false;
   let foundMuthawifs: any[] = [];
 
+  let payoutData: any = { items: [], total: 0, page: 1, totalPages: 0 };
+  let globalSettings: any = null;
+  let feeConfig: FeeConfig = { feeType: "PERCENT", feeValue: 0 };
+
   try {
-    bookings = await getBookingsForUser(session.id, session.role);
+    [bookings, feeConfig] = await Promise.all([
+      getBookingsForUser(session.id, session.role),
+      getFeeConfig(),
+    ]);
     if (session.role === "AMIR") {
-      [muthawifData, muthawifCounts] = await Promise.all([
+      [muthawifData, muthawifCounts, payoutData, globalSettings] = await Promise.all([
         getMuthawifsPaginated({ search: mSearch, status: mStatus, page: mPage }),
         getMuthawifCounts(),
+        getPayouts({ search: mSearch, status: mStatus, page: mPage }),
+        getGlobalSettings(),
       ]);
     }
     if (session.role === "MUTHAWIF") {
@@ -148,18 +174,15 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       end.setDate(end.getDate() + parseInt(searchDuration));
 
       // Build location filter: skip entirely for ALL, otherwise allow exact match OR "BOTH"
-      const locFilter = (searchLocation && searchLocation !== "ALL")
-        ? { OR: [
-            { location: searchLocation as "MAKKAH" | "MADINAH" | "BOTH" },
-            { location: "BOTH" as const },
-          ] }
-        : undefined;
+      const locFilters = searchLocation && searchLocation !== "ALL"
+        ? { operatingAreas: { has: searchLocation } }
+        : {};
 
       foundMuthawifs = await prisma.muthawifProfile.findMany({
         where: {
           isAvailable: true,
           verificationStatus: "VERIFIED",
-          ...(locFilter ? locFilter : {}),
+          ...locFilters,
           // Exclude muthawifs who have an overlapping CONFIRMED/PENDING booking in this period
           user: {
             bookingsAsMuthawif: {
@@ -453,13 +476,13 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                 {/* Desktop Table Header row */}
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1.5fr 1.5fr 120px 100px 110px",
+                  gridTemplateColumns: "1.2fr 1.5fr 1.5fr 120px 100px 130px",
                   padding: "0.75rem 1.5rem",
                   background: "var(--ivory)",
                   borderBottom: "1px solid var(--border)",
                   gap: "1rem",
                 }} className="amir-table-header">
-                  {["Order ID", "Jamaah", "Muthawif", "Tanggal", "Total", "Status"].map(h => (
+                  {["Order ID", "Jamaah", "Muthawif", "Tanggal", "Nominal & Bayar", "Status"].map(h => (
                     <div key={h} style={{ fontSize: "0.625rem", fontWeight: 900, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
                       {h}
                     </div>
@@ -484,7 +507,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                       {/* Desktop row */}
                       <div style={{
                         display: "grid",
-                        gridTemplateColumns: "1fr 1.5fr 1.5fr 120px 100px 110px",
+                        gridTemplateColumns: "1.2fr 1.5fr 1.5fr 120px 100px 130px",
                         padding: "1rem 1.5rem",
                         gap: "1rem",
                         alignItems: "center",
@@ -495,8 +518,10 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                             fontFamily: "monospace", fontSize: "0.75rem", fontWeight: 800,
                             color: "var(--charcoal)", background: "var(--ivory-dark)",
                             padding: "0.2rem 0.5rem", borderRadius: 6, border: "1px solid var(--border)",
+                            display: "flex", alignItems: "center", width: "fit-content"
                           }}>
                             #{shortId}
+                            <CopyButton text={booking.id} />
                           </span>
                         </div>
                         {/* Jamaah */}
@@ -521,27 +546,31 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                         <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-body)" }}>
                           {new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" })}
                         </div>
-                        {/* Total */}
+                        {/* Total + Bayar */}
                         <div>
                           <div style={{ fontWeight: 800, fontSize: "0.875rem", color: isPaid ? "var(--emerald)" : "var(--charcoal)" }}>
                             Rp {booking.totalFee.toLocaleString("id-ID")}
                           </div>
-                          <div style={{
-                            fontSize: "0.5625rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em",
-                            color: isPaid ? "var(--emerald)" : "var(--gold)",
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", padding: "0.15rem 0.5rem",
+                            borderRadius: 99, fontSize: "0.5625rem", fontWeight: 800,
+                            background: isPaid ? "rgba(27,107,74,0.1)" : "rgba(196,151,59,0.1)",
+                            color: isPaid ? "#1B6B4A" : "#92700A",
+                            marginTop: "0.25rem",
                           }}>
-                            {isPaid ? "LUNAS" : "BELUM BAYAR"}
-                          </div>
+                            {isPaid ? "Lunas" : "Belum"}
+                          </span>
                         </div>
                         {/* Status */}
                         <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", alignItems: "flex-start" }}>
                           <span style={{
-                            display: "inline-block",
-                            padding: "0.3rem 0.75rem", borderRadius: 99,
-                            fontSize: "0.6875rem", fontWeight: 800,
+                            display: "inline-flex", alignItems: "center", gap: "0.3rem",
+                            padding: "0.25rem 0.625rem", borderRadius: 99,
+                            fontSize: "0.6875rem", fontWeight: 700,
                             background: statusColor.bg, color: statusColor.color,
                             whiteSpace: "nowrap",
                           }}>
+                            <span style={{ width: 5, height: 5, borderRadius: "50%", background: statusColor.color, flexShrink: 0 }} />
                             {STATUS_LABELS[booking.status] || booking.status}
                           </span>
                           <BookingStatusButton
@@ -555,8 +584,9 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                       {/* Mobile card row (hidden on desktop via CSS) */}
                       <div style={{ padding: "1rem 1.25rem" }} className="amir-mobile-row">
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-                          <span style={{ fontFamily: "monospace", fontSize: "0.75rem", fontWeight: 800, color: "var(--text-muted)", background: "var(--ivory-dark)", padding: "0.2rem 0.5rem", borderRadius: 6 }}>
+                          <span style={{ fontFamily: "monospace", fontSize: "0.75rem", fontWeight: 800, color: "var(--text-muted)", background: "var(--ivory-dark)", padding: "0.2rem 0.5rem", borderRadius: 6, display: "flex", alignItems: "center" }}>
                             #{shortId}
+                            <CopyButton text={booking.id} />
                           </span>
                           <span style={{ padding: "0.275rem 0.7rem", borderRadius: 99, fontSize: "0.6875rem", fontWeight: 800, background: statusColor.bg, color: statusColor.color }}>
                             {STATUS_LABELS[booking.status] || booking.status}
@@ -618,161 +648,123 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
     }
 
 
+    const STATUS_DOT: Record<string, string> = {
+      PENDING: "#C4973B", CONFIRMED: "#27956A", CANCELLED: "#EF4444", COMPLETED: "#3B82F6",
+    };
+    const PAYMENT_META: Record<string, { label: string; bg: string; color: string }> = {
+      PAID:   { label: "Lunas",   bg: "rgba(27,107,74,0.1)",  color: "#1B6B4A" },
+      UNPAID: { label: "Belum",   bg: "rgba(196,151,59,0.1)", color: "#92700A" },
+    };
+
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        {bookings.map((booking) => {
-          const status = STATUS_LABELS[booking.status] || booking.status;
-          const color = STATUS_COLORS[booking.status] || { bg: "#F0EBE1", color: "#8A8A8A" };
-          const location = booking.muthawif.profile?.location || "";
-          const initials = booking.muthawif.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-          // Handle both UUID (hyphenated) and CUID (no hyphens)
-          const shortId = booking.id.includes("-")
-            ? booking.id.split("-")[0].toUpperCase()
-            : booking.id.slice(0, 8).toUpperCase();
-          
+      <div style={{ background: "white", borderRadius: 16, border: "1px solid var(--border)", boxShadow: "0 4px 16px rgba(0,0,0,0.04)", overflow: "hidden" }}>
+        {/* Table header */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1.1fr 0.9fr 0.9fr auto", gap: "0.75rem", padding: "0.75rem 1.25rem", background: "var(--ivory)", borderBottom: "1px solid var(--border)", alignItems: "center" }} className="bk-hdr">
+          {["Muthawif", "Tanggal & Durasi", "Nominal", "Status", "Pembayaran", "Aksi"].map(h => (
+            <div key={h} style={{ fontSize: "0.625rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{h}</div>
+          ))}
+        </div>
+
+        {bookings.map((booking, idx) => {
+          const color  = STATUS_COLORS[booking.status] || { bg: "#eee", color: "#666" };
+          const dot    = STATUS_DOT[booking.status] || "#ccc";
+          const pm     = PAYMENT_META[booking.paymentStatus || "UNPAID"] || PAYMENT_META["UNPAID"];
+          const location = booking.muthawif.profile?.operatingAreas?.join(", ") || "";
+          const initials = booking.muthawif.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+          const shortId  = booking.id.includes("-") ? booking.id.split("-")[0].toUpperCase() : booking.id.slice(0, 8).toUpperCase();
           const startDate = new Date(booking.startDate);
-          const endDate = new Date(booking.endDate);
-          const durationDays = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-
-          let displayName = booking.muthawif.name;
-          let nameLabel = "Muthawif";
-          if (session.role === "MUTHAWIF") {
-            displayName = booking.jamaah.name;
-            nameLabel = "Jamaah";
-          }
-
-          const isPaid = booking.paymentStatus === "PAID";
-          const isUnpaidActive = booking.paymentStatus === "UNPAID" && booking.status !== "CANCELLED";
+          const duration  = Math.max(1, Math.round((new Date(booking.endDate).getTime() - startDate.getTime()) / 86400000));
+          const isPaid    = booking.paymentStatus === "PAID";
+          const isUnpaid  = booking.paymentStatus === "UNPAID" && booking.status !== "CANCELLED";
 
           return (
-            <div key={booking.id} style={{ 
-              background: "white", 
-              borderRadius: "18px", 
-              border: "1px solid var(--border)", 
-              boxShadow: "var(--shadow-sm)", 
-              overflow: "hidden" 
-            }}>
-              {/* Header bar */}
-              <div style={{ 
-                padding: "0.875rem 1.25rem", 
-                background: "var(--ivory-dark)", 
-                borderBottom: "1px solid var(--border)", 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "0.5rem"
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Order</span>
-                  <span style={{ fontFamily: "monospace", fontSize: "0.8125rem", fontWeight: 800, color: "var(--charcoal)", background: "white", padding: "0.15rem 0.5rem", borderRadius: "6px", border: "1px solid var(--border)" }}>
-                    #{shortId}
-                  </span>
+            <div key={booking.id} style={{ display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1.1fr 0.9fr 0.9fr auto", gap: "0.75rem", padding: "1rem 1.25rem", borderBottom: idx < bookings.length - 1 ? "1px solid var(--border)" : "none", alignItems: "center", transition: "background 0.15s" }} className="bk-row">
+
+              {/* Muthawif info */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
+                <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, var(--emerald), #27956A)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "0.875rem", flexShrink: 0, overflow: "hidden", border: "2px solid var(--border)" }}>
+                  {booking.muthawif.photoUrl
+                    ? <img src={booking.muthawif.photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : initials}
                 </div>
-                <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
-                  <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 700, background: color.bg, color: color.color }}>
-                    {status}
-                  </span>
-                  {isPaid && (
-                    <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 700, background: "var(--emerald-pale)", color: "var(--emerald)" }}>
-                      Lunas ✓
-                    </span>
-                  )}
-                  {isUnpaidActive && (
-                    <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 700, background: "#FEF9C3", color: "#A16207" }}>
-                      Belum Bayar
-                    </span>
-                  )}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{booking.muthawif.name}</div>
+                  {location && <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{location === "BOTH" ? "Makkah & Madinah" : location}</div>}
+                  <div style={{ fontSize: "0.5625rem", color: "var(--text-muted)", fontFamily: "monospace", marginTop: "0.1rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                    #{shortId}<CopyButton text={booking.id} />
+                  </div>
                 </div>
               </div>
 
-              {/* Body */}
-              <div style={{ padding: "1.25rem" }}>
-                {/* Profile row */}
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.25rem" }}>
-                  <div style={{ 
-                    width: 52, height: 52, borderRadius: "50%", 
-                    background: "linear-gradient(135deg, var(--emerald), var(--emerald-light))", 
-                    color: "white", display: "flex", alignItems: "center", justifyContent: "center", 
-                    fontWeight: 800, fontSize: "1.125rem", flexShrink: 0, overflow: "hidden",
-                    border: "2px solid var(--emerald-pale)"
-                  }}>
-                    {booking.muthawif.photoUrl 
-                      ? <img src={booking.muthawif.photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> 
-                      : initials}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.2rem" }}>
-                      {nameLabel}
-                    </div>
-                    <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {displayName}
-                    </div>
-                    {location && (
-                      <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.25rem", marginTop: "0.2rem" }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-                        {location === "BOTH" ? "Makkah & Madinah" : location}
-                      </div>
-                    )}
-                  </div>
+              {/* Tanggal */}
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>
+                  {startDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                 </div>
-
-                {/* Info grid: 3 columns on mobile */}
-                <div style={{ 
-                  display: "grid", 
-                  gridTemplateColumns: "1fr 1fr 1fr", 
-                  gap: "0.75rem",
-                  padding: "1rem",
-                  background: "var(--ivory)",
-                  borderRadius: "12px",
-                  marginBottom: "1rem"
-                }}>
-                  <div>
-                    <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.3rem" }}>Berangkat</div>
-                    <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>
-                      {startDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                    </div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                      {startDate.getFullYear()}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.3rem" }}>Durasi</div>
-                    <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>{durationDays} Hari</div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.3rem" }}>Total</div>
-                    <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: isPaid ? "var(--emerald)" : "var(--charcoal)" }}>
-                      Rp {booking.totalFee.toLocaleString("id-ID")}
-                    </div>
-                  </div>
+                <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.125rem" }}>
+                  {duration} hari · s/d {new Date(booking.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
                 </div>
+              </div>
 
-                {/* Payment CTA */}
-                {session.role === "JAMAAH" && isUnpaidActive && (
-                  <div style={{ marginTop: "0.5rem" }}>
-                    <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} />
-                  </div>
+              {/* Nominal */}
+              <div>
+                <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: isPaid ? "var(--emerald)" : "var(--charcoal)" }}>
+                  Rp {booking.totalFee.toLocaleString("id-ID")}
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", padding: "0.25rem 0.625rem", borderRadius: 99, fontSize: "0.6875rem", fontWeight: 700, background: color.bg, color: color.color }}>
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: dot, flexShrink: 0 }} />
+                  {STATUS_LABELS[booking.status] || booking.status}
+                </span>
+              </div>
+
+              {/* Pembayaran */}
+              <div>
+                <span style={{ display: "inline-flex", alignItems: "center", padding: "0.25rem 0.625rem", borderRadius: 99, fontSize: "0.6875rem", fontWeight: 700, background: pm.bg, color: pm.color }}>
+                  {pm.label}
+                </span>
+              </div>
+
+              {/* Aksi */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", minWidth: "max-content" }}>
+                {session.role === "JAMAAH" && isUnpaid && (
+                  <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} />
                 )}
-
-                {/* Review CTA — JAMAAH on COMPLETED bookings */}
                 {session.role === "JAMAAH" && booking.status === "COMPLETED" && (
-                  <div style={{ marginTop: "0.875rem" }}>
-                    <ReviewButton
-                      bookingId={booking.id}
-                      muthawifId={booking.muthawif.id}
-                      muthawifName={booking.muthawif.name}
-                      hasReview={!!booking.review}
-                    />
-                  </div>
+                  <ReviewButton bookingId={booking.id} muthawifId={booking.muthawif.id} muthawifName={booking.muthawif.name} hasReview={!!booking.review} dashboardHref="/dashboard" />
+                )}
+                {!isUnpaid && booking.status !== "COMPLETED" && (
+                  <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontStyle: "italic" }}>—</span>
                 )}
               </div>
+
             </div>
           );
         })}
+
+        {/* Footer */}
+        <div style={{ padding: "0.875rem 1.25rem", borderTop: "1px solid var(--border)", background: "var(--ivory)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+          <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600 }}>{bookings.length} pesanan</span>
+          <span style={{ fontSize: "0.875rem", fontWeight: 900, color: "var(--emerald)" }}>
+            Total Lunas: Rp {bookings.filter(b => b.paymentStatus === "PAID").reduce((s, b) => s + b.totalFee, 0).toLocaleString("id-ID")}
+          </span>
+        </div>
+
+        <style>{`
+          .bk-hdr { display: grid !important; }
+          .bk-row:hover { background: var(--ivory) !important; }
+          @media (max-width: 768px) {
+            .bk-hdr { display: none !important; }
+            .bk-row { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
       </div>
     );
   };
+
 
   const sidebarNavItems = [
     {
@@ -797,6 +789,64 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       desc: "Kelola & verifikasi akun",
       emoji: "👥",
       tab: "muthawif",
+      show: session.role === "AMIR",
+    },
+    {
+      href: "/dashboard?tab=penarikan",
+      label: "Manajemen Penarikan",
+      desc: "Kelola dana keluar",
+      emoji: "💸",
+      tab: "penarikan",
+      show: session.role === "AMIR",
+    },
+    {
+      href: "/dashboard?tab=biaya",
+      label: "Pengaturan Biaya",
+      desc: "Fee jasa & manajemen",
+      emoji: "⚙️",
+      tab: "biaya",
+      show: session.role === "AMIR",
+    },
+    {
+      type: "header",
+      label: "MASTER DATA",
+      show: session.role === "AMIR",
+    },
+    {
+      href: "/dashboard?tab=master_lokasi",
+      label: "Wilayah Operasi",
+      desc: "Manajemen area operasi",
+      emoji: "📍",
+      tab: "master_lokasi",
+      show: session.role === "AMIR",
+    },
+    {
+      href: "/dashboard?tab=master_layanan",
+      label: "Jenis Layanan",
+      desc: "Layanan Muthawif",
+      emoji: "💼",
+      tab: "master_layanan",
+      show: session.role === "AMIR",
+    },
+    {
+      href: "/dashboard?tab=master_bahasa",
+      label: "Spesialisasi Bahasa",
+      desc: "Pilihan bahasa komunikasi",
+      emoji: "🗣️",
+      tab: "master_bahasa",
+      show: session.role === "AMIR",
+    },
+    {
+      type: "header",
+      label: "SISTEM",
+      show: session.role === "AMIR",
+    },
+    {
+      href: "/dashboard?tab=simulator",
+      label: "Simulator Midtrans",
+      desc: "Test Flow Pembayaran",
+      emoji: "💳",
+      tab: "simulator",
       show: session.role === "AMIR",
     },
   ].filter((item) => item.show);
@@ -832,12 +882,20 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
             NAVIGASI
           </div>
           <nav style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-            {sidebarNavItems.map((item) => {
+            {sidebarNavItems.map((item, idx) => {
+              if (item.type === "header") {
+                return (
+                  <div key={`head-${idx}`} style={{ fontSize: "0.5875rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", marginTop: "1.25rem", marginBottom: "0.375rem", padding: "0 0.25rem" }}>
+                    {item.label}
+                  </div>
+                );
+              }
+
               const isActive = currentTab === item.tab;
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={item.href!}
                   className="dsb-nav-lnk"
                   style={{
                     display: "flex", alignItems: "center", gap: "0.75rem",
@@ -917,7 +975,8 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                   <DashboardSearchList 
                     muthawifs={foundMuthawifs} 
                     startDate={searchStartDate} 
-                    duration={searchDuration} 
+                    duration={searchDuration}
+                    feeConfig={feeConfig}
                   />
                 )}
               </div>
@@ -978,6 +1037,30 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                 </div>
               );
             })()}
+
+            {currentTab === "simulator" && session.role === "AMIR" && (
+              <MidtransSimulator />
+            )}
+
+            {currentTab === "penarikan" && session.role === "AMIR" && (
+              <PayoutManagement payouts={payoutData} />
+            )}
+
+            {currentTab === "biaya" && session.role === "AMIR" && (
+              <FeeSettings initialSettings={globalSettings} />
+            )}
+
+            {currentTab === "master_lokasi" && session.role === "AMIR" && (
+              <LocationSettings initialSettings={globalSettings} currentPage={mPage} />
+            )}
+
+            {currentTab === "master_layanan" && session.role === "AMIR" && (
+              <ServiceSettings initialSettings={globalSettings} currentPage={mPage} />
+            )}
+
+            {currentTab === "master_bahasa" && session.role === "AMIR" && (
+              <LanguageSettings initialSettings={globalSettings} currentPage={mPage} />
+            )}
           </div>
         </main>
       </div>

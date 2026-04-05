@@ -57,6 +57,7 @@ model User {
   bookingsAsJamaah   Booking[]        @relation("JamaahBookings")
   bookingsAsMuthawif Booking[]        @relation("MuthawifBookings")
   reviewsGiven       Review[]         @relation("ReviewsGiven")
+  wallet             Wallet?
 }
 
 model MuthawifProfile {
@@ -65,7 +66,7 @@ model MuthawifProfile {
   user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   bio                String?
   basePrice          Float              @default(500000)
-  location           Location           @default(MAKKAH)
+  operatingAreas     String[]           @default([])
   experience         Int                @default(0)
   languages          String[]           @default(["Indonesia"])
   specializations    String[]           @default([])
@@ -102,7 +103,8 @@ model Booking {
   startDate       DateTime
   endDate         DateTime
   status          BookingStatus @default(PENDING)
-  totalFee        Float
+  totalFee        Float                           // Jamaah pays: baseFee + serviceFee
+  baseFee         Float         @default(0)       // Muthawif receives: basePrice × duration
   notes           String?
   paymentRef      String?
   paymentStatus   String?       @default("UNPAID")
@@ -111,6 +113,7 @@ model Booking {
   updatedAt       DateTime      @updatedAt
 
   review          Review?
+  transactions    Transaction[]
 }
 
 model Review {
@@ -126,3 +129,74 @@ model Review {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
+
+enum TransactionType {
+  PAYMENT_ESCROW         // Uang masuk ke escrow (dari jamaah bayar)
+  ESCROW_SETTLEMENT      // Uang pindah dari escrow ke available
+  WITHDRAWAL             // Uang ditarik muthawif
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Wallet {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availableBalance Float    @default(0)
+  escrowBalance    Float    @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  transactions     Transaction[]
+  payouts          Payout[]
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  walletId    String
+  wallet      Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  bookingId   String?           
+  booking     Booking?          @relation(fields: [bookingId], references: [id])
+  type        TransactionType
+  amount      Float
+  status      TransactionStatus @default(PENDING)
+  referenceId String?           
+  description String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model Payout {
+  id                     String            @id @default(cuid())
+  walletId               String
+  wallet                 Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  amount                 Float
+  status                 TransactionStatus @default(PENDING)
+  bankName               String
+  encryptedAccountNumber String
+  accountHolderName      String
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+}
+
+enum FeeType {
+  PERCENT
+  FLAT
+}
+
+model GlobalSetting {
+  id                String   @id @default("singleton")
+  feeType           FeeType  @default(PERCENT)
+  feeValue          Float    @default(5.0)         // % atau IDR tergantung feeType
+  feeComponents     Json     @default("[]")         // array komponen biaya tambahan
+  minimumWithdrawal Float    @default(50000)
+  supportedLocations String[] @default(["Makkah", "Madinah"])
+  supportedServices  String[] @default(["Umrah Reguler", "Badal Umrah", "City Tour"])
+  supportedLanguages String[] @default(["Indonesia", "Arab", "Inggris"])
+  updatedAt         DateTime @updatedAt
+}
+

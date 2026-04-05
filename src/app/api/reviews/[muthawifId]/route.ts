@@ -72,7 +72,6 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("[GET /api/reviews/[muthawifId]]", error);
     return NextResponse.json({ error: "Terjadi kesalahan server." }, { status: 500 });
   }
 }

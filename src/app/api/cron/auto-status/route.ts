@@ -17,17 +17,14 @@ export async function GET(req: NextRequest) {
   const cronType = process.env.CRON_TYPE || "VPS";
   const now = new Date();
   
-  // Verify cron secret for SECURITY
+  // CRON_SECRET is required — if not set, block all access
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${secret}`) {
-      console.warn(`[cron/auto-status] Blocked unauthorized access attempt (${cronType})`);
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const authHeader = req.headers.get("authorization");
+  if (!secret || authHeader !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  console.log(`[cron/auto-status] Triggered via: ${cronType}`);
+  // Triggered manually or by cron
   const results = { completed: 0, cancelledUnpaid: 0, cancelledPendingExpired: 0 };
   const hours = parseInt(process.env.AUTO_CANCEL_HOURS || "24");
   const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
@@ -81,11 +78,10 @@ export async function GET(req: NextRequest) {
       results.cancelledPendingExpired = toCancelExpired.length;
     }
 
-    console.log(`[cron/auto-status] ${now.toISOString()} (Cutoff: ${hours}h)`, results);
+    // Done
     return NextResponse.json({ ok: true, results, timestamp: now.toISOString(), config: { cutoffHours: hours } });
 
   } catch (err) {
-    console.error("[cron/auto-status] error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

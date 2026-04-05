@@ -8,37 +8,48 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, email, password, role } = body;
 
+    // Input validation
     if (!name || !email || !password) {
-      return NextResponse.json(
-        { error: "Semua field wajib diisi." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Semua field wajib diisi." }, { status: 400 });
     }
+    const trimmedName = String(name).trim().slice(0, 100);
+    const trimmedEmail = String(email).trim().toLowerCase();
+    const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      return NextResponse.json({ error: "Format email tidak valid." }, { status: 400 });
+    }
+    if (String(password).length < 8) {
+      return NextResponse.json({ error: "Password minimal 8 karakter." }, { status: 400 });
+    }
+    // Prevent self-registration as AMIR (admin)
+    const allowedSelfRegisterRoles = ["MUTHAWIF", "JAMAAH"];
+    const sanitizedRole = allowedSelfRegisterRoles.includes(role) ? role : "JAMAAH";
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await prisma.user.findUnique({ where: { email: trimmedEmail } });
     if (existing) {
-      return NextResponse.json(
-        { error: "Email sudah terdaftar." },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "Email sudah terdaftar." }, { status: 409 });
     }
 
     const hashed = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashed,
-        role: ["MUTHAWIF"].includes(role) ? role : "JAMAAH",
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: trimmedName,
+          email: trimmedEmail,
+          password: hashed,
+          role: sanitizedRole,
+        },
+      });
+
+      if (newUser.role === "MUTHAWIF") {
+        await tx.muthawifProfile.create({
+          data: { userId: newUser.id },
+        });
+      }
+      return newUser;
     });
 
-    // If registering as muthawif, create empty profile
-    if (user.role === "MUTHAWIF") {
-      await prisma.muthawifProfile.create({
-        data: { userId: user.id },
-      });
-    }
+    const user = result;
 
     const token = await signJWT({
       id: user.id,

@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import MuthawifCard from "@/components/MuthawifCard";
 import Link from "next/link";
+import SearchFilterBar from "@/components/SearchFilterBar";
+import GuestSearchBanner from "@/components/GuestSearchBanner";
+import { getFeeConfig, type FeeConfig } from "@/lib/fee";
 
 interface SearchPageProps {
   searchParams: Promise<{
@@ -33,13 +36,11 @@ async function fetchMuthawifs(startDate?: string, duration?: string, location?: 
   const end = new Date(start);
   end.setDate(end.getDate() + parseInt(duration));
 
+  // Filter if specific location is selected (not ALL)
   const locationFilter =
     location && location !== "ALL"
       ? {
-          OR: [
-            { location: location as "MAKKAH" | "MADINAH" | "BOTH" },
-            { location: "BOTH" as const },
-          ],
+          operatingAreas: { has: location },
         }
       : {};
 
@@ -68,16 +69,10 @@ async function fetchMuthawifs(startDate?: string, duration?: string, location?: 
   });
 }
 
-/* ── Skeleton Cards ───────────────────────────── */
+/* ── Skeleton Card ───────────────────────────── */
 function SkeletonCard() {
   return (
-    <div style={{
-      background: "white",
-      borderRadius: 20,
-      border: "1px solid var(--border)",
-      overflow: "hidden",
-      boxShadow: "var(--shadow-sm)",
-    }}>
+    <div style={{ background: "white", borderRadius: 20, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
       <div style={{ padding: "1.25rem", borderBottom: "1px solid var(--border)" }}>
         <div style={{ display: "flex", gap: "0.875rem", alignItems: "center" }}>
           <div style={{ width: 52, height: 52, borderRadius: "50%", background: "var(--ivory-dark)", flexShrink: 0 }} className="animate-pulse" />
@@ -97,40 +92,36 @@ function SkeletonCard() {
 }
 
 /* ── Empty State ───────────────────────────── */
-function EmptyState() {
+function EmptyState({ startDate, duration, location, supportedLocations }: { startDate?: string; duration?: string; location?: string; supportedLocations?: string[] }) {
   return (
-    <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "4rem 2rem" }}>
-      <div style={{
-        width: 80, height: 80, borderRadius: "50%",
-        background: "var(--ivory-dark)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        margin: "0 auto 1.5rem",
-      }}>
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
+    <div style={{ maxWidth: 800, margin: "0 auto", padding: "6rem 2rem", textAlign: "center" }}>
+      <div style={{ width: 80, height: 80, borderRadius: 24, background: "var(--emerald-pale)", color: "var(--emerald)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem", boxShadow: "0 8px 32px rgba(27,107,74,0.15)" }}>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
       </div>
-      <h3 style={{ fontSize: "1.125rem", fontWeight: 800, marginBottom: "0.75rem", color: "var(--charcoal)" }}>
-        Muthawif Tidak Ditemukan
-      </h3>
-      <p style={{ color: "var(--text-muted)", marginBottom: "2rem", maxWidth: 360, margin: "0 auto 2rem", lineHeight: 1.6, fontSize: "0.9375rem" }}>
-        Tidak ada Muthawif tersedia untuk kriteria yang dipilih. Coba ubah tanggal atau lokasi.
+      <h2 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "0.5rem" }}>Muthawif Tidak Ditemukan</h2>
+      <p style={{ fontSize: "1rem", color: "var(--text-muted)", marginBottom: "2rem", maxWidth: 500, margin: "0 auto 2rem" }}>
+        Maaf, kami tidak menemukan muthawif yang tersedia untuk jadwal tersebut. Silakan coba ubah tanggal, durasi, atau lokasi.
       </p>
-      <Link href="/" className="btn btn-secondary" style={{ display: "inline-flex" }}>
-        ← Ubah Pencarian
-      </Link>
+      
+      <div style={{ background: "white", padding: "1.5rem", borderRadius: 20, boxShadow: "var(--shadow-sm)", textAlign: "left" }}>
+        <SearchFilterBar startDate={startDate} duration={duration} location={location} supportedLocations={supportedLocations} forceOpen />
+      </div>
     </div>
   );
 }
 
 /* ── Search Results (Server Component) ───────────────────────── */
 async function SearchResults({
-  startDate, duration, location, isLoggedIn,
+  startDate, duration, location, isLoggedIn, dashboardHref, searchLocation, feeConfig, supportedLocations,
 }: {
   startDate?: string;
   duration?: string;
   location?: string;
   isLoggedIn: boolean;
+  dashboardHref: string;
+  searchLocation?: string;
+  feeConfig: FeeConfig;
+  supportedLocations: string[];
 }) {
   let muthawifs: Awaited<ReturnType<typeof fetchMuthawifs>> = [];
 
@@ -144,7 +135,9 @@ async function SearchResults({
     );
   }
 
-  if (muthawifs.length === 0) return <EmptyState />;
+  if (muthawifs.length === 0) {
+    return <EmptyState startDate={startDate} duration={duration} location={location} supportedLocations={supportedLocations} />;
+  }
 
   return (
     <>
@@ -155,20 +148,109 @@ async function SearchResults({
           startDate={startDate}
           duration={duration}
           isLoggedIn={isLoggedIn}
+          dashboardHref={dashboardHref}
+          searchLocation={searchLocation}
+          feeConfig={feeConfig}
         />
       ))}
     </>
   );
 }
 
+/* ── Guest Sidebar Widget (Desktop only) ── */
+function GuestSidebarWidget() {
+  return (
+    <div style={{
+      background: "linear-gradient(155deg, #0d2818 0%, #1B6B4A 100%)",
+      borderRadius: 20,
+      padding: "1.5rem",
+      color: "white",
+      position: "sticky",
+      top: "5.5rem",
+    }}>
+      {/* Icon */}
+      <div style={{ fontSize: "1.75rem", marginBottom: "0.75rem" }}>🕌</div>
+      <h3 style={{ fontSize: "1.0625rem", color: "rgba(255,255,255,0.7)", fontWeight: 900, marginBottom: "0.5rem", lineHeight: 1.3 }}>
+        Pesan Muthawif Terpercaya
+      </h3>
+      <p style={{ fontSize: "0.8125rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.7, marginBottom: "1.25rem" }}>
+        Daftar gratis dan langsung bisa pesan Muthawif terverifikasi untuk ibadah Umrah Anda.
+      </p>
+
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.625rem", marginBottom: "1.25rem" }}>
+        {[
+          { num: "500+", lbl: "Muthawif" },
+          { num: "4.9★", lbl: "Rating" },
+          { num: "10K+", lbl: "Jamaah" },
+          { num: "24/7", lbl: "Support" },
+        ].map((s, i) => (
+          <div key={i} style={{
+            background: "rgba(255,255,255,0.08)",
+            borderRadius: 12,
+            padding: "0.625rem 0.75rem",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}>
+            <div style={{ fontSize: "1.0625rem", fontWeight: 900, color: "white" }}>{s.num}</div>
+            <div style={{ fontSize: "0.625rem", color: "rgba(255,255,255,0.55)", fontWeight: 600, letterSpacing: "0.04em" }}>{s.lbl}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Trust points */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.375rem" }}>
+        {[
+          "✅ Muthawif terverifikasi resmi",
+          "🔒 Pembayaran 100% aman",
+          "📞 Support 24/7 siap membantu",
+          "🎯 Filter sesuai kebutuhan",
+        ].map((item, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "rgba(255,255,255,0.8)" }}>
+            {item}
+          </div>
+        ))}
+      </div>
+
+      <Link
+        href="/auth/register"
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
+          background: "linear-gradient(135deg, #C4973B, #E4B55A)",
+          color: "white",
+          padding: "0.75rem 1rem",
+          borderRadius: 12,
+          fontSize: "0.875rem",
+          fontWeight: 800,
+          textDecoration: "none",
+          boxShadow: "0 4px 16px rgba(196,151,59,0.4)",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
+        ✨ Daftar Gratis Sekarang
+      </Link>
+    </div>
+  );
+}
+
 /* ── Main Page ───────────────────────────────────── */
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
-  const session = await getSession();
   const { startDate, duration, location } = params;
-  const isLoggedIn = !!session;
 
-  const hasFilters = startDate || duration || (location && location !== "ALL");
+  const [session, feeConfig, globalSet] = await Promise.all([
+    getSession(),
+    getFeeConfig(),
+    prisma.globalSetting.findUnique({ where: { id: "singleton" } }),
+  ]);
+
+  const supportedLocations = (globalSet as any)?.supportedLocations || ["Makkah", "Madinah"];
+  const isLoggedIn = !!session;
+  const dashboardHref = session?.role === "MUTHAWIF"
+    ? "/dashboard/muthawif"
+    : "/dashboard";
+
+  const hasFilters = !!(startDate || duration || (location && location !== "ALL"));
 
   return (
     <>
@@ -176,58 +258,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
       <div style={{ minHeight: "100vh", background: "var(--ivory)", paddingTop: "4.5rem" }}>
 
-        {/* ─── Guest Banner (not logged in) ─── */}
-        {!isLoggedIn && (
-          <div style={{
-            background: "linear-gradient(135deg, var(--emerald) 0%, #27956A 100%)",
-            padding: "0.875rem 1rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "1rem",
-            flexWrap: "wrap",
-          }}>
-            <span style={{ color: "white", fontSize: "0.875rem", fontWeight: 600, textAlign: "center" }}>
-              🔒 Masuk atau daftar untuk langsung memesan Muthawif pilihan Anda
-            </span>
-            <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
-              <Link href="/auth/login" style={{
-                background: "rgba(255,255,255,0.2)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.4)",
-                padding: "0.375rem 1rem",
-                borderRadius: 8,
-                fontSize: "0.8125rem",
-                fontWeight: 700,
-                textDecoration: "none",
-                backdropFilter: "blur(4px)",
-              }}>
-                Masuk
-              </Link>
-              <Link href="/auth/register" style={{
-                background: "white",
-                color: "var(--emerald)",
-                padding: "0.375rem 1rem",
-                borderRadius: 8,
-                fontSize: "0.8125rem",
-                fontWeight: 800,
-                textDecoration: "none",
-              }}>
-                Daftar Gratis
-              </Link>
-            </div>
-          </div>
-        )}
+        {/* ─── Guest Banner with Value Prop ─── */}
+        {!isLoggedIn && <GuestSearchBanner />}
 
         {/* ─── Page Header ─── */}
         <div style={{
           background: "linear-gradient(160deg, #ffffff 0%, var(--emerald-pale) 100%)",
           borderBottom: "1px solid var(--border)",
-          padding: "2rem 1rem 2.5rem",
+          padding: "2rem 1.5rem 1.75rem",
         }}>
-          <div className="container">
-            {/* Title */}
-            <div style={{ textAlign: "center", marginBottom: hasFilters ? "1.75rem" : "0" }}>
+          <div className="sp-container">
+
+            {/* Title + subtitle */}
+            <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: "0.5rem",
                 background: "var(--emerald-pale)", color: "var(--emerald)",
@@ -241,159 +284,165 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 Muthawif Terverifikasi
               </div>
               <h1 style={{
-                fontSize: "clamp(1.625rem, 5vw, 2.5rem)",
-                fontWeight: 900,
-                color: "var(--charcoal)",
-                lineHeight: 1.15,
-                letterSpacing: "-0.02em",
+                fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
+                fontWeight: 900, color: "var(--charcoal)",
+                lineHeight: 1.15, letterSpacing: "-0.025em",
                 marginBottom: "0.5rem",
               }}>
                 Temukan{" "}
                 <span style={{
                   background: "linear-gradient(135deg, var(--emerald), #27956A)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                 }}>
                   Muthawif
                 </span>
                 {" "}Terbaik
               </h1>
-              <p style={{
-                color: "var(--text-muted)",
-                fontSize: "0.9375rem",
-                lineHeight: 1.65,
-                maxWidth: 520,
-                margin: "0 auto",
-              }}>
-                Muthawif berpengalaman & berlisensi siap mendampingi ibadah Anda di Tanah Suci.
+              <p style={{ color: "var(--text-muted)", fontSize: "0.9375rem", lineHeight: 1.65, maxWidth: 560, margin: "0 auto" }}>
+                {hasFilters
+                  ? `Menampilkan Muthawif tersedia${startDate ? ` mulai ${new Date(startDate).toLocaleDateString("id-ID", { day: "numeric", month: "long" })}` : ""}${duration ? ` · ${duration} hari` : ""}${location && location !== "ALL" ? ` · ${LOCATION_LABELS[location] || location}` : ""}`
+                  : "Muthawif berpengalaman & berlisensi siap mendampingi ibadah Anda di Tanah Suci."
+                }
               </p>
             </div>
 
-            {/* Filter Chips */}
-            {hasFilters && (
-              <div style={{
-                display: "flex",
-                gap: "0.625rem",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                alignItems: "center",
-              }}>
-                {startDate && (
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: "0.5rem",
-                    background: "white",
-                    border: "1.5px solid var(--border)",
-                    borderRadius: 12,
-                    padding: "0.5625rem 0.875rem",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                  }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5">
-                      <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-                    </svg>
-                    <div>
-                      <div style={{ fontSize: "0.5625rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", lineHeight: 1 }}>Berangkat</div>
-                      <div style={{ fontSize: "0.8125rem", fontWeight: 800, color: "var(--charcoal)", lineHeight: 1.3 }}>
-                        {new Date(startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                      </div>
-                    </div>
-                  </div>
-                )}
+            {/* Filter Bar — full width */}
+            <SearchFilterBar
+              startDate={startDate}
+              duration={duration}
+              location={location}
+              supportedLocations={supportedLocations}
+            />
 
-                {duration && (
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: "0.5rem",
-                    background: "white",
-                    border: "1.5px solid var(--border)",
-                    borderRadius: 12,
-                    padding: "0.5625rem 0.875rem",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                  }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
-                      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    <div>
-                      <div style={{ fontSize: "0.5625rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", lineHeight: 1 }}>Durasi</div>
-                      <div style={{ fontSize: "0.8125rem", fontWeight: 800, color: "var(--charcoal)", lineHeight: 1.3 }}>
-                        {duration} Hari
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {location && location !== "ALL" && (
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: "0.5rem",
-                    background: "white",
-                    border: "1.5px solid var(--border)",
-                    borderRadius: 12,
-                    padding: "0.5625rem 0.875rem",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                  }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                    </svg>
-                    <div>
-                      <div style={{ fontSize: "0.5625rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", lineHeight: 1 }}>Lokasi</div>
-                      <div style={{ fontSize: "0.8125rem", fontWeight: 800, color: "var(--charcoal)", lineHeight: 1.3 }}>
-                        {LOCATION_LABELS[location] || location}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <Link href="/" style={{
-                  display: "flex", alignItems: "center", gap: "0.375rem",
-                  padding: "0.5625rem 0.875rem",
-                  borderRadius: 12,
-                  border: "1.5px solid var(--border)",
-                  background: "white",
-                  fontSize: "0.8125rem",
-                  fontWeight: 700,
-                  color: "var(--text-muted)",
-                  textDecoration: "none",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                  whiteSpace: "nowrap",
-                }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                  Ubah Pencarian
-                </Link>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* ─── Results Grid ─── */}
-        <div style={{ padding: "2rem 0 5rem" }}>
-          <div className="container">
-            <Suspense fallback={
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))",
-                gap: "1.25rem",
-              }}>
-                {[1, 2, 3, 4, 5, 6].map((n) => <SkeletonCard key={n} />)}
+        {/* ─── Main Content ─── */}
+        <div style={{ padding: "2rem 1.5rem 5rem" }}>
+          <div className="sp-container">
+
+            {/* Desktop: 2-col layout (sidebar + grid) for guests, full grid for logged in */}
+            <div className={`sp-layout ${!isLoggedIn ? "sp-layout-guest" : ""}`}>
+
+              {/* ─── Guest sidebar (desktop only) ─── */}
+              {!isLoggedIn && (
+                <aside className="sp-sidebar">
+                  <GuestSidebarWidget />
+                </aside>
+              )}
+
+              {/* ─── Results grid ─── */}
+              <div className="sp-results">
+
+
+                {/* Cards grid */}
+                <Suspense fallback={
+                  <div className="sp-cards-grid">
+                    {[1, 2, 3, 4, 5, 6].map((n) => <SkeletonCard key={n} />)}
+                  </div>
+                }>
+                  <div className="sp-cards-grid">
+                    <SearchResults
+                      startDate={startDate}
+                      duration={duration}
+                      location={location}
+                      isLoggedIn={isLoggedIn}
+                      dashboardHref={dashboardHref}
+                      searchLocation={location}
+                      feeConfig={feeConfig as any}
+                      supportedLocations={supportedLocations}
+                    />
+                  </div>
+                </Suspense>
+
               </div>
-            }>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))",
-                gap: "1.25rem",
-              }}>
-                <SearchResults
-                  startDate={startDate}
-                  duration={duration}
-                  location={location}
-                  isLoggedIn={isLoggedIn}
-                />
-              </div>
-            </Suspense>
+            </div>
+
           </div>
         </div>
 
       </div>
+
+      {/* ─── Global page CSS ─── */}
+      <style>{`
+        /* Container — wider than standard for search page */
+        .sp-container {
+          width: 95%;
+          max-width: 1600px;
+          margin: 0 auto;
+          padding: 0;
+        }
+
+        /* Two-col layout for guests on desktop */
+        .sp-layout {
+          display: block;
+        }
+        .sp-layout-guest {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+
+        /* Sidebar hidden on mobile */
+        .sp-sidebar {
+          display: none;
+        }
+
+        /* Cards grid — 1 col mobile, expands on desktop */
+        .sp-cards-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1.125rem;
+        }
+
+        /* ── sm: 2 cols ── */
+        @media (min-width: 600px) {
+          .sp-cards-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        /* ── md: sidebar appears, grid adjusts ── */
+        @media (min-width: 900px) {
+          .sp-layout-guest {
+            grid-template-columns: 260px 1fr;
+          }
+          .sp-sidebar {
+            display: block;
+          }
+          /* Guest: 2 col cards in the main area */
+          .sp-layout-guest .sp-cards-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          /* Logged in: 3 cols */
+          .sp-layout:not(.sp-layout-guest) .sp-cards-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        /* ── xl: even more columns ── */
+        @media (min-width: 1200px) {
+          .sp-layout-guest {
+            grid-template-columns: 320px 1fr;
+          }
+          .sp-layout-guest .sp-cards-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+          .sp-layout:not(.sp-layout-guest) .sp-cards-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+
+        /* ── 2xl: ultra wide ── */
+        @media (min-width: 1600px) {
+          .sp-layout-guest .sp-cards-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+          .sp-layout:not(.sp-layout-guest) .sp-cards-grid {
+            grid-template-columns: repeat(5, 1fr);
+          }
+        }
+      `}</style>
     </>
   );
 }
