@@ -19,6 +19,7 @@ import { getPayouts, getGlobalSettings } from "@/actions/finance";
 import { CopyButton } from "./CopyButton";
 import { getFeeConfig, type FeeConfig } from "@/lib/fee";
 import MobileSidebarDrawer from "@/components/MobileSidebarDrawer";
+import ChatWidget from "@/components/ChatWidget";
 
 // Types corresponding to Next.js 15/16 App Router
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -662,7 +663,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
         {/* ── Table header (desktop only) ── */}
         <div className="bk-hdr" style={{
           display: "grid",
-          gridTemplateColumns: "1.8fr 1.4fr 1.1fr 1.1fr 1fr 140px",
+          gridTemplateColumns: "1.8fr 1.4fr 1.1fr 1.1fr 1fr 180px",
           gap: "0",
           padding: "0.625rem 1.25rem",
           background: "var(--ivory)",
@@ -760,23 +761,46 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                   </span>
                 </div>
 
-                {/* Col 6: Aksi — bayar atau dash */}
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minWidth: 0, padding: "0 0 0 0.5rem" }}>
-                  {session.role === "JAMAAH" && isUnpaid
-                    ? <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} />
-                    : !showReview
-                      ? <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontStyle: "italic" }}>—</span>
-                      : null
-                  }
+                {/* Col 6: Aksi — chat, bayar, atau review */}
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", minWidth: 0, padding: "0 0 0 0.5rem", gap: "0.375rem" }}>
+                  {/* Tombol Chat Drawer — tampil untuk booking CONFIRMED/COMPLETED */}
+                  {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
+                    <ChatWidget
+                      bookingId={booking.id}
+                      currentUser={{ id: session.id, name: session.name!, photoUrl: userRecord?.photoUrl, role: session.role as "JAMAAH" | "MUTHAWIF" }}
+                      otherUser={{ id: booking.muthawif.id, name: booking.muthawif.name, photoUrl: booking.muthawif.photoUrl, role: "MUTHAWIF" }}
+                      buttonLabel="💬 Chat"
+                      variant="compact"
+                    />
+                  )}
+                  {/* Tombol Bayar — hanya untuk UNPAID & bukan CANCELLED */}
+                  {session.role === "JAMAAH" && isUnpaid && (
+                    <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} />
+                  )}
+                  {/* Dash placeholder jika tidak ada aksi tersedia */}
+                  {!isUnpaid && booking.status !== "CONFIRMED" && booking.status !== "COMPLETED" && (
+                    <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontStyle: "italic", textAlign: "center" }}>—</span>
+                  )}
                 </div>
               </div>
 
-              {/* ── Mobile-only pay button (full width, shown below grid on small screens) ── */}
-              {session.role === "JAMAAH" && isUnpaid && (
-                <div className="bk-pay-mobile" style={{ padding: "0 1rem 0.875rem" }}>
+              {/* ── Mobile action area (full width, shown below grid on small screens) ── */}
+              <div className="bk-pay-mobile" style={{ padding: "0 1rem 0.875rem" }}>
+                {/* Tombol Bayar — hanya UNPAID */}
+                {session.role === "JAMAAH" && isUnpaid && (
                   <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} fullWidth />
-                </div>
-              )}
+                )}
+                {/* Tombol Chat — CONFIRMED atau COMPLETED */}
+                {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
+                  <ChatWidget
+                    bookingId={booking.id}
+                    currentUser={{ id: session.id, name: session.name!, photoUrl: userRecord?.photoUrl, role: session.role as "JAMAAH" | "MUTHAWIF" }}
+                    otherUser={{ id: booking.muthawif.id, name: booking.muthawif.name, photoUrl: booking.muthawif.photoUrl, role: "MUTHAWIF" }}
+                    buttonLabel={`💬 Chat dengan ${booking.muthawif.name}`}
+                    variant="primary"
+                  />
+                )}
+              </div>
 
               {/* ── Review row (full-width, below data row) ── */}
               {showReview && (
@@ -805,7 +829,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
         <style>{`
           .bk-hdr { display: grid !important; }
           .bk-row:hover { background: var(--ivory) !important; }
-          .bk-pay-mobile { display: none; }
+          .bk-pay-mobile { display: none; flex-direction: column; gap: 0.5rem; }
 
           @media (max-width: 768px) {
             .bk-hdr { display: none !important; }
@@ -823,10 +847,10 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
             /* Status left, Pembayaran right */
             .bk-row > div:nth-child(4) { justify-content: flex-start; padding: 0 !important; }
             .bk-row > div:nth-child(5) { justify-content: flex-end; padding: 0 !important; }
-            /* Aksi hidden on mobile — fullwidth button shown below via bk-pay-mobile */
+            /* Aksi hidden on mobile — fullwidth buttons shown below via bk-pay-mobile */
             .bk-row > div:nth-child(6) { display: none !important; }
-            /* Show fullwidth pay button on mobile */
-            .bk-pay-mobile { display: block; }
+            /* Show fullwidth action buttons on mobile */
+            .bk-pay-mobile { display: flex !important; }
           }
         `}</style>
       </div>

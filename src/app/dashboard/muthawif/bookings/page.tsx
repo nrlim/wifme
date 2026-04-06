@@ -1,3 +1,4 @@
+import React from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -5,6 +6,8 @@ import Link from "next/link";
 import { CopyButton } from "../../CopyButton";
 import { DashboardHeader } from "../DashboardHeader";
 import { AmirHeaderPanel } from "../../AmirHeaderPanel";
+import ChatWidget from "@/components/ChatWidget";
+import MobileSidebarDrawer from "@/components/MobileSidebarDrawer";
 
 /* ─── Types ─── */
 interface PageProps {
@@ -175,7 +178,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
   const [bookings, total, allStats] = await Promise.all([
     prisma.booking.findMany({
       where,
-      include: { jamaah: { select: { name: true, email: true, photoUrl: true } } },
+      include: { jamaah: { select: { id: true, name: true, email: true, photoUrl: true } } },
       orderBy: { createdAt: "desc" },
       skip,
       take: PAGE_SIZE,
@@ -203,8 +206,8 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
   return (
     <div className="dashboard-fullscreen">
 
-      {/* ══ SIDEBAR ══ */}
-      <aside className="dashboard-sidebar-fixed" style={{ background: "linear-gradient(170deg, #0d2818 0%, #1B6B4A 70%, #27956A 100%)", borderRight: "none" }}>
+      {/* ══ SIDEBAR (mobile: compact topbar + off-canvas drawer via MobileSidebarDrawer) ══ */}
+      <MobileSidebarDrawer brandLabel="MUTHAWIF">
         {/* Brand */}
         <div style={{ padding: "1.25rem 1.375rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.625rem" }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -242,7 +245,6 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                 position: "relative",
               }}
             >
-              {/* Connector line for sub-items */}
               {t.sub && (
                 <div style={{
                   position: "absolute", left: "0.875rem", top: "50%", transform: "translateY(-50%)",
@@ -260,7 +262,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
             </Link>
           ))}
         </div>
-      </aside>
+      </MobileSidebarDrawer>
 
       {/* ══ MAIN ══ */}
       <div className="dashboard-main-area">
@@ -348,20 +350,21 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                 const isPending = booking.status === "PENDING";
 
                 return (
-                  <div
-                    key={booking.id}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1.6fr 1.4fr 1.2fr 1fr 1fr auto",
-                      gap: "0.75rem",
-                      padding: "1rem 1.25rem",
-                      borderBottom: idx < bookings.length - 1 ? "1px solid var(--border)" : "none",
-                      alignItems: "center",
-                      transition: "background 0.15s",
-                      background: isPending ? "rgba(196,151,59,0.02)" : "white",
-                    }}
-                    className="booking-row"
-                  >
+                  <React.Fragment key={booking.id}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1.6fr 1.4fr 1.2fr 1fr 1fr auto",
+                        gap: "0.75rem",
+                        padding: "1rem 1.25rem",
+                        borderBottom: "none",
+                        alignItems: "center",
+                        transition: "background 0.15s",
+                        background: isPending ? "rgba(196,151,59,0.02)" : "white",
+                        borderTop: idx > 0 ? "1px solid var(--border)" : "none",
+                      }}
+                      className="booking-row"
+                    >
                     {/* Col 1: Jamaah info */}
                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
                       {booking.jamaah.photoUrl ? (
@@ -441,8 +444,8 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                       </span>
                     </div>
 
-                    {/* Col 6: Action */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", minWidth: "max-content" }}>
+                    {/* Col 6: Action (desktop only) */}
+                    <div className="bm-action-desktop" style={{ display: "flex", flexDirection: "column", gap: "0.375rem", minWidth: "max-content" }}>
                       {isPending ? (
                         <>
                           <form action={acceptBooking.bind(null, booking.id)}>
@@ -484,11 +487,61 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                             </button>
                           </form>
                         </>
+                      ) : (booking.status === "CONFIRMED" || booking.status === "COMPLETED") ? (
+                        <ChatWidget
+                          bookingId={booking.id}
+                          currentUser={{ id: session.id, name: session.name!, photoUrl: profile?.user?.photoUrl, role: "MUTHAWIF" }}
+                          otherUser={{ id: booking.jamaahId, name: booking.jamaah.name, photoUrl: booking.jamaah.photoUrl, role: "JAMAAH" }}
+                          buttonLabel="💬 Chat Jamaah"
+                          variant="compact"
+                        />
                       ) : (
                         <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontStyle: "italic" }}>—</span>
                       )}
                     </div>
                   </div>
+
+                  {/* ── Mobile action area (full-width, below grid) ── */}
+                  <div className="bm-action-mobile" style={{ padding: "0 1.25rem 1rem" }}>
+                    {/* Terima/Tolak di mobile untuk PENDING */}
+                    {isPending && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                        <form action={acceptBooking.bind(null, booking.id)}>
+                          <button type="submit" style={{
+                            width: "100%", padding: "0.625rem", background: "var(--emerald)",
+                            color: "white", border: "none", borderRadius: 10, fontSize: "0.8125rem",
+                            fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center",
+                            justifyContent: "center", gap: "0.375rem",
+                          }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                            Terima
+                          </button>
+                        </form>
+                        <form action={rejectBooking.bind(null, booking.id)}>
+                          <button type="submit" style={{
+                            width: "100%", padding: "0.625rem", background: "white",
+                            color: "var(--error)", border: "1px solid rgba(220,38,38,0.3)",
+                            borderRadius: 10, fontSize: "0.8125rem", fontWeight: 700, cursor: "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
+                          }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            Tolak
+                          </button>
+                        </form>
+                      </div>
+                    )}
+                    {/* Chat button di mobile */}
+                    {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
+                      <ChatWidget
+                        bookingId={booking.id}
+                        currentUser={{ id: session!.id, name: session!.name!, photoUrl: profile?.user?.photoUrl, role: "MUTHAWIF" }}
+                        otherUser={{ id: booking.jamaahId, name: booking.jamaah.name, photoUrl: booking.jamaah.photoUrl, role: "JAMAAH" }}
+                        buttonLabel={`💬 Chat dengan ${booking.jamaah.name}`}
+                        variant="primary"
+                      />
+                    )}
+                  </div>
+                  </React.Fragment>
                 );
               })}
 
@@ -504,10 +557,23 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
         .booking-row:hover {
           background: var(--ivory) !important;
         }
+        .bm-action-mobile { display: none; flex-direction: column; gap: 0.5rem; }
         @media (max-width: 900px) {
-          .booking-row, .booking-row ~ div {
-            grid-template-columns: 1fr !important;
+          .booking-row {
+            grid-template-columns: 1fr 1fr !important;
           }
+          /* Sembunyikan kolom Aksi di grid mobile */
+          .bm-action-desktop { display: none !important; }
+          /* Tampilkan area aksi mobile full-width */
+          .bm-action-mobile { display: flex !important; }
+          /* Kolom 1 (jamaah) span full width */
+          .booking-row > div:nth-child(1) { grid-column: 1 / -1; }
+          /* Kolom 2,3 berdampingan */
+          .booking-row > div:nth-child(2) { }
+          .booking-row > div:nth-child(3) { text-align: right; }
+          /* Kolom 4,5 berdampingan */
+          .booking-row > div:nth-child(4) { }
+          .booking-row > div:nth-child(5) { justify-content: flex-end; display: flex; }
         }
       `}</style>
     </div>

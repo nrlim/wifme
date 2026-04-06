@@ -7,6 +7,7 @@ import Link from "next/link";
 import SearchFilterBar from "@/components/SearchFilterBar";
 import GuestSearchBanner from "@/components/GuestSearchBanner";
 import { getFeeConfig, type FeeConfig } from "@/lib/fee";
+import EmptySearchState from "@/components/EmptySearchState";
 
 interface SearchPageProps {
   searchParams: Promise<{
@@ -36,12 +37,9 @@ async function fetchMuthawifs(startDate?: string, duration?: string, location?: 
   const end = new Date(start);
   end.setDate(end.getDate() + parseInt(duration));
 
-  // Filter if specific location is selected (not ALL)
   const locationFilter =
     location && location !== "ALL"
-      ? {
-          operatingAreas: { has: location },
-        }
+      ? { operatingAreas: { has: location } }
       : {};
 
   return prisma.muthawifProfile.findMany({
@@ -69,7 +67,7 @@ async function fetchMuthawifs(startDate?: string, duration?: string, location?: 
   });
 }
 
-/* ── Skeleton Card ───────────────────────────── */
+/* ── Skeleton Card ─────────────────────────────────── */
 function SkeletonCard() {
   return (
     <div style={{ background: "white", borderRadius: 20, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
@@ -91,54 +89,18 @@ function SkeletonCard() {
   );
 }
 
-/* ── Empty State ───────────────────────────── */
-function EmptyState({ startDate, duration, location, supportedLocations }: { startDate?: string; duration?: string; location?: string; supportedLocations?: string[] }) {
-  return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: "6rem 2rem", textAlign: "center" }}>
-      <div style={{ width: 80, height: 80, borderRadius: 24, background: "var(--emerald-pale)", color: "var(--emerald)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem", boxShadow: "0 8px 32px rgba(27,107,74,0.15)" }}>
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
-      </div>
-      <h2 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "0.5rem" }}>Muthawif Tidak Ditemukan</h2>
-      <p style={{ fontSize: "1rem", color: "var(--text-muted)", marginBottom: "2rem", maxWidth: 500, margin: "0 auto 2rem" }}>
-        Maaf, kami tidak menemukan muthawif yang tersedia untuk jadwal tersebut. Silakan coba ubah tanggal, durasi, atau lokasi.
-      </p>
-      
-      <div style={{ background: "white", padding: "1.5rem", borderRadius: 20, boxShadow: "var(--shadow-sm)", textAlign: "left" }}>
-        <SearchFilterBar startDate={startDate} duration={duration} location={location} supportedLocations={supportedLocations} forceOpen />
-      </div>
-    </div>
-  );
-}
-
-/* ── Search Results (Server Component) ───────────────────────── */
-async function SearchResults({
-  startDate, duration, location, isLoggedIn, dashboardHref, searchLocation, feeConfig, supportedLocations,
+/* ── Cards Component ─────────────────────────────── */
+function MuthawifCards({
+  muthawifs, startDate, duration, isLoggedIn, dashboardHref, searchLocation, feeConfig,
 }: {
+  muthawifs: any[];
   startDate?: string;
   duration?: string;
-  location?: string;
   isLoggedIn: boolean;
   dashboardHref: string;
   searchLocation?: string;
   feeConfig: FeeConfig;
-  supportedLocations: string[];
 }) {
-  let muthawifs: Awaited<ReturnType<typeof fetchMuthawifs>> = [];
-
-  try {
-    muthawifs = await fetchMuthawifs(startDate, duration, location);
-  } catch {
-    return (
-      <div className="alert alert-error" style={{ gridColumn: "1/-1" }}>
-        Koneksi database gagal. Pastikan DATABASE_URL sudah benar.
-      </div>
-    );
-  }
-
-  if (muthawifs.length === 0) {
-    return <EmptyState startDate={startDate} duration={duration} location={location} supportedLocations={supportedLocations} />;
-  }
-
   return (
     <>
       {muthawifs.map((m: any) => (
@@ -157,7 +119,7 @@ async function SearchResults({
   );
 }
 
-/* ── Guest Sidebar Widget (Desktop only) ── */
+/* ── Guest Sidebar Widget (Desktop only) ─────────────── */
 function GuestSidebarWidget() {
   return (
     <div style={{
@@ -168,7 +130,6 @@ function GuestSidebarWidget() {
       position: "sticky",
       top: "5.5rem",
     }}>
-      {/* Icon */}
       <div style={{ fontSize: "1.75rem", marginBottom: "0.75rem" }}>🕌</div>
       <h3 style={{ fontSize: "1.0625rem", color: "rgba(255,255,255,0.7)", fontWeight: 900, marginBottom: "0.5rem", lineHeight: 1.3 }}>
         Pesan Muthawif Terpercaya
@@ -177,7 +138,6 @@ function GuestSidebarWidget() {
         Daftar gratis dan langsung bisa pesan Muthawif terverifikasi untuk ibadah Umrah Anda.
       </p>
 
-      {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.625rem", marginBottom: "1.25rem" }}>
         {[
           { num: "500+", lbl: "Muthawif" },
@@ -197,7 +157,6 @@ function GuestSidebarWidget() {
         ))}
       </div>
 
-      {/* Trust points */}
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.375rem" }}>
         {[
           "✅ Muthawif terverifikasi resmi",
@@ -233,7 +192,7 @@ function GuestSidebarWidget() {
   );
 }
 
-/* ── Main Page ───────────────────────────────────── */
+/* ── Main Page ──────────────────────────────────────── */
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
   const { startDate, duration, location } = params;
@@ -252,24 +211,33 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   const hasFilters = !!(startDate || duration || (location && location !== "ALL"));
 
+  // Fetch at page level — determines which layout to render
+  let muthawifs: Awaited<ReturnType<typeof fetchMuthawifs>> = [];
+  let fetchError = false;
+  try {
+    muthawifs = await fetchMuthawifs(startDate, duration, location);
+  } catch {
+    fetchError = true;
+  }
+
+  const isEmpty = !fetchError && muthawifs.length === 0;
+
   return (
     <>
       <Navbar user={session} />
 
       <div style={{ minHeight: "100vh", background: "var(--ivory)", paddingTop: "4.5rem" }}>
 
-        {/* ─── Guest Banner with Value Prop ─── */}
+        {/* ─── Guest Banner ─── */}
         {!isLoggedIn && <GuestSearchBanner />}
 
-        {/* ─── Page Header ─── */}
+        {/* ─── Page Header + Filter ─── */}
         <div style={{
           background: "linear-gradient(160deg, #ffffff 0%, var(--emerald-pale) 100%)",
           borderBottom: "1px solid var(--border)",
           padding: "2rem 1.5rem 1.75rem",
         }}>
           <div className="sp-container">
-
-            {/* Title + subtitle */}
             <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: "0.5rem",
@@ -305,15 +273,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 }
               </p>
             </div>
-
-            {/* Filter Bar — full width */}
             <SearchFilterBar
               startDate={startDate}
               duration={duration}
               location={location}
               supportedLocations={supportedLocations}
             />
-
           </div>
         </div>
 
@@ -321,126 +286,91 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <div style={{ padding: "2rem 1.5rem 5rem" }}>
           <div className="sp-container">
 
-            {/* Desktop: 2-col layout (sidebar + grid) for guests, full grid for logged in */}
-            <div className={`sp-layout ${!isLoggedIn ? "sp-layout-guest" : ""}`}>
-
-              {/* ─── Guest sidebar (desktop only) ─── */}
-              {!isLoggedIn && (
-                <aside className="sp-sidebar">
-                  <GuestSidebarWidget />
-                </aside>
-              )}
-
-              {/* ─── Results grid ─── */}
-              <div className="sp-results">
-
-
-                {/* Cards grid */}
-                <Suspense fallback={
-                  <div className="sp-cards-grid">
-                    {[1, 2, 3, 4, 5, 6].map((n) => <SkeletonCard key={n} />)}
-                  </div>
-                }>
-                  <div className="sp-cards-grid">
-                    <SearchResults
-                      startDate={startDate}
-                      duration={duration}
-                      location={location}
-                      isLoggedIn={isLoggedIn}
-                      dashboardHref={dashboardHref}
-                      searchLocation={location}
-                      feeConfig={feeConfig as any}
-                      supportedLocations={supportedLocations}
-                    />
-                  </div>
-                </Suspense>
-
+            {fetchError ? (
+              <div className="alert alert-error">
+                Koneksi database gagal. Pastikan DATABASE_URL sudah benar.
               </div>
-            </div>
+            ) : isEmpty ? (
+              /* Full-width empty state — no sidebar */
+              <EmptySearchState
+                startDate={startDate}
+                duration={duration}
+                location={location}
+              />
+            ) : (
+              /* Results: sidebar for guests on desktop, full grid for logged-in */
+              <div className={`sp-layout ${!isLoggedIn ? "sp-layout-guest" : ""}`}>
+
+                {!isLoggedIn && (
+                  <aside className="sp-sidebar">
+                    <GuestSidebarWidget />
+                  </aside>
+                )}
+
+                <div className="sp-results">
+                  <Suspense fallback={
+                    <div className="sp-cards-grid">
+                      {[1, 2, 3, 4, 5, 6].map((n) => <SkeletonCard key={n} />)}
+                    </div>
+                  }>
+                    <div className="sp-cards-grid">
+                      <MuthawifCards
+                        muthawifs={muthawifs}
+                        startDate={startDate}
+                        duration={duration}
+                        isLoggedIn={isLoggedIn}
+                        dashboardHref={dashboardHref}
+                        searchLocation={location}
+                        feeConfig={feeConfig as any}
+                      />
+                    </div>
+                  </Suspense>
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
 
       </div>
 
-      {/* ─── Global page CSS ─── */}
+      {/* ─── Page CSS ─── */}
       <style>{`
-        /* Container — wider than standard for search page */
         .sp-container {
           width: 95%;
           max-width: 1600px;
           margin: 0 auto;
           padding: 0;
         }
-
-        /* Two-col layout for guests on desktop */
-        .sp-layout {
-          display: block;
-        }
+        .sp-layout { display: block; }
         .sp-layout-guest {
           display: grid;
           grid-template-columns: 1fr;
           gap: 1.5rem;
         }
-
-        /* Sidebar hidden on mobile */
-        .sp-sidebar {
-          display: none;
-        }
-
-        /* Cards grid — 1 col mobile, expands on desktop */
+        .sp-sidebar { display: none; }
         .sp-cards-grid {
           display: grid;
           grid-template-columns: 1fr;
           gap: 1.125rem;
         }
-
-        /* ── sm: 2 cols ── */
         @media (min-width: 600px) {
-          .sp-cards-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
+          .sp-cards-grid { grid-template-columns: repeat(2, 1fr); }
         }
-
-        /* ── md: sidebar appears, grid adjusts ── */
         @media (min-width: 900px) {
-          .sp-layout-guest {
-            grid-template-columns: 260px 1fr;
-          }
-          .sp-sidebar {
-            display: block;
-          }
-          /* Guest: 2 col cards in the main area */
-          .sp-layout-guest .sp-cards-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          /* Logged in: 3 cols */
-          .sp-layout:not(.sp-layout-guest) .sp-cards-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
+          .sp-layout-guest { grid-template-columns: 260px 1fr; }
+          .sp-sidebar { display: block; }
+          .sp-layout-guest .sp-cards-grid { grid-template-columns: repeat(2, 1fr); }
+          .sp-layout:not(.sp-layout-guest) .sp-cards-grid { grid-template-columns: repeat(3, 1fr); }
         }
-
-        /* ── xl: even more columns ── */
         @media (min-width: 1200px) {
-          .sp-layout-guest {
-            grid-template-columns: 320px 1fr;
-          }
-          .sp-layout-guest .sp-cards-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-          .sp-layout:not(.sp-layout-guest) .sp-cards-grid {
-            grid-template-columns: repeat(4, 1fr);
-          }
+          .sp-layout-guest { grid-template-columns: 320px 1fr; }
+          .sp-layout-guest .sp-cards-grid { grid-template-columns: repeat(3, 1fr); }
+          .sp-layout:not(.sp-layout-guest) .sp-cards-grid { grid-template-columns: repeat(4, 1fr); }
         }
-
-        /* ── 2xl: ultra wide ── */
         @media (min-width: 1600px) {
-          .sp-layout-guest .sp-cards-grid {
-            grid-template-columns: repeat(4, 1fr);
-          }
-          .sp-layout:not(.sp-layout-guest) .sp-cards-grid {
-            grid-template-columns: repeat(5, 1fr);
-          }
+          .sp-layout-guest .sp-cards-grid { grid-template-columns: repeat(4, 1fr); }
+          .sp-layout:not(.sp-layout-guest) .sp-cards-grid { grid-template-columns: repeat(5, 1fr); }
         }
       `}</style>
     </>

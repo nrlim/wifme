@@ -56,9 +56,31 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protect /chat/* — any authenticated user
+  if (pathname.startsWith("/chat/")) {
+    const token = request.cookies.get("wifme_token")?.value;
+    if (!token) {
+      return NextResponse.redirect(
+        new URL(`/auth/login?redirect=${pathname}`, request.url)
+      );
+    }
+    const payload = await verifyJWT(token);
+    if (!payload) {
+      return NextResponse.redirect(
+        new URL(`/auth/login?redirect=${pathname}`, request.url)
+      );
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard", "/dashboard/muthawif/:path*", "/itinerary/:path*", "/agenda"],
+  matcher: [
+    "/dashboard",
+    "/dashboard/muthawif/:path*",
+    "/itinerary/:path*",
+    "/agenda",
+    "/chat/:path*",
+  ],
 };

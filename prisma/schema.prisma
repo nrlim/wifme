@@ -59,6 +59,7 @@ model User {
   tripPackages       TripPackage[]    @relation("MuthawifPackages")
   reviewsGiven       Review[]         @relation("ReviewsGiven")
   wallet             Wallet?
+  sentMessages       ChatMessage[]    @relation("SentMessages")
 }
 
 model MuthawifProfile {
@@ -110,11 +111,17 @@ model Booking {
   paymentRef      String?
   paymentStatus   String?       @default("UNPAID")
   paymentDeadline DateTime?
+  // ── Chat Session Control ──────────────────────────────────────
+  // When muthawif closes the chat, chatClosedAt is set.
+  // After this point, no new messages can be sent (read-only mode).
+  chatClosedAt    DateTime?     // null = active session
+  chatClosedByMuthawif Boolean  @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  review       Review?
-  transactions Transaction[]
+  review        Review?
+  transactions  Transaction[]
+  chatMessages  ChatMessage[]
 }
 
 // ── Trip Package ─────────────────────────────────────────────
@@ -256,3 +263,31 @@ model GlobalSetting {
   updatedAt         DateTime @updatedAt
 }
 
+// ── Chat (Firebase RTDB Mirror → PostgreSQL Archive) ─────────────
+// Firebase RTDB is the source-of-truth for real-time delivery.
+// This table is a permanent archive for:
+//   1. Audit trail & legal record-keeping
+//   2. Zero-downtime migration to PostgreSQL/Socket.io
+//   3. Sequence ordering guarantee via sequenceNumber
+enum MessageStatus {
+  sent
+  delivered
+}
+
+model ChatMessage {
+  id                String        @id @default(cuid())
+  bookingId         String
+  booking           Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  senderId          String
+  sender            User          @relation("SentMessages", fields: [senderId], references: [id])
+  content           String
+  firebaseMessageId String?       @unique   // Firebase push key — used for upsert/dedup
+  sentAt            DateTime                // Parsed from Firebase client timestamp
+  sequenceNumber    Int                     // Monotonically increasing per booking
+  status            MessageStatus @default(sent)
+  archivedAt        DateTime      @default(now())
+
+  @@index([bookingId, sequenceNumber]) // Primary: chat history ordered by seq
+  @@index([bookingId, sentAt])         // Secondary: time-based queries
+  @@index([senderId])
+}

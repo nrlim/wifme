@@ -17,6 +17,8 @@
     "bcryptjs": "^3.0.3",
     "cookies-next": "^6.1.1",
     "date-fns": "^4.1.0",
+    "firebase": "^12.11.0",
+    "firebase-admin": "^13.7.0",
     "framer-motion": "^12.38.0",
     "jose": "^6.2.2",
     "jsonwebtoken": "^9.0.3",
