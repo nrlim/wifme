@@ -18,6 +18,7 @@ import LanguageSettings from "@/components/wallet/LanguageSettings";
 import { getPayouts, getGlobalSettings } from "@/actions/finance";
 import { CopyButton } from "./CopyButton";
 import { getFeeConfig, type FeeConfig } from "@/lib/fee";
+import MobileSidebarDrawer from "@/components/MobileSidebarDrawer";
 
 // Types corresponding to Next.js 15/16 App Router
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -658,89 +659,137 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
     return (
       <div style={{ background: "white", borderRadius: 16, border: "1px solid var(--border)", boxShadow: "0 4px 16px rgba(0,0,0,0.04)", overflow: "hidden" }}>
-        {/* Table header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1.1fr 0.9fr 0.9fr auto", gap: "0.75rem", padding: "0.75rem 1.25rem", background: "var(--ivory)", borderBottom: "1px solid var(--border)", alignItems: "center" }} className="bk-hdr">
-          {["Muthawif", "Tanggal & Durasi", "Nominal", "Status", "Pembayaran", "Aksi"].map(h => (
-            <div key={h} style={{ fontSize: "0.625rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{h}</div>
+        {/* ── Table header (desktop only) ── */}
+        <div className="bk-hdr" style={{
+          display: "grid",
+          gridTemplateColumns: "1.8fr 1.4fr 1.1fr 1.1fr 1fr 140px",
+          gap: "0",
+          padding: "0.625rem 1.25rem",
+          background: "var(--ivory)",
+          borderBottom: "1px solid var(--border)",
+          alignItems: "center",
+        }}>
+          {[
+            { label: "Muthawif",        align: "left"   },
+            { label: "Tanggal & Durasi", align: "left"   },
+            { label: "Nominal",          align: "center" },
+            { label: "Status",           align: "center" },
+            { label: "Pembayaran",       align: "center" },
+            { label: "Aksi",             align: "center" },
+          ].map(h => (
+            <div key={h.label} style={{
+              fontSize: "0.5875rem", fontWeight: 800,
+              color: "var(--text-muted)", textTransform: "uppercase",
+              letterSpacing: "0.1em", textAlign: h.align as "left" | "center",
+              padding: "0 0.5rem",
+            }}>{h.label}</div>
           ))}
         </div>
 
         {bookings.map((booking, idx) => {
-          const color  = STATUS_COLORS[booking.status] || { bg: "#eee", color: "#666" };
-          const dot    = STATUS_DOT[booking.status] || "#ccc";
-          const pm     = PAYMENT_META[booking.paymentStatus || "UNPAID"] || PAYMENT_META["UNPAID"];
-          const location = booking.muthawif.profile?.operatingAreas?.join(", ") || "";
-          const initials = booking.muthawif.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
-          const shortId  = booking.id.includes("-") ? booking.id.split("-")[0].toUpperCase() : booking.id.slice(0, 8).toUpperCase();
+          const color   = STATUS_COLORS[booking.status] || { bg: "#eee", color: "#666" };
+          const dot     = STATUS_DOT[booking.status] || "#ccc";
+          const pm      = PAYMENT_META[booking.paymentStatus || "UNPAID"] || PAYMENT_META["UNPAID"];
+          const location  = booking.muthawif.profile?.operatingAreas?.join(", ") || "";
+          const initials  = booking.muthawif.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+          const shortId   = booking.id.includes("-") ? booking.id.split("-")[0].toUpperCase() : booking.id.slice(0, 8).toUpperCase();
           const startDate = new Date(booking.startDate);
           const duration  = Math.max(1, Math.round((new Date(booking.endDate).getTime() - startDate.getTime()) / 86400000));
           const isPaid    = booking.paymentStatus === "PAID";
           const isUnpaid  = booking.paymentStatus === "UNPAID" && booking.status !== "CANCELLED";
+          const showReview = session.role === "JAMAAH" && booking.status === "COMPLETED";
 
           return (
-            <div key={booking.id} style={{ display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1.1fr 0.9fr 0.9fr auto", gap: "0.75rem", padding: "1rem 1.25rem", borderBottom: idx < bookings.length - 1 ? "1px solid var(--border)" : "none", alignItems: "center", transition: "background 0.15s" }} className="bk-row">
+            <div key={booking.id} style={{ borderBottom: idx < bookings.length - 1 ? "1px solid var(--border)" : "none" }}>
 
-              {/* Muthawif info */}
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
-                <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, var(--emerald), #27956A)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "0.875rem", flexShrink: 0, overflow: "hidden", border: "2px solid var(--border)" }}>
-                  {booking.muthawif.photoUrl
-                    ? <img src={booking.muthawif.photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    : initials}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{booking.muthawif.name}</div>
-                  {location && <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>{location === "BOTH" ? "Makkah & Madinah" : location}</div>}
-                  <div style={{ fontSize: "0.5625rem", color: "var(--text-muted)", fontFamily: "monospace", marginTop: "0.1rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                    #{shortId}<CopyButton text={booking.id} />
+              {/* ── Data row ── */}
+              <div className="bk-row" style={{
+                display: "grid",
+                gridTemplateColumns: "1.8fr 1.4fr 1.1fr 1.1fr 1fr 140px",
+                gap: "0",
+                padding: "0.875rem 1.25rem",
+                alignItems: "center",
+                transition: "background 0.15s",
+              }}>
+
+                {/* Col 1: Muthawif */}
+                <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", minWidth: 0, padding: "0 0.5rem 0 0" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,var(--emerald),#27956A)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "0.8125rem", flexShrink: 0, overflow: "hidden", border: "2px solid var(--border)" }}>
+                    {booking.muthawif.photoUrl
+                      ? <img src={booking.muthawif.photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : initials}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{booking.muthawif.name}</div>
+                    {location && <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{location === "BOTH" ? "Makkah & Madinah" : location}</div>}
+                    <div style={{ fontSize: "0.5625rem", color: "var(--text-muted)", fontFamily: "monospace", marginTop: "0.1rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                      #{shortId}<CopyButton text={booking.id} />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Tanggal */}
-              <div>
-                <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>
-                  {startDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                {/* Col 2: Tanggal */}
+                <div style={{ minWidth: 0, padding: "0 0.5rem" }}>
+                  <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>
+                    {startDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                  </div>
+                  <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
+                    {duration} hari · s/d {new Date(booking.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                  </div>
                 </div>
-                <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.125rem" }}>
-                  {duration} hari · s/d {new Date(booking.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+
+                {/* Col 3: Nominal */}
+                <div style={{ display: "flex", justifyContent: "center", minWidth: 0, padding: "0 0.5rem" }}>
+                  <span style={{ fontWeight: 800, fontSize: "0.9rem", color: isPaid ? "var(--emerald)" : "var(--charcoal)", whiteSpace: "nowrap" }}>
+                    Rp {booking.totalFee.toLocaleString("id-ID")}
+                  </span>
+                </div>
+
+                {/* Col 4: Status */}
+                <div style={{ display: "flex", justifyContent: "center", minWidth: 0, padding: "0 0.5rem" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", padding: "0.25rem 0.625rem", borderRadius: 99, fontSize: "0.6875rem", fontWeight: 700, background: color.bg, color: color.color, whiteSpace: "nowrap" }}>
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: dot, flexShrink: 0 }} />
+                    {STATUS_LABELS[booking.status] || booking.status}
+                  </span>
+                </div>
+
+                {/* Col 5: Pembayaran */}
+                <div style={{ display: "flex", justifyContent: "center", minWidth: 0, padding: "0 0.5rem" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", padding: "0.25rem 0.625rem", borderRadius: 99, fontSize: "0.6875rem", fontWeight: 700, background: pm.bg, color: pm.color, whiteSpace: "nowrap" }}>
+                    {pm.label}
+                  </span>
+                </div>
+
+                {/* Col 6: Aksi — bayar atau dash */}
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minWidth: 0, padding: "0 0 0 0.5rem" }}>
+                  {session.role === "JAMAAH" && isUnpaid
+                    ? <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} />
+                    : !showReview
+                      ? <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontStyle: "italic" }}>—</span>
+                      : null
+                  }
                 </div>
               </div>
 
-              {/* Nominal */}
-              <div>
-                <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: isPaid ? "var(--emerald)" : "var(--charcoal)" }}>
-                  Rp {booking.totalFee.toLocaleString("id-ID")}
+              {/* ── Mobile-only pay button (full width, shown below grid on small screens) ── */}
+              {session.role === "JAMAAH" && isUnpaid && (
+                <div className="bk-pay-mobile" style={{ padding: "0 1rem 0.875rem" }}>
+                  <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} fullWidth />
                 </div>
-              </div>
+              )}
 
-              {/* Status */}
-              <div>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", padding: "0.25rem 0.625rem", borderRadius: 99, fontSize: "0.6875rem", fontWeight: 700, background: color.bg, color: color.color }}>
-                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: dot, flexShrink: 0 }} />
-                  {STATUS_LABELS[booking.status] || booking.status}
-                </span>
-              </div>
-
-              {/* Pembayaran */}
-              <div>
-                <span style={{ display: "inline-flex", alignItems: "center", padding: "0.25rem 0.625rem", borderRadius: 99, fontSize: "0.6875rem", fontWeight: 700, background: pm.bg, color: pm.color }}>
-                  {pm.label}
-                </span>
-              </div>
-
-              {/* Aksi */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", minWidth: "max-content" }}>
-                {session.role === "JAMAAH" && isUnpaid && (
-                  <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} />
-                )}
-                {session.role === "JAMAAH" && booking.status === "COMPLETED" && (
-                  <ReviewButton bookingId={booking.id} muthawifId={booking.muthawif.id} muthawifName={booking.muthawif.name} hasReview={!!booking.review} dashboardHref="/dashboard" />
-                )}
-                {!isUnpaid && booking.status !== "COMPLETED" && (
-                  <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontStyle: "italic" }}>—</span>
-                )}
-              </div>
-
+              {/* ── Review row (full-width, below data row) ── */}
+              {showReview && (
+                <div style={{ padding: "0 1.25rem 0.875rem", marginTop: "-0.25rem" }}>
+                  <ReviewButton
+                    bookingId={booking.id}
+                    muthawifId={booking.muthawif.id}
+                    muthawifName={booking.muthawif.name}
+                    hasReview={!!booking.review}
+                    dashboardHref="/dashboard"
+                  />
+                </div>
+              )}
             </div>
           );
         })}
@@ -756,9 +805,28 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
         <style>{`
           .bk-hdr { display: grid !important; }
           .bk-row:hover { background: var(--ivory) !important; }
+          .bk-pay-mobile { display: none; }
+
           @media (max-width: 768px) {
             .bk-hdr { display: none !important; }
-            .bk-row { grid-template-columns: 1fr !important; }
+            .bk-row {
+              grid-template-columns: 1fr 1fr !important;
+              grid-template-rows: auto auto auto !important;
+              gap: 0.625rem !important;
+              padding: 0.875rem !important;
+            }
+            /* Muthawif spans full width */
+            .bk-row > div:nth-child(1) { grid-column: 1 / -1; padding: 0 !important; }
+            /* Tanggal left, Nominal right */
+            .bk-row > div:nth-child(2) { justify-content: flex-start; padding: 0 !important; }
+            .bk-row > div:nth-child(3) { justify-content: flex-end; padding: 0 !important; }
+            /* Status left, Pembayaran right */
+            .bk-row > div:nth-child(4) { justify-content: flex-start; padding: 0 !important; }
+            .bk-row > div:nth-child(5) { justify-content: flex-end; padding: 0 !important; }
+            /* Aksi hidden on mobile — fullwidth button shown below via bk-pay-mobile */
+            .bk-row > div:nth-child(6) { display: none !important; }
+            /* Show fullwidth pay button on mobile */
+            .bk-pay-mobile { display: block; }
           }
         `}</style>
       </div>
@@ -774,6 +842,15 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       emoji: "📋",
       tab: "beranda",
       show: true,
+    },
+    {
+      href: "/agenda",
+      label: "Agenda Perjalanan",
+      desc: "Timeline & laporan ibadah",
+      emoji: "🗓️",
+      tab: "agenda",
+      isSubItem: true,
+      show: session.role === "JAMAAH" || session.role === "MUTHAWIF",
     },
     {
       href: "/dashboard?tab=cari",
@@ -854,10 +931,10 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
   return (
     <div className="dashboard-fullscreen">
-      {/* ══ SIDEBAR ══ */}
-      <aside className="dashboard-sidebar-fixed" style={{ background: "linear-gradient(170deg, #0d2818 0%, #1B6B4A 70%, #27956A 100%)", borderRight: "none" }}>
+      {/* ══ SIDEBAR — wrapped in mobile drawer ══ */}
+      <MobileSidebarDrawer brandLabel="MARKETPLACE MUTHAWIF">
 
-        {/* Brand header */}
+        {/* Brand header (desktop) */}
         <div style={{ padding: "1.25rem 1.375rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.625rem" }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #1B6B4A, #27956A)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
@@ -874,12 +951,10 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
           </div>
         </div>
 
-
-
         {/* Nav links */}
         <div className="sidebar-scrollable" style={{ padding: "0.875rem 0.75rem", flex: 1, overflowY: "auto" }}>
           <div style={{ fontSize: "0.5875rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", marginBottom: "0.375rem", padding: "0 0.25rem" }}>
-            NAVIGASI
+            MENU UTAMA
           </div>
           <nav style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             {sidebarNavItems.map((item, idx) => {
@@ -892,34 +967,49 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
               }
 
               const isActive = currentTab === item.tab;
+              const isSub    = !!(item as { isSubItem?: boolean }).isSubItem;
               return (
                 <Link
                   key={item.href}
                   href={item.href!}
                   className="dsb-nav-lnk"
                   style={{
-                    display: "flex", alignItems: "center", gap: "0.75rem",
-                    padding: "0.6875rem 0.75rem",
-                    borderRadius: "12px",
+                    display: "flex", alignItems: "center", gap: isSub ? "0.5rem" : "0.75rem",
+                    padding: isSub ? "0.5rem 0.625rem 0.5rem 2.25rem" : "0.6875rem 0.75rem",
+                    borderRadius: "10px",
                     textDecoration: "none",
+                    marginLeft: isSub ? "0.5rem" : "0",
                     background: isActive ? "rgba(255,255,255,0.14)" : "transparent",
                     border: isActive ? "1px solid rgba(255,255,255,0.18)" : "1px solid transparent",
                     transition: "background 0.15s, border-color 0.15s",
+                    position: "relative",
                   }}
                 >
-                  <div style={{ width: 34, height: 34, borderRadius: 9, background: isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>
+                  {isSub && (
+                    <div style={{
+                      position: "absolute", left: "0.875rem", top: "50%", transform: "translateY(-50%)",
+                      width: 8, height: 1, background: "rgba(255,255,255,0.2)",
+                    }} />
+                  )}
+                  <div style={{
+                    width: isSub ? 26 : 34, height: isSub ? 26 : 34,
+                    borderRadius: isSub ? 7 : 9,
+                    background: isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: isSub ? "0.8125rem" : "1rem", flexShrink: 0,
+                  }}>
                     {item.emoji}
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ color: isActive ? "white" : "rgba(255,255,255,0.8)", fontWeight: isActive ? 700 : 600, fontSize: "0.875rem", lineHeight: 1.2 }}>
+                    <div style={{ color: isActive ? "white" : isSub ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.8)", fontWeight: isActive ? 700 : isSub ? 500 : 600, fontSize: isSub ? "0.8125rem" : "0.875rem", lineHeight: 1.2 }}>
                       {item.label}
                     </div>
-                    <div style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.625rem", marginTop: "0.125rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.5625rem", marginTop: "0.1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {item.desc}
                     </div>
                   </div>
                   {isActive && (
-                    <div style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: "#E4B55A", flexShrink: 0 }} />
+                    <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#E4B55A", flexShrink: 0 }} />
                   )}
                 </Link>
               );
@@ -927,7 +1017,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
           </nav>
         </div>
 
-      </aside>
+      </MobileSidebarDrawer>
 
       {/* Main Content Area */}
       <div className="dashboard-main-area">

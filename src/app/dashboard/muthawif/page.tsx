@@ -135,9 +135,10 @@ export default async function MuthawifDashboardPage({
   const globalSettings = (await prisma.globalSetting.findUnique({
     where: { id: "singleton" },
   })) as any;
-  const supportedLocations: string[] = globalSettings?.supportedLocations || ["Makkah", "Madinah"];
-  const supportedServices: string[] = globalSettings?.supportedServices || ["Umrah Reguler", "Badal Umrah", "City Tour"];
-  const supportedLanguages: string[] = globalSettings?.supportedLanguages || ["Indonesia", "Arab", "Inggris"];
+  // No fallback defaults — only show options actually configured in master data
+  const supportedLocations: string[] = globalSettings?.supportedLocations ?? [];
+  const supportedServices: string[] = globalSettings?.supportedServices ?? [];
+  const supportedLanguages: string[] = globalSettings?.supportedLanguages ?? [];
 
   const bookings = await prisma.booking.findMany({
     where: { muthawifId: session.id },
@@ -154,8 +155,8 @@ export default async function MuthawifDashboardPage({
   
   if (isPending) {
     const isReview = profile?.verificationStatus === "REVIEW";
-    // Profile is done if they have basic service info (basePrice > 0 and location set)
-    const isProfileDone = !!(profile?.basePrice && profile.basePrice > 0 && profile?.location);
+    // Profile is done if they have basic service info (basePrice > 0 and operatingAreas set)
+    const isProfileDone = !!(profile?.basePrice && profile.basePrice > 0 && profile?.operatingAreas && profile.operatingAreas.length > 0);
     
     let currentStepNum = 1;
 
@@ -182,27 +183,21 @@ export default async function MuthawifDashboardPage({
           title={stepTitles[currentStepNum]} 
         />
         
-        <main style={{ padding: "2rem 1.5rem", flex: 1, display: "flex", justifyContent: "center" }}>
-          <div style={{ width: "100%", maxWidth: "760px", display: "flex", flexDirection: "column", gap: "0" }}>
-            <VerificationTimeline currentStep={currentStepNum} />
+        <main style={{ flex: 1, overflow: "auto" }}>
+          <div style={{ padding: "clamp(1rem, 3vw, 1.75rem) clamp(1rem, 4vw, 2rem)", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+            <div style={{ width: "100%" }}>
+              <VerificationTimeline currentStep={currentStepNum} />
+            </div>
             
             {/* STEP 1 — Informasi Layanan */}
             {currentStepNum === 1 && (
-              <div>
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <h3 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--charcoal)", margin: 0 }}>Lengkapi Data Layanan Anda</h3>
-                  <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", marginTop: "0.375rem" }}>Isi informasi berikut untuk melanjutkan ke tahap unggah dokumen.</p>
-                </div>
-                <div className="card">
-                  <ProfileForm
-                  profile={profile as any}
-                  userName={session.name}
-                  supportedLocations={supportedLocations}
-                  supportedServices={supportedServices}
-                  supportedLanguages={supportedLanguages}
-                />
-                </div>
-              </div>
+              <ProfileForm
+                profile={profile as any}
+                userName={session.name}
+                supportedLocations={supportedLocations}
+                supportedServices={supportedServices}
+                supportedLanguages={supportedLanguages}
+              />
             )}
 
             {/* STEP 2 — Unggah Berkas */}
@@ -296,45 +291,53 @@ export default async function MuthawifDashboardPage({
         {/* Nav links */}
         <div className="sidebar-scrollable" style={{ padding: "0.875rem 0.75rem", flex: 1, overflowY: "auto" }}>
           <div style={{ fontSize: "0.5875rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", marginBottom: "0.375rem", padding: "0 0.25rem" }}>
-            NAVIGASI
+            MENU UTAMA
           </div>
           <nav style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             {[
-              { id: "schedule", href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",         desc: "Kelola ketersediaan",    emoji: "📅" },
-              { id: "bookings", href: "/dashboard/muthawif/bookings",     label: "Pesanan",         desc: "Riwayat pesanan masuk",  emoji: "📋" },
-              { id: "profile",  href: "/dashboard/muthawif?tab=profile",  label: "Profil Layanan", desc: "Info, tarif & keahlian", emoji: "👤" },
-              { id: "wallet",   href: "/dashboard/muthawif?tab=wallet",   label: "Dompet Muthawif", desc: "Balans Escrow",         emoji: "💰" },
+              { id: "schedule", href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",           desc: "Kelola ketersediaan",    emoji: "📅",  sub: false },
+              { id: "bookings", href: "/dashboard/muthawif/bookings",     label: "Pesanan",           desc: "Riwayat pesanan masuk",  emoji: "📋",  sub: false },
+              { id: "agenda",   href: "/agenda",                          label: "Agenda Perjalanan", desc: "Timeline & laporan",     emoji: "🗓️", sub: true  },
+              { id: "profile",  href: "/dashboard/muthawif?tab=profile",  label: "Profil Layanan",   desc: "Info, tarif & keahlian", emoji: "👤",  sub: false },
+              { id: "wallet",   href: "/dashboard/muthawif?tab=wallet",   label: "Dompet Muthawif",  desc: "Balans Escrow",          emoji: "💰",  sub: false },
             ].map((t) => {
               const isActive = t.id === "bookings" ? false : currentTab === t.id;
-              const href = t.href || `/dashboard/muthawif?tab=${t.id}`;
               return (
                 <Link
                   key={t.id}
-                  href={href}
+                  href={t.href}
                   className="dsb-nav-lnk"
                   style={{
-                    display: "flex", alignItems: "center", gap: "0.75rem",
-                    padding: "0.6875rem 0.75rem",
-                    borderRadius: "12px",
-                    textDecoration: "none",
+                    display: "flex", alignItems: "center", gap: t.sub ? "0.5rem" : "0.75rem",
+                    padding: t.sub ? "0.5rem 0.625rem 0.5rem 2.25rem" : "0.6875rem 0.75rem",
+                    borderRadius: t.sub ? 10 : 12, textDecoration: "none", marginBottom: "0.25rem",
+                    marginLeft: t.sub ? "0.5rem" : "0",
                     background: isActive ? "rgba(255,255,255,0.14)" : "transparent",
                     border: isActive ? "1px solid rgba(255,255,255,0.18)" : "1px solid transparent",
                     transition: "background 0.15s, border-color 0.15s",
+                    position: "relative",
                   }}
                 >
-                  <div style={{ width: 34, height: 34, borderRadius: 9, background: isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>
+                  {/* Connector line for sub-items */}
+                  {t.sub && (
+                    <div style={{
+                      position: "absolute", left: "0.875rem", top: "50%", transform: "translateY(-50%)",
+                      width: 8, height: 1, background: "rgba(255,255,255,0.2)",
+                    }} />
+                  )}
+                  <div style={{ width: t.sub ? 26 : 34, height: t.sub ? 26 : 34, borderRadius: t.sub ? 7 : 9, background: isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: t.sub ? "0.8125rem" : "1rem", flexShrink: 0 }}>
                     {t.emoji}
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ color: isActive ? "white" : "rgba(255,255,255,0.8)", fontWeight: isActive ? 700 : 600, fontSize: "0.875rem", lineHeight: 1.2 }}>
+                    <div style={{ color: isActive ? "white" : t.sub ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.8)", fontWeight: isActive ? 700 : t.sub ? 500 : 600, fontSize: t.sub ? "0.8125rem" : "0.875rem", lineHeight: 1.2 }}>
                       {t.label}
                     </div>
-                    <div style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.625rem", marginTop: "0.125rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.5625rem", marginTop: "0.1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {t.desc}
                     </div>
                   </div>
                   {isActive && (
-                    <div style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: "#E4B55A", flexShrink: 0 }} />
+                    <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#E4B55A", flexShrink: 0 }} />
                   )}
                 </Link>
               );

@@ -76,9 +76,9 @@ export default function MuthawifCard({
 
   const handleBook = async () => {
     if (!isLoggedIn) {
-      // Tidak ada session: redirect ke login, dengan return URL ke /search (public)
-      const currentSearch = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/search';
-      router.push(`/auth/login?redirect=${encodeURIComponent(currentSearch)}`);
+      // Belum login: simpan URL profil muthawif sebagai tujuan redirect setelah registrasi
+      const muthawifUrl = `/muthawif/${muthawif.user.id}${startDate ? `?startDate=${startDate}&duration=${duration}&location=${searchLocation}` : ''}`;
+      router.push(`/auth/register?redirect=${encodeURIComponent(muthawifUrl)}`);
       return;
     }
     if (!startDate || !duration) {
@@ -97,7 +97,9 @@ export default function MuthawifCard({
       });
 
       if (res.ok) {
-        setBooked(true);
+        const data = await res.json();
+        // Redirect ke halaman konfirmasi pesanan dengan tombol bayar
+        router.push(`/booking/${data.booking.id}`);
       } else {
         const data = await res.json();
         setError(data.error || "Gagal melakukan pemesanan.");
@@ -315,25 +317,15 @@ export default function MuthawifCard({
         )}
 
         {booked ? (
-          <div style={{
-            background: "var(--emerald-pale)",
-            border: "1px solid rgba(27,107,74,0.2)",
-            borderRadius: 12,
-            padding: "0.875rem",
-            textAlign: "center",
-          }}>
+          <div style={{ background: "var(--emerald-pale)", border: "1px solid rgba(27,107,74,0.2)", borderRadius: 12, padding: "0.875rem", textAlign: "center" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem", marginBottom: "0.375rem" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               <span style={{ fontWeight: 800, fontSize: "0.875rem", color: "var(--emerald)" }}>Pesanan Berhasil Dikirim!</span>
             </div>
-            <Link href={dashboardHref} style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--emerald)", textDecoration: "underline" }}>
-              Cek Status di Dashboard →
-            </Link>
+            <Link href={dashboardHref} style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--emerald)", textDecoration: "underline" }}>Cek Status di Dashboard →</Link>
           </div>
-        ) : isLoggedIn ? (
-          /* Logged-in CTA */
+        ) : (
+          /* CTA button — for both logged in and guest users */
           <button
             onClick={handleBook}
             disabled={booking}
@@ -342,7 +334,11 @@ export default function MuthawifCard({
               width: "100%",
               padding: "0.8125rem",
               borderRadius: 12,
-              background: booking ? "var(--emerald-light)" : "var(--emerald)",
+              background: booking
+                ? "var(--emerald-light)"
+                : isLoggedIn
+                ? "var(--emerald)"
+                : "linear-gradient(135deg, #C4973B, #E4B55A)",
               color: "white",
               border: "none",
               fontFamily: "inherit",
@@ -353,24 +349,31 @@ export default function MuthawifCard({
               alignItems: "center",
               justifyContent: "center",
               gap: "0.5rem",
-              boxShadow: "0 4px 16px rgba(27,107,74,0.2)",
+              boxShadow: isLoggedIn
+                ? "0 4px 16px rgba(27,107,74,0.2)"
+                : "0 4px 16px rgba(196,151,59,0.25)",
               transition: "background 0.2s, transform 0.15s",
             }}
-            onMouseEnter={(e) => !booking && ((e.currentTarget as HTMLButtonElement).style.background = "var(--emerald-light)")}
-            onMouseLeave={(e) => !booking && ((e.currentTarget as HTMLButtonElement).style.background = "var(--emerald)")}
           >
             {booking ? (
               <span className="spinner" style={{ width: 18, height: 18, borderColor: "rgba(255,255,255,0.35)", borderTopColor: "white" }} />
-            ) : (
+            ) : isLoggedIn ? (
               <>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
                 </svg>
                 Pesan Sekarang
               </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                Daftar &amp; Pesan
+              </>
             )}
           </button>
-        ) : null}
+        )}
 
       </div>
     </div>

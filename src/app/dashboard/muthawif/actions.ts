@@ -311,8 +311,9 @@ export async function addDocumentUrl(
   if (!rawUrl) return { success: false, message: "URL dokumen tidak valid" };
   
   // Validate: must be a valid https URL and belong to our Supabase storage
+  const urlPart = rawUrl.includes("::") ? rawUrl.split("::")[1] : rawUrl;
   const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '');
-  if (!rawUrl.startsWith('https://') || (supabaseHost && !rawUrl.includes(supabaseHost))) {
+  if (!urlPart || !urlPart.startsWith('https://') || (supabaseHost && !urlPart.includes(supabaseHost))) {
     return { success: false, message: "URL dokumen tidak valid" };
   }
   const url = rawUrl.trim().slice(0, 2048);

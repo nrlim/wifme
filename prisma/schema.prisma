@@ -56,6 +56,7 @@ model User {
   profile            MuthawifProfile?
   bookingsAsJamaah   Booking[]        @relation("JamaahBookings")
   bookingsAsMuthawif Booking[]        @relation("MuthawifBookings")
+  tripPackages       TripPackage[]    @relation("MuthawifPackages")
   reviewsGiven       Review[]         @relation("ReviewsGiven")
   wallet             Wallet?
 }
@@ -103,17 +104,72 @@ model Booking {
   startDate       DateTime
   endDate         DateTime
   status          BookingStatus @default(PENDING)
-  totalFee        Float                           // Jamaah pays: baseFee + serviceFee
-  baseFee         Float         @default(0)       // Muthawif receives: basePrice × duration
+  totalFee        Float
+  baseFee         Float         @default(0)
   notes           String?
   paymentRef      String?
   paymentStatus   String?       @default("UNPAID")
-  paymentDeadline DateTime?     // auto-cancel if UNPAID past this
+  paymentDeadline DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  review          Review?
-  transactions    Transaction[]
+  review       Review?
+  transactions Transaction[]
+}
+
+// ── Trip Package ─────────────────────────────────────────────
+// Muthawif creates one package per date-range session.
+// All Jamaah whose booking overlaps this range can view it.
+model TripPackage {
+  id          String   @id @default(cuid())
+  muthawifId  String
+  muthawif    User     @relation("MuthawifPackages", fields: [muthawifId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  startDate   DateTime @db.Date
+  endDate     DateTime @db.Date
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  itineraries Itinerary[]
+
+  @@index([muthawifId])
+  @@index([startDate, endDate])
+}
+
+enum ItineraryStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+}
+
+model Itinerary {
+  id           String          @id @default(cuid())
+  packageId    String
+  package      TripPackage     @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  startTime    DateTime
+  endTime      DateTime
+  locationName String?
+  status       ItineraryStatus @default(PLANNED)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  logs ServiceLog[]
+
+  @@index([packageId])
+}
+
+model ServiceLog {
+  id           String     @id @default(cuid())
+  itineraryId  String
+  itinerary    Itinerary  @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  photoUrl     String?
+  notes        String?
+  checkInTime  DateTime   @default(now())
+  createdAt    DateTime   @default(now())
 }
 
 model Review {

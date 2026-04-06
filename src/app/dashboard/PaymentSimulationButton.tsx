@@ -7,9 +7,10 @@ import { useUI } from "@/components/UIProvider";
 interface Props {
   bookingId: string;
   amount: number;
+  fullWidth?: boolean;
 }
 
-export default function PaymentSimulationButton({ bookingId, amount }: Props) {
+export default function PaymentSimulationButton({ bookingId, amount, fullWidth = false }: Props) {
   const router = useRouter();
   const { toast } = useUI();
   const [open, setOpen] = useState(false);
@@ -44,9 +45,23 @@ export default function PaymentSimulationButton({ bookingId, amount }: Props) {
       {/* Trigger button */}
       <button
         onClick={() => setOpen(true)}
-        style={{
-          display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-          padding: "0.5rem 0.875rem",
+        style={fullWidth ? {
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+          width: "100%",
+          padding: "0.75rem 1rem",
+          fontSize: "0.875rem",
+          fontWeight: 800,
+          fontFamily: "inherit",
+          borderRadius: 12,
+          background: "linear-gradient(135deg, var(--emerald), #27956A)",
+          border: "none",
+          color: "white",
+          cursor: "pointer",
+          boxShadow: "0 4px 16px rgba(27,107,74,0.25)",
+          transition: "all 0.15s",
+        } : {
+          display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.3rem",
+          padding: "0.5rem 0.5rem",
           fontSize: "0.75rem",
           fontWeight: 700,
           fontFamily: "inherit",
@@ -55,7 +70,9 @@ export default function PaymentSimulationButton({ bookingId, amount }: Props) {
           border: "none",
           color: "white",
           cursor: "pointer",
-          whiteSpace: "nowrap",
+          whiteSpace: "normal",
+          lineHeight: 1.2,
+          textAlign: "center",
           boxShadow: "0 2px 8px rgba(27,107,74,0.25)",
           transition: "all 0.15s",
         }}
@@ -65,7 +82,7 @@ export default function PaymentSimulationButton({ bookingId, amount }: Props) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
         </svg>
-        Bayar Sekarang
+        {fullWidth ? `Bayar Sekarang — Rp ${amount.toLocaleString("id-ID")}` : "Bayar Sekarang"}
       </button>
 
       {/* ── Payment Modal ── */}

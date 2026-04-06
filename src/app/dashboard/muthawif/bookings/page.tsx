@@ -223,29 +223,40 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
         {/* Nav */}
         <div style={{ padding: "0.875rem 0.75rem", flex: 1, overflowY: "auto" }}>
           {[
-            { href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",         desc: "Kelola ketersediaan",   emoji: "📅" },
-            { href: "/dashboard/muthawif/bookings",     label: "Pesanan",         desc: "Riwayat pesanan masuk", emoji: "📋", active: true },
-            { href: "/dashboard/muthawif?tab=profile",  label: "Profil Layanan", desc: "Info, tarif & keahlian", emoji: "👤" },
-            { href: "/dashboard/muthawif?tab=wallet",   label: "Dompet",          desc: "Balans Escrow",         emoji: "💰" },
+            { href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",            desc: "Kelola ketersediaan",    emoji: "📅",  sub: false },
+            { href: "/dashboard/muthawif/bookings",     label: "Pesanan",            desc: "Riwayat pesanan masuk",  emoji: "📋",  sub: false, active: true },
+            { href: "/agenda",                          label: "Agenda Perjalanan",  desc: "Timeline & laporan",     emoji: "🗓️", sub: true  },
+            { href: "/dashboard/muthawif?tab=profile",  label: "Profil Layanan",    desc: "Info, tarif & keahlian", emoji: "👤",  sub: false },
+            { href: "/dashboard/muthawif?tab=wallet",   label: "Dompet",             desc: "Balans Escrow",          emoji: "💰",  sub: false },
           ].map((t) => (
             <Link
               key={t.href}
               href={t.href}
               style={{
-                display: "flex", alignItems: "center", gap: "0.75rem",
-                padding: "0.6875rem 0.75rem", borderRadius: 12, textDecoration: "none", marginBottom: "0.25rem",
+                display: "flex", alignItems: "center", gap: t.sub ? "0.5rem" : "0.75rem",
+                padding: t.sub ? "0.5rem 0.625rem 0.5rem 2.25rem" : "0.6875rem 0.75rem",
+                borderRadius: t.sub ? 10 : 12, textDecoration: "none", marginBottom: "0.25rem",
+                marginLeft: t.sub ? "0.5rem" : "0",
                 background: t.active ? "rgba(255,255,255,0.14)" : "transparent",
                 border: t.active ? "1px solid rgba(255,255,255,0.18)" : "1px solid transparent",
+                position: "relative",
               }}
             >
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: t.active ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>
+              {/* Connector line for sub-items */}
+              {t.sub && (
+                <div style={{
+                  position: "absolute", left: "0.875rem", top: "50%", transform: "translateY(-50%)",
+                  width: 8, height: 1, background: "rgba(255,255,255,0.2)",
+                }} />
+              )}
+              <div style={{ width: t.sub ? 26 : 34, height: t.sub ? 26 : 34, borderRadius: t.sub ? 7 : 9, background: t.active ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: t.sub ? "0.8125rem" : "1rem", flexShrink: 0 }}>
                 {t.emoji}
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ color: t.active ? "white" : "rgba(255,255,255,0.8)", fontWeight: t.active ? 700 : 600, fontSize: "0.875rem", lineHeight: 1.2 }}>{t.label}</div>
-                <div style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.625rem", marginTop: "0.125rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.desc}</div>
+                <div style={{ color: t.active ? "white" : t.sub ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.8)", fontWeight: t.active ? 700 : t.sub ? 500 : 600, fontSize: t.sub ? "0.8125rem" : "0.875rem", lineHeight: 1.2 }}>{t.label}</div>
+                <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.5625rem", marginTop: "0.1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.desc}</div>
               </div>
-              {t.active && <div style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: "#E4B55A", flexShrink: 0 }} />}
+              {t.active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#E4B55A", flexShrink: 0 }} />}
             </Link>
           ))}
         </div>

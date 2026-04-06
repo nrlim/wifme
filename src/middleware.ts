@@ -40,9 +40,25 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protect /itinerary/* and /agenda — any authenticated user
+  if (pathname.startsWith("/itinerary/") || pathname === "/agenda") {
+    const token = request.cookies.get("wifme_token")?.value;
+    if (!token) {
+      return NextResponse.redirect(
+        new URL(`/auth/login?redirect=${pathname}`, request.url)
+      );
+    }
+    const payload = await verifyJWT(token);
+    if (!payload) {
+      return NextResponse.redirect(
+        new URL(`/auth/login?redirect=${pathname}`, request.url)
+      );
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard", "/dashboard/muthawif/:path*"],
+  matcher: ["/dashboard", "/dashboard/muthawif/:path*", "/itinerary/:path*", "/agenda"],
 };
