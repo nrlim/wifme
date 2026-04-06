@@ -119,34 +119,38 @@ export default async function MuthawifDashboardPage({
   let currentTab = typeof tab === "string" ? tab : "earnings";
   const urlStep = typeof step === "string" ? parseInt(step, 10) : null;
 
-  // Fetch all necessary data
-  const profile = (await prisma.muthawifProfile.findUnique({
-    where: { userId: session.id },
-    include: {
-      user: { select: { photoUrl: true } },
-      availability: {
-        where: {
-          date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) }, // Today onwards
+  // Fetch all necessary data in parallel to reduce connection pool pressure
+  const [profileRaw, globalSettingsRaw, bookings] = await Promise.all([
+    prisma.muthawifProfile.findUnique({
+      where: { userId: session.id },
+      include: {
+        user: { select: { photoUrl: true } },
+        availability: {
+          where: {
+            date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+          },
+          select: { date: true, status: true, timeSlots: true },
         },
-        select: { date: true, status: true, timeSlots: true },
       },
-    },
-  })) as any;
+    }),
+    prisma.globalSetting.findUnique({ where: { id: "singleton" } }),
+    prisma.booking.findMany({
+      where: { muthawifId: session.id },
+      include: { jamaah: { select: { name: true, email: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const profile = profileRaw as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const globalSettings = globalSettingsRaw as any;
 
-  const globalSettings = (await prisma.globalSetting.findUnique({
-    where: { id: "singleton" },
-  })) as any;
   // No fallback defaults — only show options actually configured in master data
   const supportedLocations: string[] = globalSettings?.supportedLocations ?? [];
   const supportedServices: string[] = globalSettings?.supportedServices ?? [];
   const supportedLanguages: string[] = globalSettings?.supportedLanguages ?? [];
 
-  const bookings = await prisma.booking.findMany({
-    where: { muthawifId: session.id },
-    include: { jamaah: { select: { name: true, email: true } } },
-    orderBy: { createdAt: "desc" },
-  });
-
+  // Wallet only loaded when on wallet tab (lazy — saves connections)
   let walletData = null;
   if (currentTab === "wallet") {
     walletData = await getWallet(session.id);

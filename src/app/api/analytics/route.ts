@@ -32,8 +32,7 @@ function getPeriodRange(period: string): { start: Date; end: Date } {
 
 // Build monthly chart data from bookings
 function buildMonthlyChartData(
-  bookings: { createdAt: Date; totalFee: number; baseFee: number; status: string }[],
-  feeRate: number
+  bookings: { createdAt: Date; totalFee: number; baseFee: number; status: string }[]
 ) {
   const months: Record<string, { month: string; gross: number; net: number; count: number }> = {};
 
@@ -43,10 +42,9 @@ function buildMonthlyChartData(
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const label = d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
     if (!months[key]) months[key] = { month: label, gross: 0, net: 0, count: 0 };
-    const gross = b.baseFee || b.totalFee;
-    const platformFee = gross * (feeRate / 100);
-    months[key].gross += gross;
-    months[key].net += gross - platformFee;
+    // gross = totalFee (full price jamaah paid), net = baseFee (muthawif's share after platform fee)
+    months[key].gross += b.totalFee;
+    months[key].net += b.baseFee || b.totalFee;
     months[key].count += 1;
   }
 
@@ -92,12 +90,14 @@ async function getMuthawifAnalytics(userId: string, period: string) {
     ]);
 
   const completedInPeriod = periodBookings.filter((b) => b.status === "COMPLETED");
-  const grossEarnings = completedInPeriod.reduce(
-    (s, b) => s + (b.baseFee || b.totalFee),
-    0
-  );
-  const platformFeeTotal = grossEarnings * (feeRate / 100);
-  const netIncome = grossEarnings - platformFeeTotal;
+
+  // grossEarnings = totalFee (harga penuh yang dibayar jamaah)
+  // netIncome = baseFee (bagian muthawif setelah platform fee dipotong saat booking)
+  // CATATAN: Pemotongan fee terjadi SATU KALI saat booking dikonfirmasi (baseFee dihitung waktu itu).
+  // Jangan potong fee lagi di sini — itu menyebabkan double-deduction.
+  const grossEarnings = completedInPeriod.reduce((s, b) => s + b.totalFee, 0);
+  const netIncome = completedInPeriod.reduce((s, b) => s + (b.baseFee || b.totalFee), 0);
+  const platformFeeTotal = grossEarnings - netIncome;
 
   const pendingBookings = allBookings.filter(
     (b) => b.status === "PENDING" || b.status === "CONFIRMED"
@@ -105,7 +105,7 @@ async function getMuthawifAnalytics(userId: string, period: string) {
   const pendingBalance = wallet?.escrowBalance ?? 0;
   const availableBalance = wallet?.availableBalance ?? 0;
 
-  const chartData = buildMonthlyChartData(allBookings, feeRate);
+  const chartData = buildMonthlyChartData(allBookings);
 
   // Weekly trend (last 8 weeks)
   const weeklyTrend: { week: string; amount: number }[] = [];
@@ -215,11 +215,10 @@ async function getAmirAnalytics(period: string) {
   const chartData = buildMonthlyChartData(
     allBookings.map((b) => ({
       ...b,
-      // for AMIR, gross = totalFee (full amount)
-      baseFee: 0,
+      // for AMIR chart: gross = totalFee, net = baseFee (handled inside buildMonthlyChartData)
+      baseFee: b.baseFee || 0,
       totalFee: b.totalFee,
-    })),
-    0
+    }))
   ).map((d) => ({ ...d, gross: d.gross }));
 
   // Build proper monthly chart for AMIR showing GMV
