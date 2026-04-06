@@ -20,6 +20,7 @@ import { CopyButton } from "./CopyButton";
 import { getFeeConfig, type FeeConfig } from "@/lib/fee";
 import MobileSidebarDrawer from "@/components/MobileSidebarDrawer";
 import ChatWidget from "@/components/ChatWidget";
+import EarningsDashboard from "@/components/earnings/EarningsDashboard";
 
 // Types corresponding to Next.js 15/16 App Router
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -39,6 +40,7 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
 };
 
 const TAB_TITLES: Record<string, string> = {
+  analytics: "Dashboard Analitik",
   beranda: "Riwayat Pesanan",
   cari: "Cari Muthawif",
   pembayaran: "Pembayaran",
@@ -124,7 +126,8 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
   if (!session) redirect("/auth/login?redirect=/dashboard");
 
   const searchParams = await props.searchParams;
-  const currentTab = typeof searchParams?.tab === "string" ? searchParams.tab : "beranda";
+  const defaultTab = session.role === "AMIR" ? "analytics" : "beranda";
+  const currentTab = typeof searchParams?.tab === "string" ? searchParams.tab : defaultTab;
   const mSearch   = typeof searchParams?.q      === "string" ? searchParams.q      : "";
   const mStatus   = typeof searchParams?.status === "string" ? searchParams.status : "ALL";
   const mPage     = typeof searchParams?.page   === "string" ? Math.max(1, parseInt(searchParams.page, 10) || 1) : 1;
@@ -860,6 +863,14 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
   const sidebarNavItems = [
     {
+      href: "/dashboard?tab=analytics",
+      label: "Dashboard",
+      desc: "Analytics & finansial",
+      emoji: "📊",
+      tab: "analytics",
+      show: session.role === "AMIR",
+    },
+    {
       href: "/dashboard?tab=beranda",
       label: "Riwayat Pesanan",
       desc: "Semua pesanan umrah",
@@ -1174,6 +1185,10 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
             {currentTab === "master_bahasa" && session.role === "AMIR" && (
               <LanguageSettings initialSettings={globalSettings} currentPage={mPage} />
+            )}
+
+            {currentTab === "analytics" && session.role === "AMIR" && (
+              <EarningsDashboard initialRole="AMIR" />
             )}
           </div>
         </main>

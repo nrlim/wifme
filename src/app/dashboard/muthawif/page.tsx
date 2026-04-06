@@ -10,6 +10,7 @@ import { AmirHeaderPanel } from "../AmirHeaderPanel";
 import { CopyButton } from "../CopyButton";
 import MuthawifWallet from "@/components/wallet/MuthawifWallet";
 import { getWallet } from "@/actions/finance";
+import EarningsDashboard from "@/components/earnings/EarningsDashboard";
 function VerificationTimeline({ currentStep }: { currentStep: number }) {
   const steps = [
     { num: 1, label: "Info Layanan", desc: "Wilayah, tarif & keahlian" },
@@ -115,7 +116,7 @@ export default async function MuthawifDashboardPage({
   }
 
   const { tab, step } = await searchParams;
-  let currentTab = typeof tab === "string" ? tab : "schedule";
+  let currentTab = typeof tab === "string" ? tab : "earnings";
   const urlStep = typeof step === "string" ? parseInt(step, 10) : null;
 
   // Fetch all necessary data
@@ -260,6 +261,7 @@ export default async function MuthawifDashboardPage({
   };
 
   const TAB_TITLES_MAP: Record<string, string> = {
+    earnings: "Dashboard Pendapatan",
     schedule: "Kelola Jadwal Kesediaan",
     bookings: "Riwayat Pesanan Saya",
     profile: "Pengaturan Profil & Layanan",
@@ -295,11 +297,12 @@ export default async function MuthawifDashboardPage({
           </div>
           <nav style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             {[
-              { id: "schedule", href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",           desc: "Kelola ketersediaan",    emoji: "📅",  sub: false },
-              { id: "bookings", href: "/dashboard/muthawif/bookings",     label: "Pesanan",           desc: "Riwayat pesanan masuk",  emoji: "📋",  sub: false },
-              { id: "agenda",   href: "/agenda",                          label: "Agenda Perjalanan", desc: "Timeline & laporan",     emoji: "🗓️", sub: true  },
-              { id: "profile",  href: "/dashboard/muthawif?tab=profile",  label: "Profil Layanan",   desc: "Info, tarif & keahlian", emoji: "👤",  sub: false },
-              { id: "wallet",   href: "/dashboard/muthawif?tab=wallet",   label: "Dompet Muthawif",  desc: "Balans Escrow",          emoji: "💰",  sub: false },
+              { id: "earnings", href: "/dashboard/muthawif?tab=earnings",  label: "Dashboard",           desc: "Pendapatan & analytics",  emoji: "📊",  sub: false },
+              { id: "schedule", href: "/dashboard/muthawif?tab=schedule",  label: "Jadwal",              desc: "Kelola ketersediaan",    emoji: "📅",  sub: false },
+              { id: "bookings", href: "/dashboard/muthawif/bookings",      label: "Pesanan",              desc: "Riwayat pesanan masuk",  emoji: "📋",  sub: false },
+              { id: "agenda",   href: "/agenda",                           label: "Agenda Perjalanan",   desc: "Timeline & laporan",     emoji: "🗓️", sub: true  },
+              { id: "profile",  href: "/dashboard/muthawif?tab=profile",   label: "Profil Layanan",      desc: "Info, tarif & keahlian", emoji: "👤",  sub: false },
+              { id: "wallet",   href: "/dashboard/muthawif?tab=wallet",    label: "Dompet Muthawif",     desc: "Balans & penarikan",     emoji: "💰",  sub: false },
             ].map((t) => {
               const isActive = t.id === "bookings" ? false : currentTab === t.id;
               return (
@@ -495,6 +498,10 @@ export default async function MuthawifDashboardPage({
 
         {currentTab === "wallet" && walletData && (
           <MuthawifWallet wallet={walletData} userId={session.id} />
+        )}
+
+        {currentTab === "earnings" && (
+          <EarningsDashboard initialRole="MUTHAWIF" />
         )}
         </main>
       </div>
