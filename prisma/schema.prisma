@@ -107,6 +107,9 @@ model Booking {
   status          BookingStatus @default(PENDING)
   totalFee        Float
   baseFee         Float         @default(0)
+  discountAmount  Float         @default(0)  // Jumlah diskon yang diterapkan
+  promotionId     String?                    // Kode promo yang dipakai (opsional)
+  promotion       Promotion?    @relation("BookingPromotion", fields: [promotionId], references: [id])
   notes           String?
   paymentRef      String?
   paymentStatus   String?       @default("UNPAID")
@@ -249,6 +252,39 @@ model Payout {
 enum FeeType {
   PERCENT
   FLAT
+}
+
+// ── Promotion / Discount Engine ──────────────────────────────
+enum PromotionType {
+  FIXED_AMOUNT  // Potongan nominal langsung (IDR)
+  PERCENTAGE    // Potongan persentase dari totalFee
+}
+
+enum PromotionStatus {
+  ACTIVE
+  EXPIRED
+  DISABLED
+}
+
+model Promotion {
+  id               String          @id @default(cuid())
+  code             String          @unique
+  description      String?
+  type             PromotionType
+  value            Float           // Nominal (IDR) atau persentase tergantung `type`
+  minBookingAmount Float           @default(0)  // Total minimum booking agar promo berlaku
+  maxUsage         Int?            // null = unlimited
+  usedCount        Int             @default(0)
+  expiryDate       DateTime?       // null = tidak ada batas waktu
+  status           PromotionStatus @default(ACTIVE)
+  discountTarget   String          @default("PLATFORM") // "PLATFORM" | "MUTHAWIF"
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  bookings         Booking[]       @relation("BookingPromotion")
+
+  @@index([code])
+  @@index([status])
 }
 
 model GlobalSetting {

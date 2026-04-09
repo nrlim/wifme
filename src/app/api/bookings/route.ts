@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { applyPromoCodeTx } from "@/actions/promotions";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { muthawifId, startDate, duration, notes } = body;
+    const { muthawifId, startDate, duration, notes, promoCode } = body;
 
     // Input Validation
     if (!muthawifId || typeof muthawifId !== 'string' || !startDate || !duration) {
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Tanggal pemesanan tidak boleh di masa lalu." }, { status: 400 });
     }
     const sanitizedNotes = notes ? String(notes).trim().slice(0, 1000) : null;
+    const sanitizedPromoCode = promoCode ? String(promoCode).trim().toUpperCase() : null;
 
     const end = new Date(start);
     end.setDate(end.getDate() + durationInt);
@@ -72,11 +74,28 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const totalFee = baseFee + serviceFee;
+      let totalFee = baseFee + serviceFee;
+      let discountAmount = 0;
+      let promotionId: string | null = null;
+
+      // 3. Apply Promo Code (if provided)
+      if (sanitizedPromoCode) {
+        try {
+          const promoResult = await applyPromoCodeTx(tx, sanitizedPromoCode, totalFee, session.id);
+          discountAmount = promoResult.discountAmount;
+          totalFee = promoResult.finalAmount;
+          promotionId = promoResult.promotionId;
+        } catch (promoErr: unknown) {
+          const promoMsg = promoErr instanceof Error ? promoErr.message : "PROMO_ERROR";
+          // Surface promo errors to the client cleanly
+          throw new Error(`PROMO:${promoMsg}`);
+        }
+      }
+
       const hours = parseInt(process.env.AUTO_CANCEL_HOURS || "24");
       const paymentDeadline = new Date(Date.now() + hours * 60 * 60 * 1000);
 
-      // 3. Create Booking
+      // 4. Create Booking
       return tx.booking.create({
         data: {
           jamaahId: session.id,
@@ -85,6 +104,8 @@ export async function POST(req: NextRequest) {
           endDate: end,
           totalFee,
           baseFee,
+          discountAmount,
+          ...(promotionId && { promotionId }),
           notes: sanitizedNotes,
           status: "PENDING",
           paymentStatus: "UNPAID",
@@ -101,9 +122,25 @@ export async function POST(req: NextRequest) {
         { status: 409 }
       );
     }
+    // Promo-specific errors
+    if (error.message?.startsWith("PROMO:")) {
+      const promoKey = error.message.replace("PROMO:", "");
+      const promoMessages: Record<string, string> = {
+        PROMO_INVALID: "Kode promo tidak valid atau sudah tidak aktif.",
+        PROMO_EXPIRED: "Kode promo sudah kadaluarsa.",
+        PROMO_QUOTA: "Kuota penggunaan kode promo sudah habis.",
+        PROMO_MIN_AMOUNT: "Nominal pesanan tidak memenuhi syarat minimum promo.",
+        PROMO_USED: "Anda sudah pernah menggunakan kode promo ini.",
+      };
+      return NextResponse.json(
+        { error: promoMessages[promoKey] ?? "Kode promo tidak dapat digunakan." },
+        { status: 422 }
+      );
+    }
     return NextResponse.json({ error: "Terjadi kesalahan server." }, { status: 500 });
   }
 }
+
 
 export async function GET() {
   try {

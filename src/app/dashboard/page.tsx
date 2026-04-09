@@ -21,6 +21,8 @@ import { getFeeConfig, type FeeConfig } from "@/lib/fee";
 import MobileSidebarDrawer from "@/components/MobileSidebarDrawer";
 import ChatWidget from "@/components/ChatWidget";
 import EarningsDashboard from "@/components/earnings/EarningsDashboard";
+import PromoManagement from "@/components/wallet/PromoManagement";
+import { getPromotions } from "@/actions/promotions";
 
 // Types corresponding to Next.js 15/16 App Router
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -48,6 +50,7 @@ const TAB_TITLES: Record<string, string> = {
   muthawif: "Manajemen Muthawif",
   penarikan: "Manajemen Penarikan",
   biaya: "Pengaturan Biaya",
+  promo: "Kode Promo & Diskon",
   master_lokasi: "Master Wilayah Operasi",
   master_layanan: "Master Jenis Layanan",
   master_bahasa: "Master Bahasa",
@@ -147,6 +150,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
   let payoutData: any = { items: [], total: 0, page: 1, totalPages: 0 };
   let globalSettings: any = null;
   let feeConfig: FeeConfig = { feeType: "PERCENT", feeValue: 0 };
+  let promoData: any = { items: [], total: 0, page: 1, totalPages: 0 };
 
   try {
     [bookings, feeConfig] = await Promise.all([
@@ -154,11 +158,12 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       getFeeConfig(),
     ]);
     if (session.role === "AMIR") {
-      [muthawifData, muthawifCounts, payoutData, globalSettings] = await Promise.all([
+      [muthawifData, muthawifCounts, payoutData, globalSettings, promoData] = await Promise.all([
         getMuthawifsPaginated({ search: mSearch, status: mStatus, page: mPage }),
         getMuthawifCounts(),
         getPayouts({ search: mSearch, status: mStatus, page: mPage }),
         getGlobalSettings(),
+        getPromotions({ page: mPage }),
       ]);
     }
     if (session.role === "MUTHAWIF") {
@@ -778,7 +783,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                   )}
                   {/* Tombol Bayar — hanya untuk UNPAID & bukan CANCELLED */}
                   {session.role === "JAMAAH" && isUnpaid && (
-                    <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} />
+                    <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} jamaahId={session.id} />
                   )}
                   {/* Dash placeholder jika tidak ada aksi tersedia */}
                   {!isUnpaid && booking.status !== "CONFIRMED" && booking.status !== "COMPLETED" && (
@@ -791,7 +796,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
               <div className="bk-pay-mobile" style={{ padding: "0 1rem 0.875rem" }}>
                 {/* Tombol Bayar — hanya UNPAID */}
                 {session.role === "JAMAAH" && isUnpaid && (
-                  <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} fullWidth />
+                  <PaymentSimulationButton bookingId={booking.id} amount={booking.totalFee} jamaahId={session.id} fullWidth />
                 )}
                 {/* Tombol Chat — CONFIRMED atau COMPLETED */}
                 {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
@@ -917,6 +922,14 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       desc: "Fee jasa & manajemen",
       emoji: "⚙️",
       tab: "biaya",
+      show: session.role === "AMIR",
+    },
+    {
+      href: "/dashboard?tab=promo",
+      label: "Kode Promo",
+      desc: "Diskon & voucher jamaah",
+      emoji: "🏷️",
+      tab: "promo",
       show: session.role === "AMIR",
     },
     {
@@ -1189,6 +1202,10 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
             {currentTab === "analytics" && session.role === "AMIR" && (
               <EarningsDashboard initialRole="AMIR" />
+            )}
+
+            {currentTab === "promo" && session.role === "AMIR" && (
+              <PromoManagement initialData={promoData} />
             )}
           </div>
         </main>

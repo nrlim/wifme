@@ -7,6 +7,7 @@ import BookingPayButton from "./BookingPayButton";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ promo?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps) {
@@ -48,8 +49,9 @@ const PAY_STATUS_LABEL: Record<string, string> = {
   PAID: "Lunas ✓",
 };
 
-export default async function BookingConfirmationPage({ params }: PageProps) {
+export default async function BookingConfirmationPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const { promo: initialPromo } = await searchParams;
   const session = await getSession();
 
   if (!session) {
@@ -437,7 +439,7 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: isUnpaid ? "1.5rem" : 0,
+                  marginBottom: isUnpaid ? "1rem" : 0,
                 }}
               >
                 <div>
@@ -453,23 +455,30 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
                   >
                     Total Pembayaran
                   </div>
-                  <div
-                    style={{
-                      fontSize: "0.8125rem",
-                      color: C.muted,
-                    }}
-                  >
+                  <div style={{ fontSize: "0.8125rem", color: C.muted }}>
                     Tarif muthawif + biaya layanan platform
                   </div>
+                  {(booking as any).discountAmount > 0 && (
+                    <div style={{ fontSize: "0.75rem", color: C.emerald, fontWeight: 700, marginTop: "0.25rem" }}>
+                      🏷️ Promo diterapkan — Hemat Rp {((booking as any).discountAmount as number).toLocaleString("id-ID")}
+                    </div>
+                  )}
                 </div>
-                <div
-                  style={{
-                    fontSize: "1.625rem",
-                    fontWeight: 900,
-                    color: isPaid ? C.emerald : C.charcoal,
-                  }}
-                >
-                  Rp {booking.totalFee.toLocaleString("id-ID")}
+                <div>
+                  {(booking as any).discountAmount > 0 && (
+                    <div style={{ fontSize: "0.875rem", color: C.muted, textDecoration: "line-through", textAlign: "right" }}>
+                      Rp {(booking.totalFee + (booking as any).discountAmount).toLocaleString("id-ID")}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      fontSize: "1.625rem",
+                      fontWeight: 900,
+                      color: isPaid ? C.emerald : C.charcoal,
+                    }}
+                  >
+                    Rp {booking.totalFee.toLocaleString("id-ID")}
+                  </div>
                 </div>
               </div>
 
@@ -500,12 +509,13 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
                 </div>
               )}
 
-              {/* Pay button */}
               {isUnpaid && (
                 <BookingPayButton
                   bookingId={booking.id}
                   amount={booking.totalFee}
                   muthawifName={booking.muthawif.name}
+                  jamaahId={booking.jamaah.id}
+                  initialVoucher={initialPromo}
                 />
               )}
 
