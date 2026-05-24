@@ -32,7 +32,6 @@ const C = {
   border: "#E0D8CC",
   ivory: "#FAF7F2",
   white: "#FFFFFF",
-  errorPale: "#FEF2F2",
   error: "#C0392B",
 };
 
@@ -43,7 +42,6 @@ export default function BookingPayButton({ bookingId, amount, muthawifName, jama
   const [loading, setLoading] = useState(false);
   const [promo, setPromo] = useState<PromoResult | null>(null);
 
-  // If initialVoucher passed via URL, pre-fill state so PromoInput shows it validated
   const resolvedInitial = initialVoucher?.trim().toUpperCase() || undefined;
 
   const effectiveAmount = promo?.valid && promo.finalAmount !== undefined ? promo.finalAmount : amount;
@@ -68,7 +66,7 @@ export default function BookingPayButton({ bookingId, amount, muthawifName, jama
         setOpen(false);
         toast(
           "success",
-          "Pembayaran Berhasil! 🎉",
+          "Pembayaran Berhasil!",
           `Pesanan Anda dengan ${muthawifName} telah dikonfirmasi. Semoga ibadah lancar!`
         );
         router.refresh();
@@ -85,219 +83,507 @@ export default function BookingPayButton({ bookingId, amount, muthawifName, jama
 
   return (
     <>
+      {/* ── Trigger Button ── */}
       <button
         id="booking-pay-trigger"
         onClick={() => setOpen(true)}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "0.625rem",
-          padding: "1rem 2rem",
-          fontSize: "1rem",
-          fontWeight: 800,
-          fontFamily: "inherit",
-          borderRadius: 14,
-          background: `linear-gradient(135deg, ${C.emerald}, ${C.emeraldLight})`,
-          border: "none",
-          color: C.white,
-          cursor: "pointer",
-          width: "100%",
-          boxShadow: "0 4px 22px rgba(27,107,74,0.3)",
-          transition: "all 0.2s",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-          e.currentTarget.style.boxShadow = "0 8px 28px rgba(27,107,74,0.35)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "none";
-          e.currentTarget.style.boxShadow = "0 4px 22px rgba(27,107,74,0.3)";
-        }}
+        className="bpb-trigger"
       >
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
         </svg>
-        Bayar Sekarang — Rp {amount.toLocaleString("id-ID")}
+        Bayar Sekarang
       </button>
 
-      {/* Payment Modal */}
+      {/* ── Payment Sheet / Modal ── */}
       {open && (
         <>
+          {/* Backdrop */}
           <div
+            className="bpb-backdrop"
             onClick={() => !loading && setOpen(false)}
-            style={{
-              position: "fixed", inset: 0,
-              background: "rgba(5,15,10,0.65)",
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-              zIndex: 9100,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              padding: "1rem",
-            }}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: C.white,
-                borderRadius: 24,
-                width: "100%",
-                maxWidth: 480,
-                boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
-                overflow: "hidden",
-                animation: "payIn 0.28s cubic-bezier(0.34,1.1,0.64,1) both",
-                maxHeight: "90vh",
-                overflowY: "auto",
-              }}
-            >
-              {/* Header */}
-              <div style={{ background: "linear-gradient(135deg, #0d2818 0%, #1B6B4A 100%)", padding: "1.5rem 1.75rem", color: C.white }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                        <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 900, fontSize: "0.9375rem", lineHeight: 1 }}>Midtrans</div>
-                      <div style={{ fontSize: "0.5625rem", opacity: 0.6, letterSpacing: "0.05em", marginTop: 2 }}>PAYMENT GATEWAY SIMULATION</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => !loading && setOpen(false)}
-                    disabled={loading}
-                    style={{ background: "rgba(255,255,255,0.12)", border: "none", borderRadius: "50%", width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "not-allowed" : "pointer", color: C.white }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12" /></svg>
-                  </button>
-                </div>
+          />
 
-                {/* Amount display */}
-                <div>
-                  <div style={{ fontSize: "0.75rem", opacity: 0.65, marginBottom: "0.3rem" }}>Total Pembayaran</div>
-                  {discountAmount > 0 ? (
-                    <div>
-                      <div style={{ fontSize: "1rem", opacity: 0.55, textDecoration: "line-through", lineHeight: 1, marginBottom: "0.2rem" }}>
-                        Rp {amount.toLocaleString("id-ID")}
-                      </div>
-                      <div style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1, display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                        Rp {effectiveAmount.toLocaleString("id-ID")}
-                        <span style={{ fontSize: "0.75rem", fontWeight: 700, background: "rgba(255,255,255,0.18)", padding: "0.2rem 0.625rem", borderRadius: 99, letterSpacing: 0 }}>
-                          Hemat Rp {discountAmount.toLocaleString("id-ID")}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1 }}>
-                      Rp {effectiveAmount.toLocaleString("id-ID")}
-                    </div>
-                  )}
-                </div>
-              </div>
+          {/* Sheet (bottom sheet on mobile, centered modal on desktop) */}
+          <div className="bpb-sheet" onClick={(e) => e.stopPropagation()}>
+            {/* Mobile drag handle */}
+            <div className="bpb-handle" />
 
-              {/* Body */}
-              <div style={{ padding: "1.375rem 1.75rem", display: "flex", flexDirection: "column", gap: "1.125rem" }}>
-                {/* ── Promo Code Input ── */}
-                <PromoInput
-                  bookingAmount={amount}
-                  jamaahId={jamaahId}
-                  onPromoApplied={handlePromoApplied}
-                  applied={promo ?? undefined}
-                  initialCode={resolvedInitial}
-                />
-
-                {/* Transaction detail */}
-                <div style={{ background: C.ivory, borderRadius: 14, padding: "1rem", border: `1px solid ${C.border}` }}>
-                  <div style={{ fontSize: "0.625rem", fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.75rem" }}>Detail Transaksi</div>
-                  {[
-                    { label: "Order ID", value: `#${bookingId.slice(0, 8).toUpperCase()}`, mono: true },
-                    { label: "Muthawif", value: muthawifName },
-                    { label: "Merchant", value: "Wif–Me Pendamping Umroh" },
-                    ...(discountAmount > 0 ? [{ label: "Kode Promo", value: promo?.code ?? "—", mono: true }] : []),
-                    ...(discountAmount > 0 ? [{ label: "Diskon", value: `- Rp ${discountAmount.toLocaleString("id-ID")}`, highlight: true }] : []),
-                  ].map((row) => (
-                    <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "0.5rem", marginBottom: "0.5rem", borderBottom: `1px dashed ${C.border}` }}>
-                      <span style={{ fontSize: "0.8125rem", color: C.muted, fontWeight: 600 }}>{row.label}</span>
-                      <span style={{
-                        fontSize: "0.8125rem", fontWeight: 700,
-                        color: (row as {highlight?: boolean}).highlight ? C.emerald : C.charcoal,
-                        fontFamily: row.mono ? "monospace" : "inherit",
-                      }}>
-                        {row.value}
-                      </span>
-                    </div>
-                  ))}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.875rem", color: C.charcoal, fontWeight: 700 }}>Total</span>
-                    <span style={{ fontSize: "0.9375rem", fontWeight: 900, color: C.emerald }}>Rp {effectiveAmount.toLocaleString("id-ID")}</span>
-                  </div>
-                </div>
-
-                {/* Payment Method */}
-                <div>
-                  <div style={{ fontSize: "0.625rem", fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.75rem" }}>Metode Pembayaran (Simulasi)</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", border: `2px solid ${C.emerald}`, borderRadius: 12, background: "rgba(27,107,74,0.04)" }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 9, background: C.emeraldPale, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.emerald} strokeWidth="2">
-                        <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
-                      </svg>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: "0.875rem", color: C.charcoal }}>Virtual Account</div>
-                      <div style={{ fontSize: "0.6875rem", color: C.muted }}>BCA · BNI · Mandiri · BRI</div>
-                    </div>
-                    <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${C.emerald}`, background: C.emerald, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5"><polyline points="20 6 9 17 4 12" /></svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Disclaimer */}
-                <div style={{ fontSize: "0.6875rem", color: C.muted, background: "rgba(196,151,59,0.06)", border: "1px solid rgba(196,151,59,0.2)", borderRadius: 10, padding: "0.625rem 0.75rem", display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
-                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            {/* Header */}
+            <div className="bpb-header">
+              <div className="bpb-header-left">
+                <div className="bpb-header-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                    <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
                   </svg>
-                  <span>Ini adalah <strong>simulasi pembayaran</strong> untuk keperluan demo. Tidak ada dana nyata yang diproses.</span>
                 </div>
-
-                {/* CTA */}
-                <button
-                  id="booking-pay-confirm"
-                  onClick={handlePay}
-                  disabled={loading}
-                  style={{
-                    width: "100%", padding: "1rem", borderRadius: 14,
-                    background: loading ? C.muted : `linear-gradient(135deg, ${C.emerald}, ${C.emeraldLight})`,
-                    color: C.white, border: "none", fontFamily: "inherit",
-                    fontSize: "1rem", fontWeight: 800,
-                    cursor: loading ? "not-allowed" : "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: "0.625rem",
-                    boxShadow: loading ? "none" : "0 4px 18px rgba(27,107,74,0.3)",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {loading ? (
-                    <>
-                      <span style={{ width: 18, height: 18, borderRadius: "50%", border: "2.5px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "payIn-spin 0.8s linear infinite", display: "inline-block" }} />
-                      Memproses Pembayaran...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      </svg>
-                      Bayar Rp {effectiveAmount.toLocaleString("id-ID")}
-                    </>
-                  )}
-                </button>
+                <div>
+                  <div className="bpb-header-title">Konfirmasi Pembayaran</div>
+                  <div className="bpb-header-sub">Simulasi Midtrans Payment Gateway</div>
+                </div>
               </div>
+              <button
+                className="bpb-close"
+                onClick={() => !loading && setOpen(false)}
+                disabled={loading}
+                aria-label="Tutup"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Amount Hero */}
+            <div className="bpb-amount-hero">
+              <div className="bpb-amount-label">Total Pembayaran</div>
+              {discountAmount > 0 ? (
+                <div>
+                  <div className="bpb-amount-original">Rp {amount.toLocaleString("id-ID")}</div>
+                  <div className="bpb-amount-main">
+                    Rp {effectiveAmount.toLocaleString("id-ID")}
+                    <span className="bpb-discount-badge">Hemat Rp {discountAmount.toLocaleString("id-ID")}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="bpb-amount-main">Rp {effectiveAmount.toLocaleString("id-ID")}</div>
+              )}
+            </div>
+
+            {/* Body */}
+            <div className="bpb-body">
+              {/* Promo Input */}
+              <PromoInput
+                bookingAmount={amount}
+                jamaahId={jamaahId}
+                onPromoApplied={handlePromoApplied}
+                applied={promo ?? undefined}
+                initialCode={resolvedInitial}
+              />
+
+              {/* Transaction Detail */}
+              <div className="bpb-detail-box">
+                <div className="bpb-detail-title">Detail Transaksi</div>
+                {[
+                  { label: "Order ID", value: `#${bookingId.slice(0, 8).toUpperCase()}`, mono: true },
+                  { label: "Muthawif", value: muthawifName },
+                  { label: "Merchant", value: "Wif-Me Pendamping Umroh" },
+                  ...(discountAmount > 0 ? [{ label: "Kode Promo", value: promo?.code ?? "—", mono: true }] : []),
+                  ...(discountAmount > 0 ? [{ label: "Diskon", value: `- Rp ${discountAmount.toLocaleString("id-ID")}`, highlight: true }] : []),
+                ].map((row) => (
+                  <div key={row.label} className="bpb-detail-row">
+                    <span className="bpb-detail-key">{row.label}</span>
+                    <span
+                      className="bpb-detail-val"
+                      style={{
+                        fontFamily: row.mono ? "monospace" : "inherit",
+                        color: (row as { highlight?: boolean }).highlight ? C.emerald : C.charcoal,
+                      }}
+                    >
+                      {row.value}
+                    </span>
+                  </div>
+                ))}
+                <div className="bpb-detail-total">
+                  <span>Total</span>
+                  <span style={{ color: C.emerald }}>Rp {effectiveAmount.toLocaleString("id-ID")}</span>
+                </div>
+              </div>
+
+              {/* Payment Method */}
+              <div className="bpb-method">
+                <div className="bpb-detail-title">Metode Pembayaran (Simulasi)</div>
+                <div className="bpb-method-card">
+                  <div className="bpb-method-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.emerald} strokeWidth="2">
+                      <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
+                    </svg>
+                  </div>
+                  <div className="bpb-method-info">
+                    <div className="bpb-method-name">Virtual Account</div>
+                    <div className="bpb-method-banks">BCA · BNI · Mandiri · BRI</div>
+                  </div>
+                  <div className="bpb-method-check">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Disclaimer */}
+              <div className="bpb-disclaimer">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>Ini adalah <strong>simulasi pembayaran</strong> untuk keperluan demo. Tidak ada dana nyata yang diproses.</span>
+              </div>
+
+              {/* CTA */}
+              <button
+                id="booking-pay-confirm"
+                onClick={handlePay}
+                disabled={loading}
+                className="bpb-cta"
+              >
+                {loading ? (
+                  <>
+                    <span className="bpb-spinner" />
+                    Memproses...
+                  </>
+                ) : (
+                  <>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    Bayar Rp {effectiveAmount.toLocaleString("id-ID")}
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
           <style>{`
-            @keyframes payIn { from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-            @keyframes payIn-spin { to { transform: rotate(360deg); } }
+            /* Backdrop */
+            .bpb-backdrop {
+              position: fixed;
+              inset: 0;
+              background: rgba(5,15,10,0.6);
+              backdrop-filter: blur(6px);
+              -webkit-backdrop-filter: blur(6px);
+              z-index: 9100;
+              animation: bpb-fade-in 0.22s ease both;
+            }
+
+            /* Sheet base */
+            .bpb-sheet {
+              position: fixed;
+              z-index: 9200;
+              background: white;
+              overflow: hidden;
+              display: flex;
+              flex-direction: column;
+            }
+
+            /* Handle (mobile only) */
+            .bpb-handle {
+              display: none;
+              width: 40px;
+              height: 4px;
+              border-radius: 99px;
+              background: #D7D1C7;
+              margin: 0.6rem auto 0;
+              flex-shrink: 0;
+            }
+
+            /* Header */
+            .bpb-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 1rem;
+              padding: 1.25rem 1.5rem 0;
+              flex-shrink: 0;
+            }
+            .bpb-header-left {
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+            }
+            .bpb-header-icon {
+              width: 38px;
+              height: 38px;
+              border-radius: 10px;
+              background: linear-gradient(135deg, #0d2818, ${C.emerald});
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0;
+            }
+            .bpb-header-title {
+              font-weight: 900;
+              font-size: 0.9375rem;
+              color: ${C.charcoal};
+              line-height: 1;
+            }
+            .bpb-header-sub {
+              font-size: 0.5625rem;
+              color: ${C.muted};
+              letter-spacing: 0.04em;
+              margin-top: 2px;
+              text-transform: uppercase;
+              font-weight: 700;
+            }
+            .bpb-close {
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              border: 1px solid ${C.border};
+              background: ${C.ivory};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              color: ${C.muted};
+              flex-shrink: 0;
+              transition: background 0.15s;
+            }
+            .bpb-close:hover:not(:disabled) { background: #eee; }
+            .bpb-close:disabled { opacity: 0.5; cursor: not-allowed; }
+
+            /* Amount Hero */
+            .bpb-amount-hero {
+              padding: 1.25rem 1.5rem;
+              border-bottom: 1px solid ${C.border};
+              flex-shrink: 0;
+            }
+            .bpb-amount-label {
+              font-size: 0.75rem;
+              color: ${C.muted};
+              font-weight: 600;
+              margin-bottom: 0.3rem;
+            }
+            .bpb-amount-original {
+              font-size: 1rem;
+              color: ${C.muted};
+              text-decoration: line-through;
+              line-height: 1;
+              margin-bottom: 0.25rem;
+            }
+            .bpb-amount-main {
+              font-size: 1.875rem;
+              font-weight: 900;
+              color: ${C.charcoal};
+              letter-spacing: -0.02em;
+              line-height: 1;
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+              flex-wrap: wrap;
+            }
+            .bpb-discount-badge {
+              font-size: 0.75rem;
+              font-weight: 700;
+              background: ${C.emeraldPale};
+              color: ${C.emerald};
+              padding: 0.25rem 0.625rem;
+              border-radius: 99px;
+              letter-spacing: 0;
+            }
+
+            /* Body */
+            .bpb-body {
+              overflow-y: auto;
+              padding: 1.25rem 1.5rem;
+              display: flex;
+              flex-direction: column;
+              gap: 1rem;
+              flex: 1;
+            }
+
+            /* Detail box */
+            .bpb-detail-box {
+              background: ${C.ivory};
+              border-radius: 14px;
+              padding: 1rem;
+              border: 1px solid ${C.border};
+            }
+            .bpb-detail-title {
+              font-size: 0.625rem;
+              font-weight: 800;
+              color: ${C.muted};
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              margin-bottom: 0.75rem;
+            }
+            .bpb-detail-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding-bottom: 0.5rem;
+              margin-bottom: 0.5rem;
+              border-bottom: 1px dashed ${C.border};
+            }
+            .bpb-detail-key {
+              font-size: 0.8125rem;
+              color: ${C.muted};
+              font-weight: 600;
+            }
+            .bpb-detail-val {
+              font-size: 0.8125rem;
+              font-weight: 700;
+              color: ${C.charcoal};
+            }
+            .bpb-detail-total {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-size: 0.9375rem;
+              font-weight: 800;
+              color: ${C.charcoal};
+            }
+
+            /* Payment method */
+            .bpb-method-card {
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+              padding: 0.875rem 1rem;
+              border: 2px solid ${C.emerald};
+              border-radius: 14px;
+              background: rgba(27,107,74,0.03);
+              margin-top: 0.5rem;
+            }
+            .bpb-method-icon {
+              width: 38px;
+              height: 38px;
+              border-radius: 10px;
+              background: ${C.emeraldPale};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0;
+            }
+            .bpb-method-info { flex: 1; }
+            .bpb-method-name {
+              font-weight: 700;
+              font-size: 0.875rem;
+              color: ${C.charcoal};
+            }
+            .bpb-method-banks {
+              font-size: 0.6875rem;
+              color: ${C.muted};
+            }
+            .bpb-method-check {
+              width: 20px;
+              height: 20px;
+              border-radius: 50%;
+              background: ${C.emerald};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+
+            /* Disclaimer */
+            .bpb-disclaimer {
+              display: flex;
+              gap: 0.5rem;
+              align-items: flex-start;
+              font-size: 0.6875rem;
+              color: ${C.muted};
+              background: rgba(196,151,59,0.06);
+              border: 1px solid rgba(196,151,59,0.2);
+              border-radius: 10px;
+              padding: 0.625rem 0.75rem;
+            }
+
+            /* CTA */
+            .bpb-cta {
+              width: 100%;
+              padding: 1rem;
+              border-radius: 14px;
+              background: linear-gradient(135deg, ${C.emerald}, ${C.emeraldLight});
+              color: white;
+              border: none;
+              font-family: inherit;
+              font-size: 1rem;
+              font-weight: 800;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 0.625rem;
+              box-shadow: 0 4px 18px rgba(27,107,74,0.3);
+              transition: all 0.15s;
+              flex-shrink: 0;
+            }
+            .bpb-cta:disabled {
+              background: ${C.muted};
+              box-shadow: none;
+              cursor: not-allowed;
+            }
+            .bpb-cta:not(:disabled):hover {
+              transform: translateY(-1px);
+              box-shadow: 0 8px 24px rgba(27,107,74,0.35);
+            }
+            .bpb-cta:not(:disabled):active { transform: scale(0.98); }
+
+            /* Trigger */
+            .bpb-trigger {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              gap: 0.625rem;
+              width: 100%;
+              padding: 1rem 2rem;
+              font-size: 1rem;
+              font-weight: 800;
+              font-family: inherit;
+              border-radius: 16px;
+              background: linear-gradient(135deg, ${C.emerald}, ${C.emeraldLight});
+              border: none;
+              color: white;
+              cursor: pointer;
+              box-shadow: 0 4px 22px rgba(27,107,74,0.3);
+              transition: all 0.2s;
+            }
+            .bpb-trigger:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 8px 28px rgba(27,107,74,0.35);
+            }
+            .bpb-trigger:active { transform: scale(0.98); }
+
+            /* Spinner */
+            .bpb-spinner {
+              width: 18px;
+              height: 18px;
+              border-radius: 50%;
+              border: 2.5px solid rgba(255,255,255,0.3);
+              border-top-color: white;
+              animation: bpb-spin 0.8s linear infinite;
+              display: inline-block;
+            }
+
+            /* Animations */
+            @keyframes bpb-fade-in { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes bpb-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+            @keyframes bpb-scale-in { from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+            @keyframes bpb-spin { to { transform: rotate(360deg); } }
+
+            /* ── Desktop: centered modal ── */
+            @media (min-width: 641px) {
+              .bpb-sheet {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 100%;
+                max-width: 480px;
+                border-radius: 24px;
+                max-height: 90vh;
+                box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+                animation: bpb-scale-in 0.28s cubic-bezier(0.34,1.1,0.64,1) both;
+              }
+            }
+
+            /* ── Mobile: bottom sheet ── */
+            @media (max-width: 640px) {
+              .bpb-handle { display: block; }
+              .bpb-sheet {
+                bottom: 0;
+                left: 0;
+                right: 0;
+                border-radius: 24px 24px 0 0;
+                max-height: 92dvh;
+                animation: bpb-slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
+                padding-bottom: env(safe-area-inset-bottom);
+              }
+              .bpb-amount-main {
+                font-size: 1.625rem;
+              }
+              .bpb-cta {
+                border-radius: 14px;
+              }
+            }
           `}</style>
         </>
       )}

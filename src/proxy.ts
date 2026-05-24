@@ -40,8 +40,8 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Protect /itinerary/* and /agenda — any authenticated user
-  if (pathname.startsWith("/itinerary/") || pathname === "/agenda") {
+  // Protect /itinerary/* — any authenticated user
+  if (pathname.startsWith("/itinerary/")) {
     const token = request.cookies.get("wifme_token")?.value;
     if (!token) {
       return NextResponse.redirect(
@@ -80,7 +80,6 @@ export const config = {
     "/dashboard",
     "/dashboard/muthawif/:path*",
     "/itinerary/:path*",
-    "/agenda",
     "/chat/:path*",
   ],
 };

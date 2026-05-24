@@ -34,6 +34,8 @@ interface MuthawifCardProps {
   searchLocation?: string;
   /** Fee configuration from globalSetting — used to compute total including service fee */
   feeConfig?: FeeConfig;
+  /** Optional callback to override default routing behavior when clicking Pesan */
+  onBookClick?: () => void;
 }
 
 
@@ -68,6 +70,7 @@ export default function MuthawifCard({
   dashboardHref = "/dashboard",
   searchLocation = "ALL",
   feeConfig,
+  onBookClick,
 }: MuthawifCardProps) {
   const router = useRouter();
   const [booking, setBooking] = useState(false);
@@ -81,34 +84,14 @@ export default function MuthawifCard({
       router.push(`/auth/register?redirect=${encodeURIComponent(muthawifUrl)}`);
       return;
     }
-    if (!startDate || !duration) {
-      setError("Silakan lengkapi tanggal dan durasi terlebih dahulu.");
+    
+    if (onBookClick) {
+      onBookClick();
       return;
     }
 
-    setBooking(true);
-    setError("");
-
-    try {
-      const res = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ muthawifId: muthawif.user.id, startDate, duration, notes: "" }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        // Redirect ke halaman konfirmasi pesanan dengan tombol bayar
-        router.push(`/booking/${data.booking.id}`);
-      } else {
-        const data = await res.json();
-        setError(data.error || "Gagal melakukan pemesanan.");
-      }
-    } catch {
-      setError("Terjadi kesalahan jaringan.");
-    } finally {
-      setBooking(false);
-    }
+    // Redirect ke halaman wizard pemesanan baru
+    router.push(`/book/${muthawif.user.id}`);
   };
 
   const durationNum = parseInt(duration || "1");

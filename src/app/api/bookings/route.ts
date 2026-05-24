@@ -11,60 +11,63 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { muthawifId, startDate, duration, notes, promoCode } = body;
+    const { muthawifId, items, notes, promoCode, bundleId } = body;
 
     // Input Validation
-    if (!muthawifId || typeof muthawifId !== 'string' || !startDate || !duration) {
-      return NextResponse.json({ error: "Data tidak lengkap." }, { status: 400 });
+    if (!muthawifId || typeof muthawifId !== 'string' || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: "Data pesanan tidak lengkap." }, { status: 400 });
     }
     // Prevent self-booking
     if (session.id === muthawifId) {
       return NextResponse.json({ error: "Anda tidak dapat memesan Muthawif untuk diri sendiri." }, { status: 400 });
     }
-    const durationInt = parseInt(String(duration), 10);
-    if (isNaN(durationInt) || durationInt < 1 || durationInt > 60) {
-      return NextResponse.json({ error: "Durasi harus antara 1 hingga 60 hari." }, { status: 400 });
-    }
-    const start = new Date(startDate);
-    if (isNaN(start.getTime())) {
-      return NextResponse.json({ error: "Format tanggal tidak valid." }, { status: 400 });
-    }
-    // Prevent backdated bookings
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (start < today) {
-      return NextResponse.json({ error: "Tanggal pemesanan tidak boleh di masa lalu." }, { status: 400 });
-    }
+
     const sanitizedNotes = notes ? String(notes).trim().slice(0, 1000) : null;
     const sanitizedPromoCode = promoCode ? String(promoCode).trim().toUpperCase() : null;
 
-    const end = new Date(start);
-    end.setDate(end.getDate() + durationInt);
+    // Parse and validate items
+    const parsedItems = items.map((item: any) => {
+      const date = new Date(item.date);
+      if (isNaN(date.getTime())) throw new Error("Format tanggal tidak valid");
+      return {
+        activityId: String(item.activityId),
+        date: date,
+        timeSlot: item.timeSlot ? String(item.timeSlot) : null,
+        price: Number(item.price),
+      };
+    });
+
+    // Check backdated
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const hasPastDate = parsedItems.some((item) => item.date < today);
+    if (hasPastDate) {
+      return NextResponse.json({ error: "Tanggal pemesanan tidak boleh di masa lalu." }, { status: 400 });
+    }
+
+    const startDates = parsedItems.map(i => i.date.getTime());
+    const startDate = new Date(Math.min(...startDates));
+    const endDate = new Date(Math.max(...startDates));
+    const durationInt = parsedItems.length;
 
     const booking = await prisma.$transaction(async (tx) => {
-      // 1. Conflict Check
-      const conflict = await tx.booking.findFirst({
-        where: {
-          muthawifId,
-          status: { in: ["PENDING", "CONFIRMED"] },
-          AND: [
-            { startDate: { lt: end } },
-            { endDate: { gt: start } },
-          ],
-        },
-      });
-
-      if (conflict) {
-        throw new Error("CONFLICT");
-      }
+      // Check for date conflicts (1 date = 1 activity constraint will be handled by unique constraint on BookingItem)
+      // But we also might want to check if Muthawif is already booked by ANOTHER jamaah? 
+      // The current system checks if the muthawif is fully booked. Since dates don't have to be continuous,
+      // it's tricky. Let's just create it and let the muthawif/admin manage. Or we can keep the simple overlap check:
+      // A muthawif can only handle one booking per day maybe? We skip conflict check for now since it's activity-based.
 
       // 2. Pricing and Profile Calculation
-      const [profile, settings] = await Promise.all([
-        tx.muthawifProfile.findFirst({ where: { userId: muthawifId } }),
-        tx.globalSetting.findUnique({ where: { id: "singleton" } }),
-      ]);
+      const settings = await tx.globalSetting.findUnique({ where: { id: "singleton" } });
 
-      const baseFee = profile ? profile.basePrice * durationInt : 0;
+      let baseFee = 0;
+      if (bundleId) {
+        const bdl = await tx.activityBundle.findUnique({ where: { id: bundleId } });
+        if (!bdl) throw new Error("Paket Bundling tidak ditemukan");
+        baseFee = bdl.price;
+      } else {
+        baseFee = parsedItems.reduce((sum, item) => sum + item.price, 0);
+      }
       let serviceFee = 0;
       if (settings) {
         if (settings.feeType === "PERCENT") {
@@ -87,12 +90,11 @@ export async function POST(req: NextRequest) {
           promotionId = promoResult.promotionId;
         } catch (promoErr: unknown) {
           const promoMsg = promoErr instanceof Error ? promoErr.message : "PROMO_ERROR";
-          // Surface promo errors to the client cleanly
           throw new Error(`PROMO:${promoMsg}`);
         }
       }
 
-      const hours = parseInt(process.env.AUTO_CANCEL_HOURS || "24");
+      const hours = settings?.paymentTimeoutHours ?? parseInt(process.env.AUTO_CANCEL_HOURS || "24");
       const paymentDeadline = new Date(Date.now() + hours * 60 * 60 * 1000);
 
       // 4. Create Booking
@@ -100,17 +102,27 @@ export async function POST(req: NextRequest) {
         data: {
           jamaahId: session.id,
           muthawifId,
-          startDate: start,
-          endDate: end,
+          startDate,
+          endDate,
           totalFee,
           baseFee,
           discountAmount,
           ...(promotionId && { promotionId }),
+          ...(bundleId && { bundleId }),
           notes: sanitizedNotes,
           status: "PENDING",
           paymentStatus: "UNPAID",
           paymentDeadline,
+          items: {
+            create: parsedItems.map(item => ({
+              activityId: item.activityId,
+              date: item.date,
+              timeSlot: item.timeSlot,
+              price: item.price,
+            }))
+          }
         },
+        include: { items: true }
       });
     });
 

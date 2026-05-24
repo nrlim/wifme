@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Calendar, MapPin, Clock, Search } from "lucide-react";
 
 const LOCATIONS = [
   { value: "ALL", label: "Semua Lokasi" },
@@ -43,28 +44,180 @@ export default function DashboardSearchForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "1rem", width: "100%" }}>
-      <div style={{ flex: "2 1 200px" }}>
-        <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "0.375rem" }}>Tanggal Keberangkatan</label>
-        <input type="date" className="form-input" min={today} value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} required style={{ width: "100%", background: "var(--ivory)", border: "1px solid var(--border)", height: "48px" }} />
+    <form className="dashboard-search-form native-mobile-form" onSubmit={handleSubmit}>
+      <div className="nmf-grid">
+        <div className="nmf-input-group">
+          <div className="nmf-icon"><Calendar size={18} /></div>
+          <div className="nmf-field">
+            <label htmlFor="dashboard-search-start-date">Tanggal Keberangkatan</label>
+            <input 
+              id="dashboard-search-start-date" 
+              type="date" 
+              min={today} 
+              value={form.startDate} 
+              onChange={(e) => setForm({ ...form, startDate: e.target.value })} 
+              required 
+            />
+          </div>
+        </div>
+
+        <div className="nmf-input-group">
+          <div className="nmf-icon"><Clock size={18} /></div>
+          <div className="nmf-field">
+            <label htmlFor="dashboard-search-duration">Durasi (Hari)</label>
+            <input 
+              id="dashboard-search-duration" 
+              type="number" 
+              min="1" 
+              max="60" 
+              value={form.duration} 
+              onChange={(e) => setForm({ ...form, duration: e.target.value })} 
+              required 
+            />
+          </div>
+        </div>
+
+        <div className="nmf-input-group">
+          <div className="nmf-icon"><MapPin size={18} /></div>
+          <div className="nmf-field">
+            <label htmlFor="dashboard-search-location">Lokasi</label>
+            <select 
+              id="dashboard-search-location" 
+              value={form.location} 
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+            >
+              {LOCATIONS.map((loc) => (
+                <option key={loc.value} value={loc.value}>{loc.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
-      <div style={{ flex: "1 1 120px" }}>
-        <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "0.375rem" }}>Durasi (Hari)</label>
-        <input type="number" className="form-input" min="1" max="60" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} required style={{ width: "100%", background: "var(--ivory)", border: "1px solid var(--border)", height: "48px" }} />
-      </div>
-      <div style={{ flex: "1 1 160px" }}>
-        <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "0.375rem" }}>Lokasi</label>
-        <select className="form-input form-select" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} style={{ width: "100%", background: "var(--ivory)", border: "1px solid var(--border)", height: "48px" }}>
-          {LOCATIONS.map((loc) => (
-            <option key={loc.value} value={loc.value}>{loc.label}</option>
-          ))}
-        </select>
-      </div>
-      <div style={{ flex: "0 0 auto", width: "100%", maxWidth: "160px" }}>
-        <button type="submit" className="btn btn-primary" disabled={loading} style={{ height: "48px", width: "100%", justifyContent: "center" }}>
-          {loading ? <span className="spinner" style={{ width: "20px", height: "20px", borderWidth: "2px", borderColor: "rgba(255,255,255,0.4)", borderTopColor: "white" }} /> : "Cari"}
-        </button>
-      </div>
+
+      <button id="dashboard-search-submit" type="submit" className="nmf-submit-btn" disabled={loading}>
+        {loading ? (
+          <span className="spinner" style={{ width: "20px", height: "20px", borderWidth: "2px", borderColor: "rgba(255,255,255,0.4)", borderTopColor: "white" }} />
+        ) : (
+          <>
+            <Search size={18} strokeWidth={2.5} />
+            <span>Cari Muthawif</span>
+          </>
+        )}
+      </button>
+
+      <style>{`
+        .native-mobile-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          width: 100%;
+        }
+        .nmf-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 0.75rem;
+          background: var(--ivory);
+          border-radius: 20px;
+          border: 1px solid var(--border);
+          padding: 0.5rem;
+        }
+        .nmf-input-group {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.75rem 1rem;
+          background: white;
+          border-radius: 14px;
+          border: 1px solid var(--border);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .nmf-input-group:focus-within {
+          border-color: var(--emerald);
+          box-shadow: 0 0 0 3px var(--emerald-pale);
+        }
+        .nmf-icon {
+          color: var(--emerald);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border-radius: 10px;
+          background: var(--emerald-pale);
+          flex-shrink: 0;
+        }
+        .nmf-field {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          min-width: 0;
+        }
+        .nmf-field label {
+          font-size: 0.625rem;
+          font-weight: 800;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 0.125rem;
+        }
+        .nmf-field input,
+        .nmf-field select {
+          border: none;
+          background: transparent;
+          font-size: 0.9375rem;
+          font-weight: 700;
+          color: var(--charcoal);
+          padding: 0;
+          width: 100%;
+          outline: none;
+          appearance: none;
+        }
+        .nmf-field select {
+          cursor: pointer;
+        }
+        .nmf-submit-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          height: 52px;
+          background: linear-gradient(135deg, var(--emerald), #27956A);
+          color: white;
+          border: none;
+          border-radius: 16px;
+          font-size: 0.9375rem;
+          font-weight: 800;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(27,107,74,0.3);
+          transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .nmf-submit-btn:active {
+          transform: scale(0.98);
+        }
+        .nmf-submit-btn:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        @media (max-width: 768px) {
+          .native-mobile-form {
+            gap: 0.75rem;
+          }
+          .nmf-grid {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            padding: 0;
+            background: transparent;
+            border: none;
+          }
+          .nmf-input-group {
+            padding: 0.875rem 1rem;
+            border-radius: 16px;
+          }
+        }
+      `}</style>
     </form>
   );
 }

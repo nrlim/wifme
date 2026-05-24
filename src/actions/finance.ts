@@ -282,7 +282,8 @@ export async function getPayouts(opts: { search?: string; status?: string; page?
   const skip = (page - 1) * PAYOUT_PAGE_SIZE;
 
   const where: any = {};
-  if (status !== "ALL") {
+  const VALID_PAYOUT_STATUSES = ["PENDING", "COMPLETED", "FAILED"];
+  if (status && status !== "ALL" && VALID_PAYOUT_STATUSES.includes(status)) {
     where.status = status;
   }
   if (search.trim()) {
@@ -369,6 +370,10 @@ export async function updateGlobalSettings(data: {
   feeValue?: number;
   feeComponents?: FeeComponent[];
   minimumWithdrawal?: number;
+  platformBankName?: string;
+  platformBankAccount?: string;
+  platformBankHolder?: string;
+  paymentTimeoutHours?: number;
   supportedLocations?: string[];
   supportedServices?: string[];
   supportedLanguages?: string[];

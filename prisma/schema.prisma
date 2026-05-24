@@ -19,9 +19,11 @@ enum Role {
 
 enum BookingStatus {
   PENDING
+  PAYMENT_REVIEW
   CONFIRMED
   CANCELLED
   COMPLETED
+  REJECTED
 }
 
 enum Location {
@@ -110,10 +112,16 @@ model Booking {
   discountAmount  Float         @default(0)  // Jumlah diskon yang diterapkan
   promotionId     String?                    // Kode promo yang dipakai (opsional)
   promotion       Promotion?    @relation("BookingPromotion", fields: [promotionId], references: [id])
+  bundleId        String?                    // Kode paket bundling (opsional)
+  bundle          ActivityBundle? @relation("BookingBundle", fields: [bundleId], references: [id])
   notes           String?
   paymentRef      String?
   paymentStatus   String?       @default("UNPAID")
   paymentDeadline DateTime?
+  paymentProofUrl   String?
+  paymentVerifiedAt DateTime?
+  paymentVerifiedBy String?
+  paymentRejectedReason String?
   // ── Chat Session Control ──────────────────────────────────────
   // When muthawif closes the chat, chatClosedAt is set.
   // After this point, no new messages can be sent (read-only mode).
@@ -125,6 +133,63 @@ model Booking {
   review        Review?
   transactions  Transaction[]
   chatMessages  ChatMessage[]
+  items         BookingItem[]
+}
+
+// ── Activity Catalog (Master Data Managed by Admin/Amir) ────
+model Activity {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  location    String?
+  duration    String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookingItems BookingItem[]
+  bundleItems  BundleItem[]
+}
+
+model ActivityBundle {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float    // Harga total/diskon dari paket ini
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items       BundleItem[]
+  bookings    Booking[]    @relation("BookingBundle")
+}
+
+model BundleItem {
+  id         String         @id @default(cuid())
+  bundleId   String
+  bundle     ActivityBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  activityId String
+  activity   Activity       @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleId, activityId])
+}
+
+model BookingItem {
+  id         String   @id @default(cuid())
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  activityId String?
+  activity   Activity? @relation(fields: [activityId], references: [id])
+  date       DateTime @db.Date
+  timeSlot   String?
+  price      Float
+  createdAt  DateTime @default(now())
+
+  @@unique([bookingId, date])
+  @@index([bookingId])
 }
 
 // ── Trip Package ─────────────────────────────────────────────
@@ -296,6 +361,12 @@ model GlobalSetting {
   supportedLocations String[] @default(["Makkah", "Madinah"])
   supportedServices  String[] @default(["Umrah Reguler", "Badal Umrah", "City Tour"])
   supportedLanguages String[] @default(["Indonesia", "Arab", "Inggris"])
+  
+  platformBankName    String?  // e.g. "BCA"
+  platformBankAccount String?  // e.g. "1234567890"
+  platformBankHolder  String?  // e.g. "PT Wifme Berkah"
+  paymentTimeoutHours Int      @default(24)
+
   updatedAt         DateTime @updatedAt
 }
 

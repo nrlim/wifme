@@ -304,7 +304,6 @@ export default async function MuthawifDashboardPage({
               { id: "earnings", href: "/dashboard/muthawif?tab=earnings",  label: "Dashboard",           desc: "Pendapatan & analytics",  emoji: "📊",  sub: false },
               { id: "schedule", href: "/dashboard/muthawif?tab=schedule",  label: "Jadwal",              desc: "Kelola ketersediaan",    emoji: "📅",  sub: false },
               { id: "bookings", href: "/dashboard/muthawif/bookings",      label: "Pesanan",              desc: "Riwayat pesanan masuk",  emoji: "📋",  sub: false },
-              { id: "agenda",   href: "/agenda",                           label: "Agenda Perjalanan",   desc: "Timeline & laporan",     emoji: "🗓️", sub: true  },
               { id: "profile",  href: "/dashboard/muthawif?tab=profile",   label: "Profil Layanan",      desc: "Info, tarif & keahlian", emoji: "👤",  sub: false },
               { id: "wallet",   href: "/dashboard/muthawif?tab=wallet",    label: "Dompet Muthawif",     desc: "Balans & penarikan",     emoji: "💰",  sub: false },
             ].map((t) => {

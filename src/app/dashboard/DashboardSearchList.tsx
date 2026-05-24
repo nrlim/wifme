@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import MuthawifCard from "@/components/MuthawifCard";
 import type { FeeConfig } from "@/lib/fee";
+import BookingPopup from "@/components/BookingPopup";
 
 interface Muthawif {
   id: string;
@@ -29,9 +31,11 @@ interface Props {
 }
 
 export default function DashboardSearchList({ muthawifs, startDate, duration, feeConfig }: Props) {
+  const [selectedMuthawif, setSelectedMuthawif] = useState<Muthawif | null>(null);
+
   if (muthawifs.length === 0) {
     return (
-      <div style={{
+      <div className="dashboard-search-empty" style={{
         textAlign: "center",
         padding: "4rem 2rem",
         background: "white",
@@ -62,7 +66,7 @@ export default function DashboardSearchList({ muthawifs, startDate, duration, fe
   return (
     <div>
       {/* Results header */}
-      <div style={{
+      <div className="dashboard-results-header" style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         marginBottom: "1.25rem",
       }}>
@@ -83,7 +87,7 @@ export default function DashboardSearchList({ muthawifs, startDate, duration, fe
       </div>
 
       {/* Card grid similar to Search page */}
-      <div style={{
+      <div className="dashboard-search-grid" style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
         gap: "1.5rem",
@@ -98,9 +102,36 @@ export default function DashboardSearchList({ muthawifs, startDate, duration, fe
             dashboardHref="/dashboard?tab=beranda"
             searchLocation="ALL"
             feeConfig={feeConfig}
+            onBookClick={() => setSelectedMuthawif(m)}
           />
         ))}
       </div>
+
+      {selectedMuthawif && (
+        <BookingPopup
+          muthawifId={selectedMuthawif.user.id}
+          muthawifName={selectedMuthawif.user.name}
+          onClose={() => setSelectedMuthawif(null)}
+        />
+      )}
+      <style>{`
+        @media (max-width: 768px) {
+          .dashboard-search-empty {
+            padding: 2.5rem 1rem !important;
+            border-radius: 20px !important;
+          }
+          .dashboard-results-header {
+            align-items: flex-start !important;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-bottom: 0.85rem !important;
+          }
+          .dashboard-search-grid {
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 0.9rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

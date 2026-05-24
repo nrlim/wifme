@@ -108,7 +108,7 @@ function Pagination({ page, total, status }: { page: number; total: number; stat
   const shown = pages.filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1);
 
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", background: "white", borderRadius: "0 0 16px 16px", borderTop: "1px solid var(--border)" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem", padding: "1rem 1.25rem", background: "white", borderRadius: "0 0 16px 16px", borderTop: "1px solid var(--border)" }}>
       <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600 }}>
         Hal {page} dari {totalPages} · {total} pesanan
       </span>
@@ -228,7 +228,6 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
           {[
             { href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",            desc: "Kelola ketersediaan",    emoji: "📅",  sub: false },
             { href: "/dashboard/muthawif/bookings",     label: "Pesanan",            desc: "Riwayat pesanan masuk",  emoji: "📋",  sub: false, active: true },
-            { href: "/agenda",                          label: "Agenda Perjalanan",  desc: "Timeline & laporan",     emoji: "🗓️", sub: true  },
             { href: "/dashboard/muthawif?tab=profile",  label: "Profil Layanan",    desc: "Info, tarif & keahlian", emoji: "👤",  sub: false },
             { href: "/dashboard/muthawif?tab=wallet",   label: "Dompet",             desc: "Balans Escrow",          emoji: "💰",  sub: false },
           ].map((t) => (

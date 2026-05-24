@@ -7,6 +7,7 @@ interface ReviewModalProps {
   muthawifName: string;
   onClose: () => void;
   onSubmitted: () => void;
+  initialRating?: number;
 }
 
 const STAR_LABELS: Record<number, { text: string; emoji: string; color: string; bg: string }> = {
@@ -94,8 +95,8 @@ function StarPicker({ rating, onChange }: { rating: number; onChange: (v: number
   );
 }
 
-export default function ReviewModal({ bookingId, muthawifName, onClose, onSubmitted }: ReviewModalProps) {
-  const [rating, setRating] = useState(0);
+export default function ReviewModal({ bookingId, muthawifName, onClose, onSubmitted, initialRating = 0 }: ReviewModalProps) {
+  const [rating, setRating] = useState(initialRating);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

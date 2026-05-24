@@ -235,6 +235,13 @@ export function AmirHeaderPanel({
                       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
                       label: "Simulator Midtrans",
                       sub: "Testing Flow Pembayaran",
+                    },
+                    {
+                      roles: ["AMIR"],
+                      href: "/dashboard?tab=kegiatan",
+                      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>,
+                      label: "Katalog Kegiatan",
+                      sub: "Kelola master kegiatan",
                     }
                   ].filter(action => action.roles.includes(role)).map(action => (
                     <Link

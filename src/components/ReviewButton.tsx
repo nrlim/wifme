@@ -13,11 +13,63 @@ interface ReviewButtonProps {
   hasReview: boolean;
   /** Redirect destination setelah review/navigasi — disesuaikan dengan role user */
   dashboardHref: string;
+  variant?: "default" | "compact-stars";
 }
 
-export default function ReviewButton({ bookingId, muthawifId, muthawifName, hasReview, dashboardHref }: ReviewButtonProps) {
+export default function ReviewButton({ bookingId, muthawifId, muthawifName, hasReview, dashboardHref, variant = "default" }: ReviewButtonProps) {
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(hasReview);
+  const [hoveredStar, setHoveredStar] = useState(0);
+  const [selectedRating, setSelectedRating] = useState(0);
+
+  if (variant === "compact-stars") {
+    return (
+      <>
+        <div 
+          onMouseLeave={() => setHoveredStar(0)}
+          style={{ display: "flex", gap: "2px", height: 32, alignItems: "center" }}
+        >
+          {[1, 2, 3, 4, 5].map(v => {
+            const isFilled = submitted || (hoveredStar >= v);
+            return (
+              <svg 
+                key={v} 
+                width="16" height="16" viewBox="0 0 24 24" 
+                fill={isFilled ? "var(--gold)" : "transparent"} 
+                stroke={isFilled ? "none" : "var(--gold)"} 
+                strokeWidth={isFilled ? 0 : 1.5}
+                style={{ cursor: submitted ? "default" : "pointer", transition: "all 0.15s" }}
+                onMouseEnter={() => !submitted && setHoveredStar(v)}
+                onClick={() => {
+                  if (!submitted) {
+                    setSelectedRating(v);
+                    setOpen(true);
+                  }
+                }}
+              >
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+              </svg>
+            );
+          })}
+        </div>
+        {open && !submitted && (
+          <ReviewModal
+            bookingId={bookingId}
+            muthawifName={muthawifName}
+            initialRating={selectedRating}
+            onClose={() => {
+              setOpen(false);
+              setSelectedRating(0);
+            }}
+            onSubmitted={() => {
+              setOpen(false);
+              setSubmitted(true);
+            }}
+          />
+        )}
+      </>
+    );
+  }
 
   if (submitted) {
     return (

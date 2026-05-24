@@ -23,6 +23,10 @@ interface Settings {
   feeValue: number;
   feeComponents: FeeComponent[];
   minimumWithdrawal: number;
+  platformBankName?: string;
+  platformBankAccount?: string;
+  platformBankHolder?: string;
+  paymentTimeoutHours?: number;
 }
 
 function calculatePreview(muthawifPrice: number, settings: Settings): {
@@ -103,6 +107,10 @@ export default function FeeSettings({ initialSettings }: { initialSettings: Sett
     feeValue: 5,
     feeComponents: [],
     minimumWithdrawal: 50000,
+    platformBankName: '',
+    platformBankAccount: '',
+    platformBankHolder: '',
+    paymentTimeoutHours: 24,
   };
 
   const [settings, setSettings] = useState<Settings>(initialSettings ?? defaultSettings);
@@ -315,6 +323,37 @@ export default function FeeSettings({ initialSettings }: { initialSettings: Sett
               onChange={e => setSettings(s => ({ ...s, minimumWithdrawal: parseFloat(e.target.value) || 0 }))}
               style={{ paddingLeft: '2.75rem', fontWeight: 700, fontSize: '1rem' }}
             />
+          </div>
+        </section>
+
+        {/* Platform Bank Info */}
+        <section style={{ background: 'white', borderRadius: 20, border: '1px solid var(--border)', padding: '2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Banknote size={20} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--charcoal)' }}>Rekening Platform (Wifme Escrow)</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Rekening yang digunakan jamaah untuk transfer pembayaran.</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Nama Bank</label>
+              <input type="text" className="form-input" placeholder="Misal: Bank Syariah Indonesia (BSI)" value={settings.platformBankName || ''} onChange={e => setSettings(s => ({ ...s, platformBankName: e.target.value }))} style={{ marginTop: '0.25rem' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Nomor Rekening</label>
+              <input type="text" className="form-input" placeholder="Misal: 7123456789" value={settings.platformBankAccount || ''} onChange={e => setSettings(s => ({ ...s, platformBankAccount: e.target.value }))} style={{ marginTop: '0.25rem' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Atas Nama Rekening</label>
+              <input type="text" className="form-input" placeholder="Misal: PT Wifme Teknologi" value={settings.platformBankHolder || ''} onChange={e => setSettings(s => ({ ...s, platformBankHolder: e.target.value }))} style={{ marginTop: '0.25rem' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Batas Waktu Pembayaran (Jam)</label>
+              <input type="number" min="1" max="72" className="form-input" value={settings.paymentTimeoutHours || 24} onChange={e => setSettings(s => ({ ...s, paymentTimeoutHours: parseInt(e.target.value) || 24 }))} style={{ marginTop: '0.25rem' }} />
+            </div>
           </div>
         </section>
 
