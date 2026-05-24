@@ -1,17 +1,27 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { UIProvider } from "@/components/UIProvider";
 
 export const metadata: Metadata = {
-  title: "Wif-Me – Marketplace Muthawif & Umrah Mandiri",
+  title: "Wif-Me – Pendamping Ibadah Umroh",
   description:
     "Temukan Muthawif terpercaya untuk perjalanan Umrah dan Haji Anda. Booking langsung, transparan, dan aman.",
   keywords: ["muthawif", "umrah mandiri", "haji", "makkah", "madinah", "booking muthawif"],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Wif-Me",
+  },
   openGraph: {
     title: "Wif-Me – Temukan Muthawif Terpercaya",
-    description: "Platform marketplace Muthawif profesional untuk jamaah Umrah dan Haji mandiri.",
+    description: "Platform Pendamping Ibadah Umroh profesional untuk jamaah Umrah dan Haji mandiri.",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1B6B4A",
 };
 
 export default function RootLayout({

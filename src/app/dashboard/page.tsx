@@ -980,7 +980,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
   return (
     <div className="dashboard-fullscreen">
       {/* ══ SIDEBAR — wrapped in mobile drawer ══ */}
-      <MobileSidebarDrawer brandLabel="MARKETPLACE MUTHAWIF">
+      <MobileSidebarDrawer brandLabel="PENDAMPING IBADAH UMROH">
 
         {/* Brand header (desktop) */}
         <div style={{ padding: "1.25rem 1.375rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.625rem" }}>
@@ -994,7 +994,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
               Wif<span style={{ color: "#E4B55A" }}>–Me</span>
             </div>
             <div style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.5625rem", fontWeight: 700, letterSpacing: "0.07em", marginTop: 2 }}>
-              MARKETPLACE MUTHAWIF
+              PENDAMPING IBADAH UMROH
             </div>
           </div>
         </div>

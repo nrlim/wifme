@@ -289,7 +289,7 @@ export default async function MuthawifDashboardPage({
               Wif<span style={{ color: "#E4B55A" }}>–Me</span>
             </div>
             <div style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.5625rem", fontWeight: 700, letterSpacing: "0.07em", marginTop: 2 }}>
-              MARKETPLACE MUTHAWIF
+              PENDAMPING IBADAH UMROH
             </div>
           </div>
         </div>

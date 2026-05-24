@@ -214,7 +214,7 @@ export default function PaymentSimulationButton({ bookingId, amount, jamaahId, f
                   </div>
                   {[
                     { label: "Order ID", value: `#${bookingId.slice(0, 8).toUpperCase()}`, mono: true },
-                    { label: "Merchant", value: "Wif–Me Marketplace" },
+                    { label: "Merchant", value: "Wif–Me Pendamping Umroh" },
                     ...(discountAmount > 0 ? [{ label: "Kode Promo", value: promo?.code ?? "—", mono: true }] : []),
                     ...(discountAmount > 0 ? [{ label: "Diskon", value: `- Rp ${discountAmount.toLocaleString("id-ID")}`, highlight: true }] : []),
                   ].map(row => (

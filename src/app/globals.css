@@ -737,3 +737,258 @@ img {
   .amir-table-row    { display: none !important; }
   .amir-mobile-row   { display: block !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   PWA Install Prompt — InstallPrompt
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Floating Banner (mobile: bottom bar, desktop: bottom-right card) ── */
+.wifme-pwa-banner {
+  position: fixed;
+  z-index: 10000;
+  bottom: 5.5rem; /* Above bottom nav on mobile */
+  left: 0.75rem;
+  right: 0.75rem;
+  background: #ffffff;
+  border: 1px solid rgba(27, 107, 74, 0.12);
+  border-radius: 18px;
+  padding: 0.75rem 0.75rem 0.875rem 0.875rem;
+  box-shadow:
+    0 8px 32px rgba(27, 107, 74, 0.15),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+
+  /* Slide-up entrance */
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.wifme-pwa-banner--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Desktop: anchor to bottom-right corner */
+@media (min-width: 640px) {
+  .wifme-pwa-banner {
+    left: auto;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    width: 360px;
+  }
+}
+
+/* ── Close button ── */
+.wifme-pwa-close {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.wifme-pwa-close:hover {
+  background: #e2e8f0;
+}
+
+/* ── Content row (logo + text) ── */
+.wifme-pwa-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.wifme-pwa-logo {
+  border-radius: 10px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.wifme-pwa-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.wifme-pwa-headline {
+  font-size: 0.825rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-bottom: 0.125rem;
+  padding-right: 1.5rem; /* avoid close btn overlap */
+}
+
+.wifme-pwa-desc {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ── Action buttons row ── */
+.wifme-pwa-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.wifme-pwa-btn-ghost {
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.wifme-pwa-btn-ghost:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.wifme-pwa-btn-primary {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.875rem;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, var(--emerald), #27956A);
+  color: #ffffff;
+  font-size: 0.725rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.18s, transform 0.12s;
+  white-space: nowrap;
+}
+
+.wifme-pwa-btn-primary:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.wifme-pwa-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ══ iOS Modal (overlay) ══════════════════════════════════════════ */
+.wifme-pwa-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  animation: pwa-overlay-in 0.2s ease;
+}
+
+@keyframes pwa-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.wifme-pwa-ios-modal {
+  position: relative;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  animation: pwa-modal-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pwa-modal-in {
+  from { opacity: 0; transform: translateY(32px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.wifme-pwa-ios-header {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-bottom: 1.25rem;
+}
+
+.wifme-pwa-ios-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.wifme-pwa-ios-sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-top: 0.125rem;
+}
+
+/* ── iOS step list ── */
+.wifme-pwa-ios-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-bottom: 1.25rem;
+}
+
+.wifme-pwa-ios-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #334155;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.wifme-pwa-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--emerald), #27956A);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wifme-pwa-step-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 2px 6px;
+  color: var(--emerald);
+  vertical-align: middle;
+}

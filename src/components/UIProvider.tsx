@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
+import { InstallPrompt } from "./InstallPrompt";
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 type ToastType = "success" | "error" | "warning" | "info";
@@ -205,6 +206,16 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
+  useEffect(() => {
+    // PWA Service Worker Registration
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => console.log("SW registered:", reg.scope))
+        .catch((err) => console.error("SW registration failed:", err));
+    }
+  }, []);
+
   const addToast = useCallback((type: ToastType, title: string, message?: string) => {
     const id = `toast-${Date.now()}-${Math.random()}`;
     setToasts(prev => [...prev, { id, type, title, message }]);
@@ -242,6 +253,9 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
 
       {/* Confirm dialog */}
       {confirmState && <ConfirmDialog state={confirmState} onClose={handleConfirmClose} />}
+      
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </UIContext.Provider>
   );
 }

@@ -219,7 +219,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
             <div style={{ color: "white", fontWeight: 900, fontSize: "1rem", letterSpacing: "-0.02em", lineHeight: 1 }}>
               Wif<span style={{ color: "#E4B55A" }}>–Me</span>
             </div>
-            <div style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.5625rem", fontWeight: 700, letterSpacing: "0.07em", marginTop: 2 }}>MARKETPLACE MUTHAWIF</div>
+            <div style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.5625rem", fontWeight: 700, letterSpacing: "0.07em", marginTop: 2 }}>PENDAMPING IBADAH UMROH</div>
           </div>
         </div>
 

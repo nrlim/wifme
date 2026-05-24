@@ -1,0 +1,27 @@
+{
+  "name": "Wif-Me \u2013 Pendamping Ibadah Umroh",
+  "short_name": "Wif-Me",
+  "description": "Platform Pendamping Ibadah Umroh profesional untuk jamaah Umrah dan Haji mandiri.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1B6B4A",
+  "background_color": "#FAF7F2",
+  "lang": "id",
+  "categories": ["travel", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
