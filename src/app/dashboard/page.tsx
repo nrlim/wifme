@@ -28,6 +28,7 @@ import { getPromotions } from "@/actions/promotions";
 import ActivityManagement from "@/components/admin/ActivityManagement";
 import TableToolbar from "@/components/TableToolbar";
 import Pagination from "@/components/Pagination";
+import { BarChart3, Search, ClipboardList, Users, Banknote, Settings, Tag, MapPin, Briefcase, Languages, ListTodo, CreditCard } from "lucide-react";
 
 // Types corresponding to Next.js 15/16 App Router
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -1114,7 +1115,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=analytics",
       label: "Dashboard",
       desc: "Analytics & finansial",
-      emoji: "📊",
+      icon: BarChart3,
       tab: "analytics",
       show: session.role === "AMIR",
     },
@@ -1122,7 +1123,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=cari",
       label: "Cari Muthawif",
       desc: "Temukan muthawif tersedia",
-      emoji: "🔍",
+      icon: Search,
       tab: "cari",
       show: session.role === "JAMAAH",
     },
@@ -1130,7 +1131,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=beranda",
       label: "Riwayat Pesanan",
       desc: "Semua pesanan umrah",
-      emoji: "📋",
+      icon: ClipboardList,
       tab: "beranda",
       show: true,
     },
@@ -1138,7 +1139,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=muthawif",
       label: "Manajemen Muthawif",
       desc: "Kelola & verifikasi akun",
-      emoji: "👥",
+      icon: Users,
       tab: "muthawif",
       show: session.role === "AMIR",
     },
@@ -1146,7 +1147,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=penarikan",
       label: "Manajemen Penarikan",
       desc: "Kelola dana keluar",
-      emoji: "💸",
+      icon: Banknote,
       tab: "penarikan",
       show: session.role === "AMIR",
     },
@@ -1154,7 +1155,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=biaya",
       label: "Pengaturan Biaya",
       desc: "Fee jasa & manajemen",
-      emoji: "⚙️",
+      icon: Settings,
       tab: "biaya",
       show: session.role === "AMIR",
     },
@@ -1162,7 +1163,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=promo",
       label: "Kode Promo",
       desc: "Diskon & voucher jamaah",
-      emoji: "🏷️",
+      icon: Tag,
       tab: "promo",
       show: session.role === "AMIR",
     },
@@ -1175,7 +1176,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=master_lokasi",
       label: "Wilayah Operasi",
       desc: "Manajemen area operasi",
-      emoji: "📍",
+      icon: MapPin,
       tab: "master_lokasi",
       show: session.role === "AMIR",
     },
@@ -1183,7 +1184,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=master_layanan",
       label: "Jenis Layanan",
       desc: "Layanan Muthawif",
-      emoji: "💼",
+      icon: Briefcase,
       tab: "master_layanan",
       show: session.role === "AMIR",
     },
@@ -1191,7 +1192,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=master_bahasa",
       label: "Spesialisasi Bahasa",
       desc: "Pilihan bahasa komunikasi",
-      emoji: "🗣️",
+      icon: Languages,
       tab: "master_bahasa",
       show: session.role === "AMIR",
     },
@@ -1199,7 +1200,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=kegiatan",
       label: "Katalog Kegiatan",
       desc: "Kelola daftar aktivitas",
-      emoji: "📋",
+      icon: ListTodo,
       tab: "kegiatan",
       show: session.role === "AMIR",
     },
@@ -1212,7 +1213,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       href: "/dashboard?tab=simulator",
       label: "Simulator Midtrans",
       desc: "Test Flow Pembayaran",
-      emoji: "💳",
+      icon: CreditCard,
       tab: "simulator",
       show: session.role === "AMIR",
     },
@@ -1287,8 +1288,9 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                     background: isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: isSub ? "0.8125rem" : "1rem", flexShrink: 0,
+                    color: isActive ? "white" : "rgba(255,255,255,0.7)"
                   }}>
-                    {item.emoji}
+                    {item.icon && <item.icon size={isSub ? 14 : 18} strokeWidth={2.2} />}
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ color: isActive ? "white" : isSub ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.8)", fontWeight: isActive ? 700 : isSub ? 500 : 600, fontSize: isSub ? "0.8125rem" : "0.875rem", lineHeight: 1.2 }}>

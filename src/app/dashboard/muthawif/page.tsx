@@ -371,7 +371,7 @@ export default async function MuthawifDashboardPage({
         </header>
 
         {/* Main Content Area */}
-        <main className="dashboard-content-scroll p-[clamp(1rem,4vw,2rem)] overflow-y-auto flex-1 min-h-0">
+        <main className="dashboard-content-scroll overflow-y-auto flex-1 min-h-0" style={{ padding: "clamp(1rem, 4vw, 2rem)" }}>
 
         {currentTab === "schedule" && (
           <div>
