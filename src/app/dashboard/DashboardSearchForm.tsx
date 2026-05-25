@@ -201,7 +201,8 @@ export default function DashboardSearchForm({
           transform: none;
         }
 
-        @media (max-width: 768px) {
+        /* Tablet/Mobile view (<= 900px) */
+        @media (max-width: 900px) {
           .native-mobile-form {
             gap: 0.75rem;
           }
@@ -215,6 +216,42 @@ export default function DashboardSearchForm({
           .nmf-input-group {
             padding: 0.875rem 1rem;
             border-radius: 16px;
+          }
+        }
+
+        /* Desktop view (> 900px) */
+        @media (min-width: 901px) {
+          .native-mobile-form {
+            flex-direction: row;
+            align-items: center;
+            background: var(--ivory);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            gap: 0.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+          }
+          .nmf-grid {
+            flex: 1;
+            grid-template-columns: 1.2fr 0.8fr 1fr;
+            background: transparent;
+            border: none;
+            padding: 0;
+            gap: 0.5rem;
+          }
+          .nmf-input-group {
+            background: white;
+            border-radius: 18px;
+            border: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+          }
+          .nmf-submit-btn {
+            height: 56px;
+            padding: 0 2rem;
+            border-radius: 18px;
+            margin: 0;
+            flex-shrink: 0;
+            white-space: nowrap;
           }
         }
       `}</style>

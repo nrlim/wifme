@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useUI } from "@/components/UIProvider";
 import { supabaseClient, bucketName, compressImage } from "@/lib/supabase-client";
@@ -22,6 +23,10 @@ export function AmirHeaderPanel({
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(avatarUrl || null);
+  const [portalRoot, setPortalRoot] = useState<Element | null>(null);
+
+  // Portal root — document.body is only available client-side
+  useEffect(() => { setPortalRoot(document.body); }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,42 +76,12 @@ export function AmirHeaderPanel({
     MUTHAWIF: "Muthawif",
   };
 
-  return (
-    <>
-      {/* Avatar trigger button */}
-      <button
-        onClick={() => setPanelOpen(true)}
-        className="header-avatar-btn"
-        title="Profil Saya"
-      >
-        <div style={{
-          width: 36, height: 36, borderRadius: "50%",
-          background: "var(--emerald-pale)", color: "var(--emerald)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontWeight: 800, fontSize: "0.875rem",
-          border: "2px solid var(--border)",
-          overflow: "hidden"
-        }}>
-          {avatarUrl ? <img src={avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
-        </div>
-        <div className="header-user-text">
-          <div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--charcoal)", lineHeight: 1.2, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {name}
-          </div>
-          <div style={{ fontSize: "0.6875rem", color: "var(--emerald)", marginTop: "0.1rem", fontWeight: 600 }}>
-            ● {ROLE_LABEL[role] || role}
-          </div>
-        </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" className="header-user-text">
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-
-      {/* Slide panel */}
-      {panelOpen && (
+  // The panel overlay — rendered via Portal so it escapes backdrop-filter containing blocks
+  const panelOverlay = panelOpen && portalRoot
+    ? createPortal(
         <div
           onClick={() => setPanelOpen(false)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)", zIndex: 200, display: "flex", justifyContent: "flex-end" }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)", zIndex: 9000, display: "flex", justifyContent: "flex-end" }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -136,14 +111,14 @@ export function AmirHeaderPanel({
                   }} style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                     <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.25rem" }}>
                       <input type="hidden" name="photoUrl" value={uploadedUrl || ""} />
-                      <label 
-                        style={{ 
-                          width: 84, height: 84, borderRadius: "50%", overflow: "hidden", 
-                          background: "var(--emerald)", color: "white", display: "flex", 
-                          alignItems: "center", justifyContent: "center", fontSize: "1.5rem", 
-                          fontWeight: 800, border: "3px solid white", 
+                      <label
+                        style={{
+                          width: 84, height: 84, borderRadius: "50%", overflow: "hidden",
+                          background: "var(--emerald)", color: "white", display: "flex",
+                          alignItems: "center", justifyContent: "center", fontSize: "1.5rem",
+                          fontWeight: 800, border: "3px solid white",
                           boxShadow: "0 4px 20px rgba(27,107,74,0.15)", position: "relative",
-                          cursor: isUploading ? "not-allowed" : "pointer" 
+                          cursor: isUploading ? "not-allowed" : "pointer"
                         }}
                         title="Klik untuk mengubah foto profil"
                       >
@@ -152,7 +127,7 @@ export function AmirHeaderPanel({
                         ) : (
                           initials
                         )}
-                        <div 
+                        <div
                           style={{
                             position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)",
                             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -214,6 +189,13 @@ export function AmirHeaderPanel({
                       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
                       label: "Cari Muthawif",
                       sub: "Temukan pendamping ibadah terbaik",
+                    },
+                    {
+                      roles: ["JAMAAH"],
+                      href: "/dashboard?tab=pengaturan",
+                      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+                      label: "Pengaturan Akun",
+                      sub: "Edit profil & ubah kata sandi",
                     },
                     {
                       roles: ["AMIR"],
@@ -280,8 +262,44 @@ export function AmirHeaderPanel({
               </button>
             </div>
           </div>
+        </div>,
+        portalRoot
+      )
+    : null;
+
+  return (
+    <>
+      {/* Avatar trigger button */}
+      <button
+        onClick={() => setPanelOpen(true)}
+        className="header-avatar-btn"
+        title="Profil Saya"
+      >
+        <div style={{
+          width: 36, height: 36, borderRadius: "50%",
+          background: "var(--emerald-pale)", color: "var(--emerald)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontWeight: 800, fontSize: "0.875rem",
+          border: "2px solid var(--border)",
+          overflow: "hidden"
+        }}>
+          {avatarUrl ? <img src={avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
         </div>
-      )}
+        <div className="header-user-text">
+          <div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--charcoal)", lineHeight: 1.2, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {name}
+          </div>
+          <div style={{ fontSize: "0.6875rem", color: "var(--emerald)", marginTop: "0.1rem", fontWeight: 600 }}>
+            ● {ROLE_LABEL[role] || role}
+          </div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" className="header-user-text">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {/* Portal-rendered panel overlay */}
+      {panelOverlay}
       <style>{`@keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
     </>
   );

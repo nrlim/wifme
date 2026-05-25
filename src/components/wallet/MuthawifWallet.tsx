@@ -108,10 +108,10 @@ export default function MuthawifWallet({ wallet, userId }: { wallet: WalletData;
   const escrowCount = wallet.transactions.filter(t => t.type === 'PAYMENT_ESCROW').length;
 
   return (
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div className="wallet-root" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* ── Balance Hero ─────────────────────────────────────────────────────── */}
-      <div style={{
+      <div className="wallet-hero" style={{
         background: 'linear-gradient(135deg, #0d2818 0%, #1B6B4A 55%, #27956A 100%)',
         borderRadius: 24,
         padding: 'clamp(1.5rem, 4vw, 2rem)',
@@ -123,7 +123,7 @@ export default function MuthawifWallet({ wallet, userId }: { wallet: WalletData;
         <div style={{ position: 'absolute', right: 40, bottom: -80, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', pointerEvents: 'none' }} />
 
         {/* Row 1: Two balances side by side */}
-        <div style={{
+        <div className="wallet-balances" style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1px 1fr',
           gap: '0',
@@ -131,31 +131,32 @@ export default function MuthawifWallet({ wallet, userId }: { wallet: WalletData;
           position: 'relative',
         }}>
           {/* Dana Amanah */}
-          <div style={{ paddingRight: '1.5rem' }}>
+          <div className="wallet-escrow" style={{ paddingRight: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.5875rem', fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.5rem' }}>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               Dana Amanah (Escrow)
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+            <div className="wallet-escrow-val" style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
               {fmtRp(wallet.escrowBalance)}
             </div>
             <div style={{ fontSize: '0.6875rem', opacity: 0.5, marginTop: '0.375rem' }}>Menunggu penyelesaian ibadah</div>
           </div>
 
           {/* Divider */}
-          <div style={{ background: 'rgba(255,255,255,0.15)' }} />
+          <div className="wallet-divider" style={{ background: 'rgba(255,255,255,0.15)' }} />
 
           {/* Saldo Tersedia */}
-          <div style={{ paddingLeft: '1.5rem' }}>
+          <div className="wallet-available" style={{ paddingLeft: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.5875rem', fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.5rem' }}>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               Saldo Tersedia
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+            <div className="wallet-available-val" style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
               {fmtRp(wallet.availableBalance)}
             </div>
             <div style={{ marginTop: '0.625rem' }}>
               <button
+                className="wallet-wd-btn"
                 onClick={() => setShowWithdraw(!showWithdraw)}
                 disabled={wallet.availableBalance <= 0}
                 style={{
@@ -182,14 +183,14 @@ export default function MuthawifWallet({ wallet, userId }: { wallet: WalletData;
         </div>
 
         {/* Row 2: 4 stat pills full-width */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', position: 'relative' }}>
+        <div className="wallet-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', position: 'relative' }}>
           {[
             { label: 'Diterima Jamaah',  value: fmtCompact(totalGross),      color: '#86EFAC' },
             { label: 'Sudah Cair',       value: fmtCompact(totalNetSettled), color: '#6EE7B7' },
             { label: 'Total Ditarik',    value: fmtCompact(totalOut),        color: '#FCA5A5' },
             { label: 'Jml Booking',      value: `${escrowCount}x`,           color: '#93C5FD' },
           ].map(s => (
-            <div key={s.label} style={{
+            <div key={s.label} className="wallet-stat-card" style={{
               background: 'rgba(0,0,0,0.18)',
               borderRadius: 10,
               padding: '0.5rem 0.75rem',
@@ -398,7 +399,7 @@ export default function MuthawifWallet({ wallet, userId }: { wallet: WalletData;
       )}
 
       {/* ── Transaction Table ─────────────────────────────────────────────────── */}
-      <div style={{ background: 'white', borderRadius: 20, border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+      <div className="wallet-history-card" style={{ background: 'white', borderRadius: 20, border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
         <div style={{ padding: '1.125rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--ivory)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--charcoal)" strokeWidth="2">
@@ -513,6 +514,41 @@ export default function MuthawifWallet({ wallet, userId }: { wallet: WalletData;
           .tx-table-header  { display: none !important; }
           .tx-desktop-row   { display: none !important; }
           .tx-mobile-row    { display: block !important; }
+          
+          .wallet-root { padding-bottom: 5.5rem; }
+          .wallet-hero {
+            border-radius: 0 !important;
+            margin: -1rem -1rem 1rem -1rem !important;
+            padding: 1.5rem 1.25rem 2rem 1.25rem !important;
+          }
+          .wallet-balances {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
+          }
+          .wallet-escrow, .wallet-available { padding: 0 !important; }
+          .wallet-available { 
+            display: flex; flex-direction: column; align-items: flex-start;
+          }
+          .wallet-available-val { font-size: 2rem !important; }
+          .wallet-wd-btn { padding: 0.5rem 1.25rem !important; font-size: 0.875rem !important; }
+          
+          .wallet-stats-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.5rem !important;
+          }
+          .wallet-stat-card {
+            padding: 0.75rem !important;
+            background: rgba(255,255,255,0.1) !important;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+          }
+          
+          .wallet-history-card {
+            border-radius: 0 !important;
+            border-left: none !important;
+            border-right: none !important;
+            margin: 0 -1rem !important;
+          }
         }
       `}</style>
     </div>

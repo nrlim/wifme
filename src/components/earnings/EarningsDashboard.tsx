@@ -5,6 +5,7 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, LineChart, Line, Legend,
 } from "recharts";
+import Link from "next/link";
 import type { MuthawifAnalytics, AmirAnalytics, AnalyticsData } from "./types";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -415,8 +416,18 @@ function MuthawifEarningsDashboard({ data }: { data: MuthawifAnalytics }) {
   const { summary, chartData, weeklyTrend, transactions, payouts } = data;
   const hasData = summary.totalCompleted > 0 || summary.grossEarnings > 0;
 
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 640);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 640);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <>
+      {/* ── DESKTOP DASHBOARD ── */}
+      {!isMobile && (
+      <div className="earn-desktop-only" style={{ flexDirection: "column", gap: "1.5rem" }}>
       {/* ── Summary Cards ── */}
       <div
         className="earn-grid"
@@ -493,7 +504,7 @@ function MuthawifEarningsDashboard({ data }: { data: MuthawifAnalytics }) {
             Tren Mingguan (8 Minggu)
           </div>
           <div style={{ height: 64 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <AreaChart data={weeklyTrend} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
                 <defs>
                   <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
@@ -527,7 +538,7 @@ function MuthawifEarningsDashboard({ data }: { data: MuthawifAnalytics }) {
             <h3 style={{ fontSize: "0.9375rem", fontWeight: 800, color: "#2C2C2C" }}>Grafik Pendapatan Bulanan</h3>
             <p style={{ fontSize: "0.75rem", color: "#8A8A8A", marginTop: "0.125rem" }}>Pendapatan kotor vs bersih per bulan</p>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
+          <ResponsiveContainer width="100%" height={240} minWidth={1} minHeight={1}>
             <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0EBE1" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8A8A8A" }} axisLine={false} tickLine={false} />
@@ -592,7 +603,144 @@ function MuthawifEarningsDashboard({ data }: { data: MuthawifAnalytics }) {
           })}
         </div>
       )}
-    </div>
+      </div>
+      )}
+
+      {/* ── MOBILE NATIVE HOME ── */}
+      {isMobile && (
+      <div className="earn-mobile-only" style={{ flexDirection: "column", gap: "1.25rem", paddingBottom: "5.5rem", margin: "-1rem -1rem 1rem -1rem", padding: "1.25rem 1.25rem 5.5rem 1.25rem", background: "var(--ivory)" }}>
+        {/* Welcome Hero Card */}
+        <div style={{
+          background: "linear-gradient(135deg, #0d2818 0%, #1B6B4A 55%, #27956A 100%)",
+          borderRadius: 20, padding: "1.5rem 1.25rem", color: "white",
+          boxShadow: "0 4px 12px rgba(27,107,74,0.25)"
+        }}>
+          <div style={{ fontSize: "0.875rem", opacity: 0.8, marginBottom: "0.2rem" }}>Assalamu'alaikum,</div>
+          <div style={{ fontSize: "1.375rem", fontWeight: 800, marginBottom: "1.25rem" }}>Ringkasan Anda</div>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <div>
+              <div style={{ fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.7, marginBottom: "0.25rem" }}>
+                Saldo Tersedia
+              </div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>
+                {fmtFull(summary.availableBalance)}
+              </div>
+            </div>
+            <Link href="/dashboard/muthawif?tab=wallet" style={{
+              background: "white", color: "#1B6B4A", padding: "0.5rem 1rem", borderRadius: 99,
+              fontSize: "0.8125rem", fontWeight: 800, textDecoration: "none",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+            }}>
+              Tarik Dana
+            </Link>
+          </div>
+        </div>
+
+        {/* Quick Actions Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+          <Link href="/dashboard/muthawif/bookings?status=PENDING&page=1" style={{
+            background: "white", padding: "1rem", borderRadius: 16, border: "1px solid #E0D8CC",
+            textDecoration: "none", color: "#2C2C2C", display: "flex", flexDirection: "column", gap: "0.5rem",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.03)"
+          }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#FEF2F2", color: "#C0392B", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "0.9375rem" }}>Pesanan Baru</div>
+              <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Cek konfirmasi</div>
+            </div>
+          </Link>
+          <Link href="/dashboard/muthawif?tab=schedule" style={{
+            background: "white", padding: "1rem", borderRadius: 16, border: "1px solid #E0D8CC",
+            textDecoration: "none", color: "#2C2C2C", display: "flex", flexDirection: "column", gap: "0.5rem",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.03)"
+          }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#EBF5EF", color: "#1B6B4A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "0.9375rem" }}>Atur Jadwal</div>
+              <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Buka/tutup hari</div>
+            </div>
+          </Link>
+          <Link href="/dashboard/muthawif/bookings?status=CONFIRMED&page=1" style={{
+            background: "white", padding: "1rem", borderRadius: 16, border: "1px solid #E0D8CC",
+            textDecoration: "none", color: "#2C2C2C", display: "flex", flexDirection: "column", gap: "0.5rem",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.03)"
+          }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F0F9FF", color: "#0EA5E9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "0.9375rem" }}>Tugas Aktif</div>
+              <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Lihat jadwal ibadah</div>
+            </div>
+          </Link>
+          <Link href="/dashboard/muthawif?tab=profile" style={{
+            background: "white", padding: "1rem", borderRadius: 16, border: "1px solid #E0D8CC",
+            textDecoration: "none", color: "#2C2C2C", display: "flex", flexDirection: "column", gap: "0.5rem",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.03)"
+          }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#FEF3C7", color: "#D97706", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "0.9375rem" }}>Profil Saya</div>
+              <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Edit layanan</div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Mini Stats List */}
+        <div style={{ background: "white", borderRadius: 16, border: "1px solid #E0D8CC" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid #E0D8CC" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#EBF5EF", color: "#1B6B4A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "#2C2C2C" }}>Pendapatan Bersih</div>
+                <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Total ditarik/cair</div>
+              </div>
+            </div>
+            <div style={{ fontWeight: 900, color: "#1B6B4A", fontSize: "0.9375rem" }}>
+              {fmtFull(summary.netIncome)}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid #E0D8CC" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#F0F9FF", color: "#0EA5E9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "#2C2C2C" }}>Dana Escrow</div>
+                <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Booking aktif</div>
+              </div>
+            </div>
+            <div style={{ fontWeight: 800, color: "#0EA5E9", fontSize: "0.9375rem" }}>
+              {fmtFull(summary.pendingBalance)}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FEF3C7", color: "#D97706", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "#2C2C2C" }}>Selesai & Rating</div>
+                <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Total layanan selesai</div>
+              </div>
+            </div>
+            <div style={{ fontWeight: 800, color: "#D97706", fontSize: "0.9375rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+              {summary.totalCompleted} <span style={{ fontSize: "0.6875rem", opacity: 0.7, fontWeight: 700 }}>({summary.rating > 0 ? summary.rating.toFixed(1) : "—"} ⭐)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      )}
+    </>
   );
 }
 
@@ -710,7 +858,7 @@ function AmirEarningsDashboard({ data }: { data: AmirAnalytics }) {
             <h3 style={{ fontSize: "0.9375rem", fontWeight: 800, color: "#2C2C2C" }}>Tren GMV & Komisi</h3>
             <p style={{ fontSize: "0.75rem", color: "#8A8A8A", marginTop: "0.125rem" }}>Nilai transaksi platform per bulan</p>
           </div>
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={260} minWidth={1} minHeight={1}>
             <BarChart data={gmvChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0EBE1" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8A8A8A" }} axisLine={false} tickLine={false} />
@@ -1063,7 +1211,12 @@ export default function EarningsDashboard({ initialRole }: { initialRole: string
         .earn-tx-row { display: grid !important; }
         .earn-tx-mob { display: none !important; }
         .earn-tx-hdr { display: grid !important; }
+        .earn-desktop-only { display: flex; }
+        .earn-mobile-only { display: none; }
+        
         @media (max-width: 640px) {
+          .earn-desktop-only { display: none !important; }
+          .earn-mobile-only { display: flex !important; }
           .earn-tx-row { display: none !important; }
           .earn-tx-mob { display: block !important; }
           .earn-tx-hdr { display: none !important; }

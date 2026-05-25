@@ -137,10 +137,13 @@ npx prisma studio    # Visual DB browser
 
 ### Styling
 - Tailwind CSS v4 utilities in JSX.
-- Custom tokens in `globals.css` (CSS variables: `--emerald`, `--gold`, `--ivory`, etc.).
-- Framer Motion for complex animations.
+- **STATIC INLINE STYLE BAN**: Do **NOT** use inline `style={{ ... }}` blocks for static properties.
+- Custom tokens in `globals.css` (CSS variables: `--emerald`, `--gold`, `--ivory`, etc.) accessed via arbitrary Tailwind brackets (`bg-[var(--emerald)]`).
+- Framer Motion for complex animations (`motion.div`).
 - Primary font: `Plus Jakarta Sans` · Arabic: `Amiri`.
 - Color scheme: Emerald primary, Gold accent, Ivory background.
+- **Portal Mandate**: Use `createPortal` to `document.body` for all viewport-wide drawers (e.g. user profile drawer) or modals inside containing-block containers (e.g. backdrop-filter elements) to prevent mobile isolation bugs.
+- **Skill Reference**: Refer to `wifme-styling/instructions.md` before coding layouts.
 
 ### API Routes
 - Pattern: `src/app/api/[resource]/route.ts`
@@ -247,12 +250,13 @@ NEXT_PUBLIC_FIREBASE_APP_ID=
 
 ### DO
 - Read `@AGENTS.md` fully before starting any task.
-- Consult skills in `C:\Users\nural\.agents\skills` before architectural decisions.
+- Consult skills in `C:\Users\nural\.agents\skills` and `.agents\skills` before architectural decisions.
+- Read and follow `wifme-styling/instructions.md` guidelines.
 - Use Prisma singleton from `@/lib/prisma`.
 - Use `getSession()` for auth checks.
 - Validate all inputs with Zod.
 - Use shadcn/ui for building UI components.
-- Design mobile-first (touch targets ≥ 44px, `100dvh`).
+- Design mobile-first (touch targets ≥ 44px, `100dvh`), separating mobile vs web styling cleanly.
 - Use existing CSS variables from `globals.css`.
 - Keep all monetary values in IDR with `Math.round()`.
 
@@ -260,6 +264,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=
 - Don't use `NextAuth`, `Auth.js`, `Clerk` — custom JWT auth only.
 - Don't use emoticons or emojis anywhere in the code, UI copy, or documentation.
 - Don't use `any` type.
+- Don't use inline `style={{ ... }}` for static formatting properties.
 - Don't call Prisma from Client Components.
 - Don't expose server-only env vars to the client.
 - Don't hardcode fee values — read from `GlobalSetting`.
@@ -272,7 +277,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=
 ## Skills Directory
 
 ```
-C:\Users\nural\.agents\skills\
+Global Skills: C:\Users\nural\.agents\skills\
 ├── api-design-principles/    → REST API patterns
 ├── api-designer/             → Endpoint design
 ├── next-best-practices/      → Next.js App Router patterns
@@ -283,6 +288,9 @@ C:\Users\nural\.agents\skills\
 ├── typescript-pro/           → TypeScript strict patterns
 ├── ui-ux-pro-max/            → Premium UI/UX design
 └── vercel-react-best-practices/
+
+Local Skills: .agents\skills\
+└── wifme-styling/            → Wifme responsive mapping, portal rules, & inline style cleanup instructions
 ```
 
 **Always check relevant skills before implementing new features.**

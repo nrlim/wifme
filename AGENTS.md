@@ -194,11 +194,14 @@ wifme/
 
 ### 6.4 Styling
 - **Tailwind CSS v4** is the primary styling tool — use utility classes in JSX.
-- Custom design tokens are defined as CSS variables in `src/app/globals.css`.
-- Use Framer Motion for animations — prefer `motion.div` over CSS animations for complex motion.
+- **STATIC INLINE STYLE BAN**: Do **NOT** use inline `style={{ ... }}` blocks for static properties (margins, padding, positions, borders, text, colors). Inline styles are ONLY allowed for highly dynamic runtime calculations (e.g. progress bar widths).
+- **CSS Custom Properties**: Always use design token variables from `src/app/globals.css` via arbitrary Tailwind classes (e.g., `text-[var(--emerald)]` rather than raw `#1B6B4A`).
+- **Framer Motion**: Prefer `motion.div` over raw CSS transitions for complex layout or state animations.
 - **Color palette**: Emerald (`#1B6B4A`) as primary, Gold (`#C4973B`) as accent, Ivory (`#FAF7F2`) as background.
 - **Typography**: Primary font is `Plus Jakarta Sans`, Arabic text uses `Amiri` serif.
-- Mobile-first: always design for mobile viewport first, then layer on desktop styles.
+- **Mobile-first Design**: Always design for mobile viewport first, then layer on desktop enhancements using Tailwind media modifiers.
+- **Portal Mandate**: All dropdown overlays, menus, or drawers that must appear over the full viewport MUST use a React Portal to `document.body` if their parent containers have properties that create containing blocks (e.g., `backdrop-filter`, `transform`, `will-change`). Without a Portal, layout rendering will break on mobile devices.
+- **Mandatory Reading**: Before writing any CSS or layout code, you MUST study `wifme-styling/instructions.md` in the skills directory.
 
 ### 6.5 API Routes (Route Handlers)
 - Located in `src/app/api/[resource]/route.ts`.
@@ -226,8 +229,9 @@ wifme/
 - All UI must be designed **mobile-native-first**. Desktop is an enhanced experience.
 - Touch targets minimum **44×44px**.
 - Use `100dvh` instead of `100vh` for mobile viewport height.
+- **Responsive Separation**: Always explicitly structure your CSS/Tailwind classes to distinguish mobile layout from web layout. Avoid mixed classes that compromise either resolution.
 - Responsive breakpoints:
-  - Mobile: `≤ 640px`
+  - Mobile: `≤ 640px` (or `≤ 768px` for dashboard sidebar transitions)
   - Tablet: `641px – 900px`
   - Desktop: `> 900px`
 - Off-canvas navigation pattern for mobile dashboards (see `MobileSidebarDrawer.tsx`).
@@ -273,8 +277,14 @@ wifme/
 
 Before making **any** architectural decision, implementing new features, or making assumptions about business logic, you **MUST** consult the skills in:
 
+**Global Skills Directory**:
 ```
 C:\Users\nural\.agents\skills
+```
+
+**Local Skills Directory (Project Specific)**:
+```
+.agents\skills
 ```
 
 Available skills:
@@ -292,6 +302,7 @@ Available skills:
 | `typescript-pro` | TypeScript strict-mode patterns and best practices |
 | `ui-ux-pro-max` | Premium UI/UX design patterns |
 | `vercel-react-best-practices` | Vercel + React deployment and performance patterns |
+| `wifme-styling` | Comprehensive Wifme styling rules, responsive matrices, portal mandates, and inline style cleanup instructions |
 
 ---
 

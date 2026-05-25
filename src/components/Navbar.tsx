@@ -104,38 +104,33 @@ export default function Navbar({ user }: NavbarProps) {
       <nav
         id="main-nav"
         aria-label="Navigasi utama"
-        style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-          background: transparent ? "transparent" : "rgba(255,255,255,0.9)",
-          backdropFilter: transparent ? "none" : "blur(16px)",
-          borderBottom: transparent ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.05)",
-          padding: "1rem 0",
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        }}
+        className={`fixed top-0 left-0 right-0 z-50 py-4 transition-all duration-300 ease-in-out ${
+          transparent
+            ? "bg-transparent backdrop-blur-none border-b border-white/10"
+            : "bg-white/90 backdrop-blur-md border-b border-black/5"
+        }`}
       >
-        <div style={{ display: "flex", width: "100%", padding: "0 clamp(1.5rem, 5vw, 4rem)", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+        <div className="flex w-full px-[clamp(1.5rem,5vw,4rem)] items-center justify-between gap-4">
           {/* ── Logo ── */}
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", flexShrink: 0 }}>
-            <div style={{
-              width: 38, height: 38,
-              borderRadius: 10,
-              background: "linear-gradient(135deg, #1B6B4A, #27956A)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: transparent ? "0 4px 14px rgba(0,0,0,0.25)" : "0 2px 8px rgba(27,107,74,0.2)",
-              flexShrink: 0,
-              transition: "box-shadow 0.3s",
-            }}>
+          <Link href="/" className="flex items-center gap-2.5 no-underline shrink-0">
+            <div className={`w-[38px] h-[38px] rounded-[10px] bg-gradient-to-br from-[var(--emerald)] to-[var(--emerald-light)] flex items-center justify-center shrink-0 transition-shadow duration-300 ${
+              transparent ? "shadow-[0_4px_14px_rgba(0,0,0,0.25)]" : "shadow-[0_2px_8px_rgba(27,107,74,0.2)]"
+            }`}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
                 <circle cx="12" cy="9" r="2.5"/>
               </svg>
             </div>
             <div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ color: transparent ? "white" : "var(--charcoal)", fontWeight: 900, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>
-                  Wif<span style={{ color: "var(--gold)" }}>-Me</span>
+              <div className="flex flex-col gap-[2px]">
+                <span className={`font-black text-xl tracking-[-0.02em] leading-none ${
+                  transparent ? "text-white" : "text-[var(--charcoal)]"
+                }`}>
+                  Wif<span className="text-[var(--gold)]">-Me</span>
                 </span>
-                <div style={{ color: transparent ? "rgba(255,255,255,0.7)" : "var(--emerald)", fontSize: "0.625rem", fontWeight: 800, letterSpacing: "0.08em", lineHeight: 1 }}>
+                <div className={`text-[10px] font-extrabold tracking-widest leading-none ${
+                  transparent ? "text-white/70" : "text-[var(--emerald)]"
+                }`}>
                   PENDAMPING IBADAH UMROH
                 </div>
               </div>
@@ -143,23 +138,16 @@ export default function Navbar({ user }: NavbarProps) {
           </Link>
 
           {/* ── Desktop Nav Links (hidden on mobile) ── */}
-          <div className="nb-desktop-links" style={{ display: "none", alignItems: "center", gap: "0.125rem" }}>
+          <div className="nb-desktop-links hidden md:flex items-center gap-0.5">
             {NAV_LINKS.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                className={`nb-link ${transparent ? "nb-link-glass" : "nb-link-solid"}`}
-                style={{
-                  fontSize: "0.9375rem",
-                  fontWeight: 550,
-                  color: transparent ? "rgba(255,255,255,0.9)" : "#4a4a4a",
-                  textDecoration: "none",
-                  padding: "0.5rem 0.875rem",
-                  borderRadius: "10px",
-                  transition: "background 0.15s, color 0.15s",
-                  letterSpacing: "-0.01em",
-                  whiteSpace: "nowrap",
-                }}
+                className={`nb-link text-[15px] font-[550] no-underline py-2 px-3.5 rounded-[10px] transition-colors duration-150 tracking-[-0.01em] whitespace-nowrap ${
+                  transparent
+                    ? "text-white/90 hover:bg-white/12 hover:text-white"
+                    : "text-[#4a4a4a] hover:bg-[var(--emerald-pale)] hover:text-[var(--emerald)]"
+                }`}
               >
                 {item.label}
               </a>
@@ -167,47 +155,49 @@ export default function Navbar({ user }: NavbarProps) {
           </div>
 
           {/* ── Desktop Auth (hidden on mobile) ── */}
-          <div className="nb-desktop-auth" style={{ display: "none", alignItems: "center", gap: "0.5rem", flexShrink: 0, marginLeft: "1.5rem" }}>
+          <div className="nb-desktop-auth hidden md:flex items-center gap-2 shrink-0 ml-6">
             {/* Divider to separate from nav links */}
-            <div style={{ width: 1, height: 24, background: transparent ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)", marginRight: "0.5rem" }} />
+            <div className={`w-[1px] h-6 mr-2 ${
+              transparent ? "bg-white/20" : "bg-black/10"
+            }`} />
             
             {user ? (
               <>
-                <Link href="/dashboard" className="nb-avatar-pill" style={{
-                  display: "flex", alignItems: "center", gap: "0.5rem",
-                  padding: "0.375rem 0.875rem 0.375rem 0.375rem",
-                  borderRadius: "99px",
-                  background: transparent ? "rgba(255,255,255,0.12)" : "rgba(27,107,74,0.08)",
-                  border: `1.5px solid ${transparent ? "rgba(255,255,255,0.2)" : "rgba(27,107,74,0.15)"}`,
-                  textDecoration: "none",
-                  transition: "background 0.2s",
-                }}>
-                  <div style={{
-                    width: 26, height: 26, borderRadius: "50%",
-                    background: "linear-gradient(135deg, #1B6B4A, #27956A)",
-                    color: "white", fontWeight: 800, fontSize: "0.75rem",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>{firstNameInitial}</div>
-                  <span style={{ fontSize: "0.875rem", fontWeight: 700, color: transparent ? "white" : "var(--emerald)", whiteSpace: "nowrap" }}>
+                <Link
+                  href="/dashboard"
+                  className={`flex items-center gap-2 p-1.5 pr-3.5 rounded-full no-underline transition-colors duration-200 border-[1.5px] ${
+                    transparent
+                      ? "bg-white/12 border-white/20 hover:bg-white/20"
+                      : "bg-[var(--emerald-pale)] border-[var(--emerald)]/15 hover:bg-[var(--emerald-pale)]/80"
+                  }`}
+                >
+                  <div className="w-[26px] h-[26px] rounded-full bg-gradient-to-br from-[var(--emerald)] to-[var(--emerald-light)] text-white font-extrabold text-xs flex items-center justify-center">
+                    {firstNameInitial}
+                  </div>
+                  <span className={`text-sm font-bold whitespace-nowrap ${
+                    transparent ? "text-white" : "text-[var(--emerald)]"
+                  }`}>
                     {firstName}
                   </span>
                 </Link>
-                <button onClick={handleLogout} style={{
-                  fontSize: "0.875rem", fontWeight: 600,
-                  color: transparent ? "rgba(255,255,255,0.65)" : "#9CA3AF",
-                  background: "none", border: "none", cursor: "pointer", padding: "0.5rem 0.375rem",
-                }}>Keluar</button>
+                <button
+                  onClick={handleLogout}
+                  className={`text-sm font-semibold bg-transparent border-none cursor-pointer py-2 px-1.5 transition-colors duration-150 ${
+                    transparent ? "text-white/65 hover:text-white" : "text-gray-400 hover:text-red-500"
+                  }`}
+                >
+                  Keluar
+                </button>
               </>
             ) : (
-              <Link href="/auth/login" className={`nb-login-link ${transparent ? "nb-link-glass" : "nb-link-solid"}`} style={{
-                fontSize: "0.9375rem", fontWeight: 700,
-                color: transparent ? "rgba(255,255,255,0.95)" : "var(--emerald)",
-                textDecoration: "none",
-                padding: "0.5rem 1rem",
-                borderRadius: "10px",
-                transition: "background 0.15s, color 0.15s",
-                whiteSpace: "nowrap",
-              }}>
+              <Link
+                href="/auth/login"
+                className={`text-[15px] font-bold no-underline py-2 px-4 rounded-[10px] transition-colors duration-150 whitespace-nowrap ${
+                  transparent
+                    ? "text-white/95 bg-white/10 hover:bg-white/20"
+                    : "text-[var(--emerald)] bg-[var(--emerald-pale)] hover:bg-[var(--emerald)] hover:text-white"
+                }`}
+              >
                 Masuk
               </Link>
             )}
@@ -219,74 +209,47 @@ export default function Navbar({ user }: NavbarProps) {
           MOBILE BOTTOM NAVIGATION
       ══════════════════════════════════════ */}
       <div
-        className="nb-mobile-bottom-nav"
-        style={{
-          display: "flex",
-          position: "fixed",
-          bottom: 0, left: 0, right: 0,
-          background: "rgba(255,255,255,0.98)",
-          backdropFilter: "blur(20px)",
-          borderTop: "1px solid rgba(0,0,0,0.06)",
-          paddingBottom: "env(safe-area-inset-bottom)",
-          height: 64,
-          zIndex: 190,
-          justifyContent: "space-around",
-          alignItems: "center",
-          boxShadow: "0 -4px 20px rgba(0,0,0,0.04)",
-        }}
+        className="nb-mobile-bottom-nav flex md:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-md border-t border-black/5 pb-[env(safe-area-inset-bottom)] h-16 z-[190] justify-around items-center shadow-[0_-4px_20px_rgba(0,0,0,0.04)]"
       >
-        <Link href="/" className="bn-item" style={{ color: pathname === "/" ? "var(--emerald)" : "#9CA3AF" }}>
+        <Link href="/" className={`bn-item ${pathname === "/" ? "text-[var(--emerald)]" : "text-[#9CA3AF]"}`}>
           <Home size={22} strokeWidth={pathname === "/" ? 2.5 : 2} />
           <span>Beranda</span>
         </Link>
-        <Link href="/#search" className="bn-item" style={{ color: "#9CA3AF" }}>
+        <Link href="/#search" className="bn-item text-[#9CA3AF]">
           <Search size={22} />
           <span>Cari</span>
         </Link>
 
         {/* Center Action Button */}
-        <div style={{ position: "relative", width: 64, height: 64 }}>
+        <div className="relative w-16 h-16">
           <button
             onClick={handleCenterAction}
             aria-label="Fitur Utama"
-            style={{
-              position: "absolute",
-              top: -24,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 56, height: 56,
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, var(--emerald), #27956A)",
-              color: "white",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              border: "none", cursor: "pointer",
-              boxShadow: "0 8px 24px rgba(27,107,74,0.4)",
-              transition: "transform 0.2s",
-            }}
+            className="absolute top-[-24px] left-1/2 translate-x-[-50%] w-14 h-14 rounded-full bg-gradient-to-br from-[var(--emerald)] to-[var(--emerald-light)] text-white flex items-center justify-center border-none cursor-pointer shadow-[0_8px_24px_rgba(27,107,74,0.4)] active:scale-95 transition-transform"
           >
             <LayoutGrid size={26} strokeWidth={2.5} />
           </button>
         </div>
 
         {user ? (
-          <Link href="/dashboard" className="bn-item" style={{ color: pathname.startsWith("/dashboard") && !pathname.includes("settings") ? "var(--emerald)" : "#9CA3AF" }}>
+          <Link href="/dashboard" className={`bn-item ${pathname.startsWith("/dashboard") && !pathname.includes("settings") ? "text-[var(--emerald)]" : "text-[#9CA3AF]"}`}>
             <ClipboardList size={22} strokeWidth={pathname.startsWith("/dashboard") && !pathname.includes("settings") ? 2.5 : 2} />
             <span>Pesanan</span>
           </Link>
         ) : (
-          <Link href="/#cara-kerja" className="bn-item" style={{ color: "#9CA3AF" }}>
+          <Link href="/#cara-kerja" className="bn-item text-[#9CA3AF]">
             <ClipboardList size={22} />
             <span>Panduan</span>
           </Link>
         )}
 
         {user ? (
-          <Link href="/dashboard/settings" className="bn-item" style={{ color: pathname.includes("settings") ? "var(--emerald)" : "#9CA3AF" }}>
-            <User size={22} strokeWidth={pathname.includes("settings") ? 2.5 : 2} />
-            <span>Profil</span>
+          <Link href="/bantuan" className={`bn-item ${pathname.includes("bantuan") ? "text-[var(--emerald)]" : "text-[#9CA3AF]"}`}>
+            <HelpCircle size={22} strokeWidth={pathname.includes("bantuan") ? 2.5 : 2} />
+            <span>Bantuan</span>
           </Link>
         ) : (
-          <Link href="/auth/login" className="bn-item" style={{ color: pathname === "/auth/login" ? "var(--emerald)" : "#9CA3AF" }}>
+          <Link href="/auth/login" className={`bn-item ${pathname === "/auth/login" ? "text-[var(--emerald)]" : "text-[#9CA3AF]"}`}>
             <LogIn size={22} strokeWidth={pathname === "/auth/login" ? 2.5 : 2} />
             <span>Masuk</span>
           </Link>
@@ -299,14 +262,9 @@ export default function Navbar({ user }: NavbarProps) {
       <div
         aria-hidden="true"
         onClick={() => setMenuOpen(false)}
-        style={{
-          position: "fixed", inset: 0, zIndex: 210,
-          background: "rgba(0,0,0,0.5)",
-          backdropFilter: "blur(4px)",
-          opacity: menuOpen ? 1 : 0,
-          pointerEvents: menuOpen ? "auto" : "none",
-          transition: "opacity 0.3s ease",
-        }}
+        className={`fixed inset-0 z-[210] bg-black/50 backdrop-blur-[4px] transition-opacity duration-300 ease-in-out ${
+          menuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
       />
 
       <div
@@ -314,27 +272,18 @@ export default function Navbar({ user }: NavbarProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Menu Fitur"
-        style={{
-          position: "fixed",
-          bottom: 0, left: 0, right: 0,
-          zIndex: 220,
-          background: "white",
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          padding: "24px 20px calc(24px + env(safe-area-inset-bottom))",
-          transform: menuOpen ? "translateY(0)" : "translateY(100%)",
-          transition: "transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)",
-          boxShadow: "0 -8px 40px rgba(0,0,0,0.15)",
-        }}
+        className={`fixed bottom-0 left-0 right-0 z-[220] bg-[var(--ivory)] border-t border-[var(--border)] rounded-t-[24px] px-5 pt-6 pb-[calc(24px+env(safe-area-inset-bottom))] shadow-[0_-8px_40px_rgba(0,0,0,0.15)] transition-transform duration-[350ms] cubic-bezier(0.32, 0.72, 0, 1) ${
+          menuOpen ? "translate-y-0" : "translate-y-full"
+        }`}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h3 style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--charcoal)", margin: 0 }}>{user ? "Fitur Wifme" : "Menu Navigasi"}</h3>
-          <button onClick={() => setMenuOpen(false)} style={{ background: "none", border: "none", color: "#6B7280", padding: 4, cursor: "pointer" }}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-black text-[var(--charcoal)] m-0">{user ? "Fitur Wifme" : "Menu Navigasi"}</h3>
+          <button onClick={() => setMenuOpen(false)} className="bg-transparent border-none text-gray-500 p-1 cursor-pointer hover:text-red-500 transition-colors">
             <X size={24} />
           </button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px 12px" }}>
+        <div className="grid grid-cols-4 gap-x-3 gap-y-4">
           {user ? (
             <>
               {features.map((feat) => (
@@ -342,22 +291,22 @@ export default function Navbar({ user }: NavbarProps) {
                   key={feat.href}
                   href={feat.href}
                   onClick={() => setMenuOpen(false)}
-                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textDecoration: "none" }}
+                  className="flex flex-col items-center gap-2 no-underline group"
                 >
-                  <div style={{ width: 52, height: 52, borderRadius: 16, background: "var(--ivory-dark)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--emerald)", border: "1px solid var(--border)" }}>
+                  <div className="w-[52px] h-[52px] rounded-2xl bg-white border border-[var(--border)] shadow-[0_1px_3px_rgba(0,0,0,0.01)] flex items-center justify-center text-[var(--emerald)] group-hover:border-[var(--emerald)] group-hover:bg-[var(--emerald-pale)] transition-colors duration-150">
                     {feat.icon}
                   </div>
-                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-body)", textAlign: "center" }}>{feat.label}</span>
+                  <span className="text-xs font-semibold text-[var(--text-body)] text-center group-hover:text-[var(--emerald)] transition-colors">{feat.label}</span>
                 </Link>
               ))}
               <button
                 onClick={handleLogout}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                className="flex flex-col items-center gap-2 bg-transparent border-none cursor-pointer p-0 group"
               >
-                <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(239,68,68,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#EF4444", border: "1px solid rgba(239,68,68,0.2)" }}>
-                  <LogIn size={20} style={{ transform: "rotate(180deg)" }} />
+                <div className="w-[52px] h-[52px] rounded-2xl bg-red-50 border border-red-200/40 flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors duration-150">
+                  <LogIn size={20} className="rotate-180" />
                 </div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#EF4444", textAlign: "center" }}>Keluar</span>
+                <span className="text-xs font-semibold text-red-500 text-center">Keluar</span>
               </button>
             </>
           ) : (
@@ -366,12 +315,12 @@ export default function Navbar({ user }: NavbarProps) {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textDecoration: "none" }}
+                className="flex flex-col items-center gap-2 no-underline group"
               >
-                <div style={{ width: 52, height: 52, borderRadius: 16, background: "var(--ivory-dark)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--emerald)", border: "1px solid var(--border)" }}>
+                <div className="w-[52px] h-[52px] rounded-2xl bg-white border border-[var(--border)] shadow-[0_1px_3px_rgba(0,0,0,0.01)] flex items-center justify-center text-[var(--emerald)] group-hover:border-[var(--emerald)] group-hover:bg-[var(--emerald-pale)] transition-colors duration-150">
                   {getNavIcon(link.href)}
                 </div>
-                <span style={{ fontSize: "0.7rem", fontWeight: 600, color: "var(--text-body)", textAlign: "center" }}>{link.label}</span>
+                <span className="text-xs font-semibold text-[var(--text-body)] text-center group-hover:text-[var(--emerald)] transition-colors">{link.label}</span>
               </Link>
             ))
           )}
@@ -413,3 +362,4 @@ export default function Navbar({ user }: NavbarProps) {
     </>
   );
 }
+

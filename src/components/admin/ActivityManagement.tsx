@@ -229,29 +229,19 @@ export default function ActivityManagement({ initialActivities, initialBundles }
 
   return (
     <>
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", width: "100%" }}>
+      <div className="flex flex-col gap-6 w-full">
 
         {/* ─── TABS NAV ─── */}
-        <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
+        <div className="flex gap-2 border-b border-[var(--border)] pb-3">
           <button
             onClick={() => setActiveTab("satuan")}
-            style={{
-              padding: "0.625rem 1.25rem", borderRadius: 99, fontWeight: 700, fontSize: "0.875rem",
-              background: activeTab === "satuan" ? "var(--charcoal)" : "transparent",
-              color: activeTab === "satuan" ? "white" : "var(--text-muted)",
-              border: "none", cursor: "pointer", transition: "all 0.2s"
-            }}
+            className={`px-5 py-2.5 rounded-full font-bold text-sm border-none cursor-pointer transition-all duration-200 ${activeTab === "satuan" ? "bg-[var(--charcoal)] text-white" : "bg-transparent text-[var(--text-muted)]"}`}
           >
             Kegiatan Satuan
           </button>
           <button
             onClick={() => setActiveTab("paket")}
-            style={{
-              padding: "0.625rem 1.25rem", borderRadius: 99, fontWeight: 700, fontSize: "0.875rem",
-              background: activeTab === "paket" ? "var(--charcoal)" : "transparent",
-              color: activeTab === "paket" ? "white" : "var(--text-muted)",
-              border: "none", cursor: "pointer", transition: "all 0.2s"
-            }}
+            className={`px-5 py-2.5 rounded-full font-bold text-sm border-none cursor-pointer transition-all duration-200 ${activeTab === "paket" ? "bg-[var(--charcoal)] text-white" : "bg-transparent text-[var(--text-muted)]"}`}
           >
             Paket Bundling
           </button>
@@ -262,50 +252,50 @@ export default function ActivityManagement({ initialActivities, initialBundles }
         {/* ========================================================= */}
         {activeTab === "satuan" && (
           <>
-            <div style={{ background: "linear-gradient(135deg, #0d2818 0%, #1B6B4A 60%, #27956A 100%)", borderRadius: 20, padding: "1.75rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem", boxShadow: "0 8px 32px rgba(27,107,74,0.2)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.15)" }}>
+            <div className="bg-gradient-to-br from-[#0d2818] via-[#1B6B4A] to-[#27956A] rounded-[20px] py-7 px-8 flex items-center justify-between flex-wrap gap-4 shadow-[0_8px_32px_rgba(27,107,74,0.2)]">
+              <div className="flex items-center gap-4">
+                <div className="w-[52px] h-[52px] rounded-[14px] bg-white/10 flex items-center justify-center border border-white/15">
                   <Layers size={26} color="white" />
                 </div>
                 <div>
-                  <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Total Kegiatan Terdaftar</div>
-                  <div style={{ color: "white", fontSize: "2.25rem", fontWeight: 900, lineHeight: 1.1 }}>{totalActItems}</div>
+                  <div className="text-white/60 text-xs font-bold tracking-[0.05em] uppercase">Total Kegiatan Terdaftar</div>
+                  <div className="text-white text-4xl font-black leading-[1.1]">{totalActItems}</div>
                 </div>
               </div>
             </div>
 
-            <div style={{ background: "white", borderRadius: 20, border: "1px solid var(--border)", boxShadow: "0 2px 16px rgba(0,0,0,0.04)", overflow: "hidden" }}>
-              <div style={{ padding: "1.375rem 1.75rem", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 11, background: "linear-gradient(135deg, var(--emerald-pale), rgba(27,107,74,0.15))", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--emerald)" }}>
+            <div className="bg-white rounded-[20px] border border-[var(--border)] shadow-[0_2px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="py-[1.375rem] px-7 border-b border-[var(--border)] flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <div className="w-[38px] h-[38px] rounded-[11px] bg-gradient-to-br from-[var(--emerald-pale)] to-[rgba(27,107,74,0.15)] flex items-center justify-center text-[var(--emerald)]">
                     <ClipboardList size={18} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--charcoal)" }}>Katalog Kegiatan Master</div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 2 }}>Anda bisa <strong style={{color: "var(--charcoal)"}}>drag & drop</strong> baris tabel untuk mengatur urutan.</div>
+                    <div className="font-extrabold text-base text-[var(--charcoal)]">Katalog Kegiatan Master</div>
+                    <div className="text-xs text-[var(--text-muted)] mt-[2px]">Anda bisa <strong className="text-[var(--charcoal)]">drag & drop</strong> baris tabel untuk mengatur urutan.</div>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
+                <div className="flex gap-2">
                   {hasReorderedAct && (
-                    <button type="button" onClick={handleSaveReorderAct} disabled={isReorderingAct} className="act-save-btn" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 1.25rem", background: "white", color: "#16a34a", border: "1px solid #16a34a", borderRadius: 12, fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", boxShadow: "0 4px 14px rgba(22,163,74,0.15)" }}>
+                    <button type="button" onClick={handleSaveReorderAct} disabled={isReorderingAct} className="act-save-btn inline-flex items-center gap-2 px-5 py-2.5 bg-white text-green-600 border border-green-600 rounded-xl font-bold text-sm cursor-pointer shadow-[0_4px_14px_rgba(22,163,74,0.15)] disabled:opacity-50">
                       <Save size={16} /> {isReorderingAct ? "Menyimpan..." : "Simpan Urutan"}
                     </button>
                   )}
-                  <button type="button" onClick={() => { resetActForm(); setShowActModal(true); }} className="act-add-btn" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 1.25rem", background: "linear-gradient(135deg, #1B6B4A, #27956A)", color: "white", border: "none", borderRadius: 12, fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", boxShadow: "0 4px 14px rgba(27,107,74,0.3)" }}>
+                  <button type="button" onClick={() => { resetActForm(); setShowActModal(true); }} className="act-add-btn inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-[#1B6B4A] to-[#27956A] text-white border-none rounded-xl font-bold text-sm cursor-pointer shadow-[0_4px_14px_rgba(27,107,74,0.3)] transition-all hover:opacity-90 hover:-translate-y-px hover:shadow-[0_6px_20px_rgba(27,107,74,0.35)]">
                     <Plus size={16} /> Tambah Kegiatan
                   </button>
                 </div>
               </div>
 
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 650 }}>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse min-w-[650px]">
                   <thead>
-                    <tr style={{ background: "#FAFAFA" }}>
-                      <th style={{ padding: "0.75rem 1.5rem", fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", width: 56, textAlign: "center" }}>Urut</th>
-                      <th style={{ padding: "0.75rem 1.5rem", fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "left" }}>Info Kegiatan</th>
-                      <th style={{ padding: "0.75rem 1.5rem", fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "left" }}>Biaya & Wilayah</th>
-                      <th style={{ padding: "0.75rem 1.5rem", fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center" }}>Status</th>
-                      <th style={{ padding: "0.75rem 1.5rem", fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "right", width: 140 }}>Aksi</th>
+                    <tr className="bg-[#FAFAFA]">
+                      <th className="px-6 py-3 text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-[0.08em] w-14 text-center">Urut</th>
+                      <th className="px-6 py-3 text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-[0.08em] text-left">Info Kegiatan</th>
+                      <th className="px-6 py-3 text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-[0.08em] text-left">Biaya & Wilayah</th>
+                      <th className="px-6 py-3 text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-[0.08em] text-center">Status</th>
+                      <th className="px-6 py-3 text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-[0.08em] text-right w-[140px]">Aksi</th>
                     </tr>
                   </thead>
                   <Reorder.Group 
@@ -321,9 +311,9 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                   >
                     {paginatedActivities.length === 0 && (
                       <tr>
-                        <td colSpan={5} style={{ padding: "4rem 1rem", textAlign: "center" }}>
-                          <ClipboardList size={40} style={{ margin: "0 auto", color: "#CBD5E1", marginBottom: "0.75rem" }} />
-                          <div style={{ fontWeight: 700, color: "var(--charcoal)", fontSize: "0.9375rem" }}>Belum Ada Kegiatan Terdaftar</div>
+                        <td colSpan={5} className="py-16 px-4 text-center">
+                          <ClipboardList size={40} className="mx-auto text-slate-300 mb-3" />
+                          <div className="font-bold text-[var(--charcoal)] text-[15px]">Belum Ada Kegiatan Terdaftar</div>
                         </td>
                       </tr>
                     )}
@@ -334,38 +324,37 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                           as="tr" 
                           key={act.id} 
                           value={act}
-                          className="act-row" 
-                          style={{ borderTop: "1px solid var(--border)", cursor: "grab", background: "#ffffff" }}
+                          className="act-row border-t border-[var(--border)] cursor-grab bg-white hover:bg-[#FAFAFA] transition-colors"
                           whileDrag={{ scale: 1.01, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", background: "#f8fafc", position: "relative", zIndex: 10 }}
                         >
-                          <td style={{ padding: "1rem 1.5rem", textAlign: "center" }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
-                              <GripVertical size={16} color="#CBD5E1" style={{ cursor: "grab" }} />
-                              <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--ivory)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 800, color: "var(--text-muted)" }}>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <GripVertical size={16} color="#CBD5E1" className="cursor-grab" />
+                              <div className="w-7 h-7 rounded-lg bg-[var(--ivory)] border border-[var(--border)] flex items-center justify-center text-xs font-extrabold text-[var(--text-muted)]">
                                 {globalIdx}
                               </div>
                             </div>
                           </td>
-                          <td style={{ padding: "1rem 1.5rem" }}>
-                            <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: "var(--charcoal)" }}>{act.name}</div>
-                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 4, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}><Clock size={12} /> {act.duration || "—"}</span>
+                          <td className="px-6 py-4">
+                            <div className="font-extrabold text-[15px] text-[var(--charcoal)]">{act.name}</div>
+                            <div className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-2">
+                              <span className="flex items-center gap-1"><Clock size={12} /> {act.duration || "—"}</span>
                             </div>
                           </td>
-                          <td style={{ padding: "1rem 1.5rem" }}>
-                            <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: "var(--emerald)" }}>Rp {act.price.toLocaleString("id-ID")}</div>
-                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 4, display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                          <td className="px-6 py-4">
+                            <div className="font-extrabold text-[15px] text-[var(--emerald)]">Rp {act.price.toLocaleString("id-ID")}</div>
+                            <div className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-1">
                               <MapPin size={12} /> {act.location === "BOTH" ? "Makkah & Madinah" : act.location || "—"}
                             </div>
                           </td>
-                          <td style={{ padding: "1rem 1.5rem", textAlign: "center" }}>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.3rem 0.75rem", borderRadius: 99, background: act.isActive ? "var(--emerald-pale)" : "#FEF2F2", color: act.isActive ? "var(--emerald)" : "#DC2626", border: `1px solid ${act.isActive ? '#a7f3d0' : '#FECACA'}`, fontSize: "0.75rem", fontWeight: 700 }}>
-                              <span style={{ width: 6, height: 6, borderRadius: "50%", background: act.isActive ? "var(--emerald)" : "#EF4444", display: "inline-block" }} />
+                          <td className="px-6 py-4 text-center">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${act.isActive ? "bg-[var(--emerald-pale)] text-[var(--emerald)] border-emerald-200" : "bg-red-50 text-red-600 border-red-200"}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full inline-block ${act.isActive ? "bg-[var(--emerald)]" : "bg-red-500"}`} />
                               {act.isActive ? "Aktif" : "Nonaktif"}
                             </span>
                           </td>
-                          <td style={{ padding: "1rem 1.5rem", textAlign: "right" }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.5rem" }}>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
                               <button type="button" className="act-icon-btn act-edit-btn" onClick={() => handleEditAct(act)} disabled={isSavingAct}><Edit2 size={14} /></button>
                               <button type="button" className="act-icon-btn act-delete-btn" onClick={() => handleDeleteAct(act)} disabled={isSavingAct}><Trash2 size={14} /></button>
                             </div>
@@ -377,13 +366,13 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                 </table>
               </div>
 
-              <div style={{ padding: "0.875rem 1.5rem", borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
-                <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-                  {totalActItems === 0 ? "Tidak ada data" : <>Halaman <strong style={{ color: "var(--charcoal)" }}>{safeActPage}</strong> dari <strong style={{ color: "var(--charcoal)" }}>{totalActPages}</strong></>}
+              <div className="px-6 py-3.5 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-3">
+                <span className="text-[13px] text-[var(--text-muted)]">
+                  {totalActItems === 0 ? "Tidak ada data" : <>Halaman <strong className="text-[var(--charcoal)]">{safeActPage}</strong> dari <strong className="text-[var(--charcoal)]">{totalActPages}</strong></>}
                 </span>
-                <div style={{ display: "flex", gap: "0.25rem" }}>
-                  <button onClick={() => setCurrentActPage(p => Math.max(1, p - 1))} disabled={safeActPage === 1} className="act-page-btn" style={{ padding: "0.4375rem 0.75rem", borderRadius: 8, border: "1px solid var(--border)", background: safeActPage === 1 ? "var(--ivory)" : "white", cursor: safeActPage === 1 ? "not-allowed" : "pointer" }}>←</button>
-                  <button onClick={() => setCurrentActPage(p => Math.min(totalActPages, p + 1))} disabled={safeActPage === totalActPages} className="act-page-btn" style={{ padding: "0.4375rem 0.75rem", borderRadius: 8, border: "1px solid var(--border)", background: safeActPage === totalActPages ? "var(--ivory)" : "white", cursor: safeActPage === totalActPages ? "not-allowed" : "pointer" }}>→</button>
+                <div className="flex gap-1">
+                  <button onClick={() => setCurrentActPage(p => Math.max(1, p - 1))} disabled={safeActPage === 1} className={`px-3 py-1.5 rounded-lg border border-[var(--border)] transition-colors ${safeActPage === 1 ? "bg-[var(--ivory)] cursor-not-allowed" : "bg-white cursor-pointer hover:bg-slate-50"}`}>←</button>
+                  <button onClick={() => setCurrentActPage(p => Math.min(totalActPages, p + 1))} disabled={safeActPage === totalActPages} className={`px-3 py-1.5 rounded-lg border border-[var(--border)] transition-colors ${safeActPage === totalActPages ? "bg-[var(--ivory)] cursor-not-allowed" : "bg-white cursor-pointer hover:bg-slate-50"}`}>→</button>
                 </div>
               </div>
             </div>
@@ -395,50 +384,50 @@ export default function ActivityManagement({ initialActivities, initialBundles }
         {/* ========================================================= */}
         {activeTab === "paket" && (
           <>
-            <div style={{ background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%)", borderRadius: 20, padding: "1.75rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem", boxShadow: "0 8px 32px rgba(37,99,235,0.2)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.15)" }}>
+            <div className="bg-gradient-to-br from-blue-900 via-blue-600 to-blue-500 rounded-[20px] py-7 px-8 flex items-center justify-between flex-wrap gap-4 shadow-[0_8px_32px_rgba(37,99,235,0.2)]">
+              <div className="flex items-center gap-4">
+                <div className="w-[52px] h-[52px] rounded-[14px] bg-white/10 flex items-center justify-center border border-white/15">
                   <Package size={26} color="white" />
                 </div>
                 <div>
-                  <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Total Paket Terdaftar</div>
-                  <div style={{ color: "white", fontSize: "2.25rem", fontWeight: 900, lineHeight: 1.1 }}>{totalBundleItems}</div>
+                  <div className="text-white/60 text-xs font-bold tracking-[0.05em] uppercase">Total Paket Terdaftar</div>
+                  <div className="text-white text-4xl font-black leading-[1.1]">{totalBundleItems}</div>
                 </div>
               </div>
             </div>
 
-            <div style={{ background: "white", borderRadius: 20, border: "1px solid var(--border)", boxShadow: "0 2px 16px rgba(0,0,0,0.04)", overflow: "hidden" }}>
-              <div style={{ padding: "1.375rem 1.75rem", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 11, background: "linear-gradient(135deg, #eff6ff, #dbeafe)", display: "flex", alignItems: "center", justifyContent: "center", color: "#2563eb" }}>
+            <div className="bg-white rounded-[20px] border border-[var(--border)] shadow-[0_2px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="py-[1.375rem] px-7 border-b border-[var(--border)] flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <div className="w-[38px] h-[38px] rounded-[11px] bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-600">
                     <Package size={18} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--charcoal)" }}>Katalog Paket (Bundling)</div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 2 }}>Anda bisa <strong style={{color: "var(--charcoal)"}}>drag & drop</strong> baris tabel untuk mengatur urutan.</div>
+                    <div className="font-extrabold text-base text-[var(--charcoal)]">Katalog Paket (Bundling)</div>
+                    <div className="text-xs text-[var(--text-muted)] mt-[2px]">Anda bisa <strong className="text-[var(--charcoal)]">drag & drop</strong> baris tabel untuk mengatur urutan.</div>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
+                <div className="flex gap-2">
                   {hasReordered && (
-                    <button type="button" onClick={handleSaveReorder} disabled={isReordering} className="bundle-save-btn" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 1.25rem", background: "white", color: "#16a34a", border: "1px solid #16a34a", borderRadius: 12, fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", boxShadow: "0 4px 14px rgba(22,163,74,0.15)" }}>
+                    <button type="button" onClick={handleSaveReorder} disabled={isReordering} className="bundle-save-btn inline-flex items-center gap-2 px-5 py-2.5 bg-white text-green-600 border border-green-600 rounded-xl font-bold text-sm cursor-pointer shadow-[0_4px_14px_rgba(22,163,74,0.15)] disabled:opacity-50">
                       <Save size={16} /> {isReordering ? "Menyimpan..." : "Simpan Urutan"}
                     </button>
                   )}
-                  <button type="button" onClick={() => { resetBundleForm(); setShowBundleModal(true); }} className="bundle-add-btn" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 1.25rem", background: "linear-gradient(135deg, #1e40af, #2563eb)", color: "white", border: "none", borderRadius: 12, fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", boxShadow: "0 4px 14px rgba(37,99,235,0.3)" }}>
+                  <button type="button" onClick={() => { resetBundleForm(); setShowBundleModal(true); }} className="bundle-add-btn inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-blue-800 to-blue-600 text-white border-none rounded-xl font-bold text-sm cursor-pointer shadow-[0_4px_14px_rgba(37,99,235,0.3)] transition-all hover:opacity-90 hover:-translate-y-px hover:shadow-[0_6px_20px_rgba(37,99,235,0.35)]">
                     <Plus size={16} /> Tambah Paket
                   </button>
                 </div>
               </div>
 
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 650 }}>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse min-w-[650px]">
                   <thead>
-                    <tr style={{ background: "#FAFAFA" }}>
-                      <th style={{ padding: "0.75rem 1.5rem", fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", width: 56, textAlign: "center" }}>Urut</th>
-                      <th style={{ padding: "0.75rem 1.5rem", fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "left" }}>Nama Paket & Isi</th>
-                      <th style={{ padding: "0.75rem 1.5rem", fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "left" }}>Harga Paket</th>
-                      <th style={{ padding: "0.75rem 1.5rem", fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center" }}>Status</th>
-                      <th style={{ padding: "0.75rem 1.5rem", fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "right", width: 140 }}>Aksi</th>
+                    <tr className="bg-[#FAFAFA]">
+                      <th className="px-6 py-3 text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-[0.08em] w-14 text-center">Urut</th>
+                      <th className="px-6 py-3 text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-[0.08em] text-left">Nama Paket & Isi</th>
+                      <th className="px-6 py-3 text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-[0.08em] text-left">Harga Paket</th>
+                      <th className="px-6 py-3 text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-[0.08em] text-center">Status</th>
+                      <th className="px-6 py-3 text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-[0.08em] text-right w-[140px]">Aksi</th>
                     </tr>
                   </thead>
                   <Reorder.Group 
@@ -454,9 +443,9 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                   >
                     {paginatedBundles.length === 0 && (
                       <tr>
-                        <td colSpan={5} style={{ padding: "4rem 1rem", textAlign: "center" }}>
-                          <Package size={40} style={{ margin: "0 auto", color: "#CBD5E1", marginBottom: "0.75rem" }} />
-                          <div style={{ fontWeight: 700, color: "var(--charcoal)", fontSize: "0.9375rem" }}>Belum Ada Paket Terdaftar</div>
+                        <td colSpan={5} className="py-16 px-4 text-center">
+                          <Package size={40} className="mx-auto text-slate-300 mb-3" />
+                          <div className="font-bold text-[var(--charcoal)] text-[15px]">Belum Ada Paket Terdaftar</div>
                         </td>
                       </tr>
                     )}
@@ -467,35 +456,34 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                           as="tr" 
                           key={bdl.id} 
                           value={bdl}
-                          className="act-row" 
-                          style={{ borderTop: "1px solid var(--border)", cursor: "grab", background: "#ffffff" }}
+                          className="act-row border-t border-[var(--border)] cursor-grab bg-white hover:bg-[#FAFAFA] transition-colors"
                           whileDrag={{ scale: 1.01, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", background: "#f8fafc", position: "relative", zIndex: 10 }}
                         >
-                          <td style={{ padding: "1rem 1.5rem", textAlign: "center" }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
-                              <GripVertical size={16} color="#CBD5E1" style={{ cursor: "grab" }} />
-                              <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--ivory)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 800, color: "var(--text-muted)" }}>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <GripVertical size={16} color="#CBD5E1" className="cursor-grab" />
+                              <div className="w-7 h-7 rounded-lg bg-[var(--ivory)] border border-[var(--border)] flex items-center justify-center text-xs font-extrabold text-[var(--text-muted)]">
                                 {globalIdx}
                               </div>
                             </div>
                           </td>
-                          <td style={{ padding: "1rem 1.5rem" }}>
-                            <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: "var(--charcoal)" }}>{bdl.name}</div>
+                          <td className="px-6 py-4">
+                            <div className="font-extrabold text-[15px] text-[var(--charcoal)]">{bdl.name}</div>
                             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 4 }}>
-                              Terdiri dari: <strong style={{ color: "var(--charcoal)" }}>{bdl.items.length} kegiatan</strong>
+                              Terdiri dari: <strong className="text-[var(--charcoal)]">{bdl.items.length} kegiatan</strong>
                             </div>
                           </td>
-                          <td style={{ padding: "1rem 1.5rem" }}>
-                            <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: "#2563eb" }}>Rp {bdl.price.toLocaleString("id-ID")}</div>
+                          <td className="px-6 py-4">
+                            <div className="font-extrabold text-[15px] text-blue-600">Rp {bdl.price.toLocaleString("id-ID")}</div>
                           </td>
-                          <td style={{ padding: "1rem 1.5rem", textAlign: "center" }}>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.3rem 0.75rem", borderRadius: 99, background: bdl.isActive ? "#eff6ff" : "#FEF2F2", color: bdl.isActive ? "#2563eb" : "#DC2626", border: `1px solid ${bdl.isActive ? '#bfdbfe' : '#FECACA'}`, fontSize: "0.75rem", fontWeight: 700 }}>
-                              <span style={{ width: 6, height: 6, borderRadius: "50%", background: bdl.isActive ? "#3b82f6" : "#EF4444", display: "inline-block" }} />
+                          <td className="px-6 py-4 text-center">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${bdl.isActive ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-red-50 text-red-600 border-red-200"}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full inline-block ${bdl.isActive ? "bg-blue-500" : "bg-red-500"}`} />
                               {bdl.isActive ? "Aktif" : "Nonaktif"}
                             </span>
                           </td>
-                          <td style={{ padding: "1rem 1.5rem", textAlign: "right" }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.5rem" }}>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
                               <button type="button" className="act-icon-btn act-edit-btn" onClick={() => handleEditBundle(bdl)} disabled={isSavingBundle}><Edit2 size={14} /></button>
                               <button type="button" className="act-icon-btn act-delete-btn" onClick={() => handleDeleteBundle(bdl)} disabled={isSavingBundle}><Trash2 size={14} /></button>
                             </div>
@@ -507,13 +495,13 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                 </table>
               </div>
 
-              <div style={{ padding: "0.875rem 1.5rem", borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
-                <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-                  {totalBundleItems === 0 ? "Tidak ada data" : <>Halaman <strong style={{ color: "var(--charcoal)" }}>{safeBundlePage}</strong> dari <strong style={{ color: "var(--charcoal)" }}>{totalBundlePages}</strong></>}
+              <div className="px-6 py-3.5 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-3">
+                <span className="text-[13px] text-[var(--text-muted)]">
+                  {totalBundleItems === 0 ? "Tidak ada data" : <>Halaman <strong className="text-[var(--charcoal)]">{safeBundlePage}</strong> dari <strong className="text-[var(--charcoal)]">{totalBundlePages}</strong></>}
                 </span>
-                <div style={{ display: "flex", gap: "0.25rem" }}>
-                  <button onClick={() => setCurrentBundlePage(p => Math.max(1, p - 1))} disabled={safeBundlePage === 1} className="act-page-btn" style={{ padding: "0.4375rem 0.75rem", borderRadius: 8, border: "1px solid var(--border)", background: safeBundlePage === 1 ? "var(--ivory)" : "white", cursor: safeBundlePage === 1 ? "not-allowed" : "pointer" }}>←</button>
-                  <button onClick={() => setCurrentBundlePage(p => Math.min(totalBundlePages, p + 1))} disabled={safeBundlePage === totalBundlePages} className="act-page-btn" style={{ padding: "0.4375rem 0.75rem", borderRadius: 8, border: "1px solid var(--border)", background: safeBundlePage === totalBundlePages ? "var(--ivory)" : "white", cursor: safeBundlePage === totalBundlePages ? "not-allowed" : "pointer" }}>→</button>
+                <div className="flex gap-1">
+                  <button onClick={() => setCurrentBundlePage(p => Math.max(1, p - 1))} disabled={safeBundlePage === 1} className={`px-3 py-1.5 rounded-lg border border-[var(--border)] transition-colors ${safeBundlePage === 1 ? "bg-[var(--ivory)] cursor-not-allowed" : "bg-white cursor-pointer hover:bg-slate-50"}`}>←</button>
+                  <button onClick={() => setCurrentBundlePage(p => Math.min(totalBundlePages, p + 1))} disabled={safeBundlePage === totalBundlePages} className={`px-3 py-1.5 rounded-lg border border-[var(--border)] transition-colors ${safeBundlePage === totalBundlePages ? "bg-[var(--ivory)] cursor-not-allowed" : "bg-white cursor-pointer hover:bg-slate-50"}`}>→</button>
                 </div>
               </div>
             </div>
@@ -523,31 +511,31 @@ export default function ActivityManagement({ initialActivities, initialBundles }
 
       {/* ─── MODAL KEGIATAN SATUAN ─── */}
       {showActModal && (
-        <div onClick={(e) => { if (e.target === e.currentTarget) { setShowActModal(false); resetActForm(); } }} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: "white", borderRadius: 20, width: "100%", maxWidth: 540, boxShadow: "0 24px 80px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "1.5rem", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)", flexShrink: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(27,107,74,0.1)", border: "1px solid rgba(27,107,74,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--emerald)" }}>
+        <div onClick={(e) => { if (e.target === e.currentTarget) { setShowActModal(false); resetActForm(); } }} className="fixed inset-0 z-[9999] bg-black/45 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-[20px] w-full max-w-[540px] shadow-[0_24px_80px_rgba(0,0,0,0.2)] overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-[var(--border)] flex items-center justify-between bg-gradient-to-br from-green-50 to-green-100 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[rgba(27,107,74,0.1)] border border-[rgba(27,107,74,0.15)] flex items-center justify-center text-[var(--emerald)]">
                   {actEditingId ? <Edit2 size={20} /> : <Plus size={20} />}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--charcoal)" }}>{actEditingId ? "Edit Kegiatan" : "Tambah Kegiatan Baru"}</div>
+                  <div className="font-extrabold text-base text-[var(--charcoal)]">{actEditingId ? "Edit Kegiatan" : "Tambah Kegiatan Baru"}</div>
                   <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Konfigurasi detail kegiatan satuan</div>
                 </div>
               </div>
-              <button type="button" onClick={() => { setShowActModal(false); resetActForm(); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.375rem", borderRadius: 8, color: "var(--text-muted)" }}><X size={20} /></button>
+              <button type="button" onClick={() => { setShowActModal(false); resetActForm(); }} className="bg-transparent border-none cursor-pointer p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-black/5 transition-colors"><X size={20} /></button>
             </div>
 
-            <form onSubmit={handleSaveAct} style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem", overflowY: "auto" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div style={{ gridColumn: "1 / -1" }}><label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.5rem" }}>Nama Kegiatan *</label><input type="text" required value={actName} onChange={e => setActName(e.target.value)} disabled={isSavingAct} style={{ width: "100%", padding: "0.75rem 1rem", borderRadius: 10, border: "1px solid var(--border)", outline: "none", fontFamily: "inherit" }} /></div>
-                <div style={{ gridColumn: "1 / -1" }}><label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.5rem" }}>Deskripsi Opsional</label><textarea value={actDesc} onChange={e => setActDesc(e.target.value)} disabled={isSavingAct} rows={2} style={{ width: "100%", padding: "0.75rem 1rem", borderRadius: 10, border: "1px solid var(--border)", outline: "none", fontFamily: "inherit", resize: "vertical" }} /></div>
-                <div><label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.5rem" }}>Estimasi Durasi (misal: 2 Jam)</label><input type="text" value={actDuration} onChange={e => setActDuration(e.target.value)} disabled={isSavingAct} style={{ width: "100%", padding: "0.75rem 1rem", borderRadius: 10, border: "1px solid var(--border)", outline: "none", fontFamily: "inherit" }} /></div>
-                <div><label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.5rem" }}>Wilayah Layanan</label><select value={actLocation} onChange={e => setActLocation(e.target.value)} disabled={isSavingAct} style={{ width: "100%", padding: "0.75rem 1rem", borderRadius: 10, border: "1px solid var(--border)", outline: "none", fontFamily: "inherit", background: "white" }}><option value="">Pilih Lokasi...</option><option value="MAKKAH">Makkah</option><option value="MADINAH">Madinah</option><option value="BOTH">Keduanya (Makkah & Madinah)</option></select></div>
-                <div style={{ gridColumn: "1 / -1" }}><label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.5rem" }}>Harga Dasar Kegiatan *</label><input type="number" required value={actPrice} onChange={e => setActPrice(e.target.value)} disabled={isSavingAct} style={{ width: "100%", padding: "0.75rem 1rem", borderRadius: 10, border: "1px solid var(--border)", outline: "none", fontFamily: "inherit" }} /></div>
+            <form onSubmit={handleSaveAct} className="p-6 flex flex-col gap-5 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-1 md:col-span-2"><label className="block text-xs font-bold text-[var(--text-muted)] mb-2">Nama Kegiatan *</label><input type="text" required value={actName} onChange={e => setActName(e.target.value)} disabled={isSavingAct} className="w-full px-4 py-3 rounded-xl border border-[var(--border)] outline-none focus:ring-2 focus:ring-[var(--emerald)] bg-white transition-all font-inherit" /></div>
+                <div className="col-span-1 md:col-span-2"><label className="block text-xs font-bold text-[var(--text-muted)] mb-2">Deskripsi Opsional</label><textarea value={actDesc} onChange={e => setActDesc(e.target.value)} disabled={isSavingAct} rows={2} className="w-full px-4 py-3 rounded-xl border border-[var(--border)] outline-none focus:ring-2 focus:ring-[var(--emerald)] bg-white transition-all font-inherit resize-y" /></div>
+                <div><label className="block text-xs font-bold text-[var(--text-muted)] mb-2">Estimasi Durasi (misal: 2 Jam)</label><input type="text" value={actDuration} onChange={e => setActDuration(e.target.value)} disabled={isSavingAct} className="w-full px-4 py-3 rounded-xl border border-[var(--border)] outline-none focus:ring-2 focus:ring-[var(--emerald)] bg-white transition-all font-inherit" /></div>
+                <div><label className="block text-xs font-bold text-[var(--text-muted)] mb-2">Wilayah Layanan</label><select value={actLocation} onChange={e => setActLocation(e.target.value)} disabled={isSavingAct} className="w-full px-4 py-3 rounded-xl border border-[var(--border)] outline-none focus:ring-2 focus:ring-[var(--emerald)] bg-white transition-all font-inherit"><option value="">Pilih Lokasi...</option><option value="MAKKAH">Makkah</option><option value="MADINAH">Madinah</option><option value="BOTH">Keduanya (Makkah & Madinah)</option></select></div>
+                <div className="col-span-1 md:col-span-2"><label className="block text-xs font-bold text-[var(--text-muted)] mb-2">Harga Dasar Kegiatan *</label><input type="number" required value={actPrice} onChange={e => setActPrice(e.target.value)} disabled={isSavingAct} className="w-full px-4 py-3 rounded-xl border border-[var(--border)] outline-none focus:ring-2 focus:ring-[var(--emerald)] bg-white transition-all font-inherit" /></div>
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem", borderTop: "1px solid var(--border)", paddingTop: "1.5rem" }}>
-                <button type="submit" disabled={isSavingAct || !actName} style={{ padding: "0.75rem 1.5rem", borderRadius: 10, background: "var(--charcoal)", color: "white", fontWeight: 700, cursor: "pointer", border: "none" }}>{isSavingAct ? "Menyimpan..." : "Simpan"}</button>
+              <div className="flex justify-end mt-4 border-t border-[var(--border)] pt-6">
+                <button type="submit" disabled={isSavingAct || !actName} className="px-6 py-3 rounded-xl bg-[var(--charcoal)] text-white font-bold cursor-pointer border-none hover:bg-black transition-colors disabled:opacity-50">{isSavingAct ? "Menyimpan..." : "Simpan"}</button>
               </div>
             </form>
           </div>
@@ -556,44 +544,44 @@ export default function ActivityManagement({ initialActivities, initialBundles }
 
       {/* ─── MODAL PAKET BUNDLING ─── */}
       {showBundleModal && (
-        <div onClick={(e) => { if (e.target === e.currentTarget) { setShowBundleModal(false); resetBundleForm(); } }} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem", backdropFilter: "blur(4px)" }}>
-          <div style={{ background: "white", borderRadius: 20, width: "100%", maxWidth: 640, boxShadow: "0 24px 80px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "1.5rem", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #eff6ff, #dbeafe)", flexShrink: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(37,99,235,0.1)", border: "1px solid rgba(37,99,235,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#2563eb" }}>
+        <div onClick={(e) => { if (e.target === e.currentTarget) { setShowBundleModal(false); resetBundleForm(); } }} className="fixed inset-0 z-[9999] bg-black/45 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-[20px] w-full max-w-[640px] shadow-[0_24px_80px_rgba(0,0,0,0.2)] overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-[var(--border)] flex items-center justify-between bg-gradient-to-br from-blue-50 to-blue-100 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100/50 border border-blue-200/50 flex items-center justify-center text-blue-600">
                   {bundleEditingId ? <Edit2 size={20} /> : <Plus size={20} />}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--charcoal)" }}>{bundleEditingId ? "Edit Paket Bundling" : "Buat Paket Bundling"}</div>
+                  <div className="font-extrabold text-base text-[var(--charcoal)]">{bundleEditingId ? "Edit Paket Bundling" : "Buat Paket Bundling"}</div>
                   <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Satu paket berisi kombinasi dari kegiatan master</div>
                 </div>
               </div>
-              <button type="button" onClick={() => { setShowBundleModal(false); resetBundleForm(); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.375rem", borderRadius: 8, color: "var(--text-muted)" }}><X size={20} /></button>
+              <button type="button" onClick={() => { setShowBundleModal(false); resetBundleForm(); }} className="bg-transparent border-none cursor-pointer p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-black/5 transition-colors"><X size={20} /></button>
             </div>
 
-            <form onSubmit={handleSaveBundle} style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem", overflowY: "auto" }}>
+            <form onSubmit={handleSaveBundle} className="p-6 flex flex-col gap-5 overflow-y-auto">
               
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div style={{ gridColumn: "1 / -1" }}><label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.5rem" }}>Nama Paket *</label><input type="text" required value={bundleName} onChange={e => setBundleName(e.target.value)} disabled={isSavingBundle} style={{ width: "100%", padding: "0.75rem 1rem", borderRadius: 10, border: "1px solid var(--border)", outline: "none", fontFamily: "inherit" }} /></div>
-                <div style={{ gridColumn: "1 / -1" }}><label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.5rem" }}>Deskripsi / Ringkasan</label><textarea value={bundleDesc} onChange={e => setBundleDesc(e.target.value)} disabled={isSavingBundle} rows={2} style={{ width: "100%", padding: "0.75rem 1rem", borderRadius: 10, border: "1px solid var(--border)", outline: "none", fontFamily: "inherit", resize: "vertical" }} /></div>
-                <div style={{ gridColumn: "1 / -1" }}><label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.5rem" }}>Harga Paket (Diskon) *</label><input type="number" required value={bundlePrice} onChange={e => setBundlePrice(e.target.value)} disabled={isSavingBundle} style={{ width: "100%", padding: "0.75rem 1rem", borderRadius: 10, border: "1px solid var(--border)", outline: "none", fontFamily: "inherit" }} /></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-1 md:col-span-2"><label className="block text-xs font-bold text-[var(--text-muted)] mb-2">Nama Paket *</label><input type="text" required value={bundleName} onChange={e => setBundleName(e.target.value)} disabled={isSavingBundle} className="w-full px-4 py-3 rounded-xl border border-[var(--border)] outline-none focus:ring-2 focus:ring-[var(--emerald)] bg-white transition-all font-inherit" /></div>
+                <div className="col-span-1 md:col-span-2"><label className="block text-xs font-bold text-[var(--text-muted)] mb-2">Deskripsi / Ringkasan</label><textarea value={bundleDesc} onChange={e => setBundleDesc(e.target.value)} disabled={isSavingBundle} rows={2} className="w-full px-4 py-3 rounded-xl border border-[var(--border)] outline-none focus:ring-2 focus:ring-[var(--emerald)] bg-white transition-all font-inherit resize-y" /></div>
+                <div className="col-span-1 md:col-span-2"><label className="block text-xs font-bold text-[var(--text-muted)] mb-2">Harga Paket (Diskon) *</label><input type="number" required value={bundlePrice} onChange={e => setBundlePrice(e.target.value)} disabled={isSavingBundle} className="w-full px-4 py-3 rounded-xl border border-[var(--border)] outline-none focus:ring-2 focus:ring-[var(--emerald)] bg-white transition-all font-inherit" /></div>
               </div>
 
               {/* Pilih Kegiatan didalam Paket */}
-              <div style={{ marginTop: "0.5rem" }}>
-                <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Pilih Kegiatan ke dalam Paket</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.5rem", maxHeight: 200, overflowY: "auto", border: "1px solid var(--border)", padding: "0.5rem", borderRadius: 10, background: "var(--ivory)" }}>
+              <div className="mt-2">
+                <label className="block text-xs font-bold text-[var(--text-muted)] mb-3 uppercase tracking-[0.05em]">Pilih Kegiatan ke dalam Paket</label>
+                <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto border border-[var(--border)] p-2 rounded-xl bg-[var(--ivory)]">
                   {activities.map(act => (
-                    <label key={act.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "white", padding: "0.75rem", borderRadius: 8, cursor: "pointer", border: bundleActivityIds.includes(act.id) ? "1px solid #3b82f6" : "1px solid var(--border)" }}>
-                      <input type="checkbox" checked={bundleActivityIds.includes(act.id)} onChange={() => toggleBundleActivity(act.id)} disabled={isSavingBundle} style={{ accentColor: "#2563eb", width: 16, height: 16 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>{act.name}</div>
-                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.25rem", flexWrap: "wrap" }}>
+                    <label key={act.id} className={`flex items-center gap-3 bg-white p-3 rounded-lg cursor-pointer border transition-colors ${bundleActivityIds.includes(act.id) ? "border-blue-500" : "border-[var(--border)]"}`}>
+                      <input type="checkbox" checked={bundleActivityIds.includes(act.id)} onChange={() => toggleBundleActivity(act.id)} disabled={isSavingBundle} className="accent-blue-600 w-4 h-4" />
+                      <div className="flex-1">
+                        <div className="font-bold text-sm text-[var(--charcoal)]">{act.name}</div>
+                        <div className="text-xs text-[var(--text-muted)] flex items-center gap-1 flex-wrap">
                           <span>Rp {act.price.toLocaleString("id-ID")}</span>
                           <span>·</span>
                           <span>{act.duration || "Tanpa durasi"}</span>
                           <span>·</span>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                          <span className="inline-flex items-center gap-1">
                             <MapPin size={10} /> {act.location === "BOTH" ? "Makkah & Madinah" : act.location || "—"}
                           </span>
                         </div>
@@ -601,16 +589,16 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                     </label>
                   ))}
                   {activities.length === 0 && (
-                    <div style={{ padding: "1rem", textAlign: "center", fontSize: "0.8125rem", color: "var(--text-muted)" }}>Belum ada kegiatan master yang tersedia.</div>
+                    <div className="p-4 text-center text-[13px] text-[var(--text-muted)]">Belum ada kegiatan master yang tersedia.</div>
                   )}
                 </div>
-                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.5rem" }}>
+                <div className="text-xs text-[var(--text-muted)] mt-2">
                   Terpilih: {bundleActivityIds.length} Kegiatan
                 </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem", borderTop: "1px solid var(--border)", paddingTop: "1.5rem" }}>
-                <button type="submit" disabled={isSavingBundle || !bundleName || bundleActivityIds.length === 0} style={{ padding: "0.75rem 1.5rem", borderRadius: 10, background: "#2563eb", color: "white", fontWeight: 700, cursor: "pointer", border: "none" }}>{isSavingBundle ? "Menyimpan..." : "Simpan Paket"}</button>
+              <div className="flex justify-end mt-4 border-t border-[var(--border)] pt-6">
+                <button type="submit" disabled={isSavingBundle || !bundleName || bundleActivityIds.length === 0} className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold cursor-pointer border-none hover:bg-blue-700 transition-colors disabled:opacity-50">{isSavingBundle ? "Menyimpan..." : "Simpan Paket"}</button>
               </div>
             </form>
           </div>

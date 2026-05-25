@@ -7,7 +7,9 @@ import { CopyButton } from "../../CopyButton";
 import { DashboardHeader } from "../DashboardHeader";
 import { AmirHeaderPanel } from "../../AmirHeaderPanel";
 import ChatWidget from "@/components/ChatWidget";
-import MobileSidebarDrawer from "@/components/MobileSidebarDrawer";
+import MuthawifMobileNav from "../MuthawifMobileNav";
+import TableToolbar from "@/components/TableToolbar";
+import { CalendarDays, ClipboardList, UserCheck, Wallet } from "lucide-react";
 
 /* ─── Types ─── */
 interface PageProps {
@@ -15,6 +17,7 @@ interface PageProps {
     page?: string;
     status?: string;
     q?: string;
+    sort?: string;
   }>;
 }
 
@@ -168,18 +171,32 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
   const params = await searchParams;
   const page    = Math.max(1, parseInt(params.page  || "1", 10));
   const status  = params.status || "ALL";
+  const searchQ = params.q || "";
+  const sort    = params.sort || "terbaru";
   const skip    = (page - 1) * PAGE_SIZE;
 
-  const where = {
+  const where: any = {
     muthawifId: session.id,
     ...(status !== "ALL" ? { status: status as any } : {}),
   };
+
+  if (searchQ.trim()) {
+    where.OR = [
+      { id: { contains: searchQ, mode: "insensitive" } },
+      { jamaah: { name: { contains: searchQ, mode: "insensitive" } } },
+    ];
+  }
+
+  let orderBy: any = { createdAt: "desc" };
+  if (sort === "terlama") orderBy = { createdAt: "asc" };
+  if (sort === "termahal") orderBy = { totalFee: "desc" };
+  if (sort === "termurah") orderBy = { totalFee: "asc" };
 
   const [bookings, total, allStats] = await Promise.all([
     prisma.booking.findMany({
       where,
       include: { jamaah: { select: { id: true, name: true, email: true, photoUrl: true } } },
-      orderBy: { createdAt: "desc" },
+      orderBy,
       skip,
       take: PAGE_SIZE,
     }),
@@ -204,10 +221,10 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
   const boundReject = rejectBooking.bind(null, "");
 
   return (
-    <div className="dashboard-fullscreen">
+    <div className="dashboard-fullscreen muthawif-dashboard">
 
-      {/* ══ SIDEBAR (mobile: compact topbar + off-canvas drawer via MobileSidebarDrawer) ══ */}
-      <MobileSidebarDrawer brandLabel="MUTHAWIF">
+      {/* ══ SIDEBAR ══ */}
+      <aside className="dashboard-sidebar-fixed hide-mobile" style={{ background: "linear-gradient(170deg, #0d2818 0%, #1B6B4A 70%, #27956A 100%)", borderRight: "none" }}>
         {/* Brand */}
         <div style={{ padding: "1.25rem 1.375rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.625rem" }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -226,10 +243,10 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
         {/* Nav */}
         <div style={{ padding: "0.875rem 0.75rem", flex: 1, overflowY: "auto" }}>
           {[
-            { href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",            desc: "Kelola ketersediaan",    emoji: "📅",  sub: false },
-            { href: "/dashboard/muthawif/bookings",     label: "Pesanan",            desc: "Riwayat pesanan masuk",  emoji: "📋",  sub: false, active: true },
-            { href: "/dashboard/muthawif?tab=profile",  label: "Profil Layanan",    desc: "Info, tarif & keahlian", emoji: "👤",  sub: false },
-            { href: "/dashboard/muthawif?tab=wallet",   label: "Dompet",             desc: "Balans Escrow",          emoji: "💰",  sub: false },
+            { href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",            desc: "Kelola ketersediaan",    icon: CalendarDays,  sub: false },
+            { href: "/dashboard/muthawif/bookings",     label: "Pesanan",            desc: "Riwayat pesanan masuk",  icon: ClipboardList, sub: false, active: true },
+            { href: "/dashboard/muthawif?tab=profile",  label: "Profil Layanan",    desc: "Info, tarif & keahlian", icon: UserCheck,     sub: false },
+            { href: "/dashboard/muthawif?tab=wallet",   label: "Dompet",             desc: "Balans Escrow",          icon: Wallet,        sub: false },
           ].map((t) => (
             <Link
               key={t.href}
@@ -250,8 +267,8 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                   width: 8, height: 1, background: "rgba(255,255,255,0.2)",
                 }} />
               )}
-              <div style={{ width: t.sub ? 26 : 34, height: t.sub ? 26 : 34, borderRadius: t.sub ? 7 : 9, background: t.active ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: t.sub ? "0.8125rem" : "1rem", flexShrink: 0 }}>
-                {t.emoji}
+              <div style={{ width: t.sub ? 26 : 34, height: t.sub ? 26 : 34, borderRadius: t.sub ? 7 : 9, background: t.active ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: t.active ? "white" : "rgba(255,255,255,0.7)" }}>
+                <t.icon size={t.sub ? 14 : 18} strokeWidth={2.2} />
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: t.active ? "white" : t.sub ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.8)", fontWeight: t.active ? 700 : t.sub ? 500 : 600, fontSize: t.sub ? "0.8125rem" : "0.875rem", lineHeight: 1.2 }}>{t.label}</div>
@@ -261,7 +278,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
             </Link>
           ))}
         </div>
-      </MobileSidebarDrawer>
+      </aside>
 
       {/* ══ MAIN ══ */}
       <div className="dashboard-main-area">
@@ -278,10 +295,10 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
           />
         </header>
 
-        <main style={{ padding: "clamp(1rem, 3vw, 1.75rem)", overflowY: "auto", flex: 1, minHeight: 0 }}>
+        <main className="dashboard-content-scroll" style={{ padding: "clamp(1rem, 3vw, 1.75rem)", overflowY: "auto", flex: 1, minHeight: 0 }}>
 
           {/* ── Summary Stats Row ── */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.875rem", marginBottom: "1.5rem" }}>
+          <div className="bm-summary-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.875rem", marginBottom: "1.5rem" }}>
             <StatCard label="Total Pesanan"     value={totalAll}                                      sub="Semua status" />
             <StatCard label="Menunggu"          value={countByStatus["PENDING"]   || 0}               sub="Perlu tindakan"  color="var(--gold)" />
             <StatCard label="Dikonfirmasi"      value={countByStatus["CONFIRMED"] || 0}               sub="Aktif"           color="var(--emerald)" />
@@ -289,19 +306,24 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
             <StatCard label="Total Pendapatan"  value={`Rp ${totalEarned.toLocaleString("id-ID")}`}  sub="Dari pesanan lunas" color="var(--emerald)" />
           </div>
 
-          {/* ── Filter Bar ── */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.125rem" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5" style={{ flexShrink: 0 }}>
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-            </svg>
-            <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-muted)", marginRight: "0.25rem" }}>Filter:</span>
-            {[
-              { label: `Semua (${totalAll})`,                       value: "ALL"       },
-              { label: `Menunggu (${countByStatus["PENDING"]   || 0})`, value: "PENDING"   },
-              { label: `Dikonfirmasi (${countByStatus["CONFIRMED"] || 0})`, value: "CONFIRMED" },
-              { label: `Selesai (${countByStatus["COMPLETED"] || 0})`,   value: "COMPLETED" },
-              { label: `Dibatalkan (${countByStatus["CANCELLED"] || 0})`, value: "CANCELLED" },
-            ].map(f => <FilterBadge key={f.value} label={f.label} value={f.value} current={status} />)}
+          {/* ── Table Toolbar (Search & Filter) ── */}
+          <div style={{ marginBottom: "1.125rem" }}>
+            <TableToolbar
+              searchPlaceholder="Cari ID atau Jamaah..."
+              filters={[
+                { label: `Semua (${totalAll})`, value: "ALL" },
+                { label: `Menunggu (${countByStatus["PENDING"] || 0})`, value: "PENDING" },
+                { label: `Dikonfirmasi (${countByStatus["CONFIRMED"] || 0})`, value: "CONFIRMED" },
+                { label: `Selesai (${countByStatus["COMPLETED"] || 0})`, value: "COMPLETED" },
+                { label: `Dibatalkan (${countByStatus["CANCELLED"] || 0})`, value: "CANCELLED" }
+              ]}
+              sorts={[
+                { label: "Terbaru", value: "terbaru" },
+                { label: "Terlama", value: "terlama" },
+                { label: "Harga Tertinggi", value: "termahal" },
+                { label: "Harga Terendah", value: "termurah" }
+              ]}
+            />
           </div>
 
           {/* ── Table ── */}
@@ -323,7 +345,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
             <div style={{ background: "white", borderRadius: 16, border: "1px solid var(--border)", boxShadow: "0 4px 16px rgba(0,0,0,0.04)", overflow: "hidden" }}>
 
               {/* Table header */}
-              <div style={{
+              <div className="bm-table-header" style={{
                 display: "grid",
                 gridTemplateColumns: "1.6fr 1.4fr 1.2fr 1fr 1fr auto",
                 gap: "0.75rem",
@@ -349,20 +371,20 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                 const isPending = booking.status === "PENDING";
 
                 return (
-                  <React.Fragment key={booking.id}>
+                  <div key={booking.id} className="bm-card-wrap" style={{ borderBottom: idx < bookings.length - 1 ? "1px solid var(--border)" : "none" }}>
+
+                    {/* ── DESKTOP VIEW ── */}
                     <div
                       style={{
                         display: "grid",
                         gridTemplateColumns: "1.6fr 1.4fr 1.2fr 1fr 1fr auto",
                         gap: "0.75rem",
                         padding: "1rem 1.25rem",
-                        borderBottom: "none",
                         alignItems: "center",
                         transition: "background 0.15s",
-                        background: isPending ? "rgba(196,151,59,0.02)" : "white",
-                        borderTop: idx > 0 ? "1px solid var(--border)" : "none",
+                        background: isPending ? "rgba(196,151,59,0.02)" : "transparent",
                       }}
-                      className="booking-row"
+                      className="bm-row-desktop"
                     >
                     {/* Col 1: Jamaah info */}
                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
@@ -498,49 +520,105 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                         <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontStyle: "italic" }}>—</span>
                       )}
                     </div>
-                  </div>
+                    </div>
 
-                  {/* ── Mobile action area (full-width, below grid) ── */}
-                  <div className="bm-action-mobile" style={{ padding: "0 1.25rem 1rem" }}>
-                    {/* Terima/Tolak di mobile untuk PENDING */}
-                    {isPending && (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-                        <form action={acceptBooking.bind(null, booking.id)}>
-                          <button type="submit" style={{
-                            width: "100%", padding: "0.625rem", background: "var(--emerald)",
-                            color: "white", border: "none", borderRadius: 10, fontSize: "0.8125rem",
-                            fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center",
-                            justifyContent: "center", gap: "0.375rem",
-                          }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                            Terima
-                          </button>
-                        </form>
-                        <form action={rejectBooking.bind(null, booking.id)}>
-                          <button type="submit" style={{
-                            width: "100%", padding: "0.625rem", background: "white",
-                            color: "var(--error)", border: "1px solid rgba(220,38,38,0.3)",
-                            borderRadius: 10, fontSize: "0.8125rem", fontWeight: 700, cursor: "pointer",
-                            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
-                          }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            Tolak
-                          </button>
-                        </form>
+                    {/* ── TOKOPEDIA-STYLE MOBILE CARD ── */}
+                    <div className="bm-row-mobile" style={{ display: "none", flexDirection: "column", padding: "0" }}>
+                      {/* Header */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.625rem 0.875rem", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                          <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--charcoal)" }}>Jamaah • {new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
+                        </div>
+                        <span style={{ padding: "0.15rem 0.4rem", borderRadius: 4, fontSize: "0.625rem", fontWeight: 800, background: sc.bg, color: sc.color, flexShrink: 0 }}>
+                          {STATUS_LABELS[booking.status] || booking.status}
+                        </span>
                       </div>
-                    )}
-                    {/* Chat button di mobile */}
-                    {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
-                      <ChatWidget
-                        bookingId={booking.id}
-                        currentUser={{ id: session!.id, name: session!.name!, photoUrl: profile?.user?.photoUrl, role: "MUTHAWIF" }}
-                        otherUser={{ id: booking.jamaahId, name: booking.jamaah.name, photoUrl: booking.jamaah.photoUrl, role: "JAMAAH" }}
-                        buttonLabel={`💬 Chat dengan ${booking.jamaah.name}`}
-                        variant="primary"
-                      />
-                    )}
+
+                      {/* Body */}
+                      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", padding: "0.875rem" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg,var(--emerald),#27956A)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "1rem", flexShrink: 0, overflow: "hidden", border: "1px solid rgba(0,0,0,0.05)" }}>
+                          {booking.jamaah.photoUrl
+                            ? <span aria-hidden="true" style={{ display: "block", width: "100%", height: "100%", backgroundImage: `url(${booking.jamaah.photoUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                            : initials}
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", flex: 1, minWidth: 0 }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: "var(--charcoal)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: "0.1rem" }}>
+                              {booking.jamaah.name}
+                            </div>
+                            <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                              {durationDays} hari • Order #{shortId}
+                            </div>
+                          </div>
+                          {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
+                            <div style={{ flexShrink: 0 }}>
+                              <ChatWidget
+                                bookingId={booking.id}
+                                currentUser={{ id: session!.id, name: session!.name!, photoUrl: profile?.user?.photoUrl, role: "MUTHAWIF" }}
+                                otherUser={{ id: booking.jamaahId, name: booking.jamaah.name, photoUrl: booking.jamaah.photoUrl, role: "JAMAAH" }}
+                                buttonLabel="Chat"
+                                variant="compact"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer: Price & Actions */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0", padding: "0", borderTop: "1px solid rgba(0,0,0,0.05)", background: "var(--ivory)", borderBottomLeftRadius: 8, borderBottomRightRadius: 8 }}>
+                        {/* Price Row */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.625rem 0.875rem" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "0.1rem" }}>
+                            <div style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>Total Pendapatan</div>
+                            <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: "var(--charcoal)" }}>Rp {booking.totalFee.toLocaleString("id-ID")}</div>
+                          </div>
+                          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                            <span style={{ fontSize: "0.625rem", fontWeight: 800, color: pc.color, background: pc.bg, padding: "0.2rem 0.5rem", borderRadius: 4 }}>{pc.label}</span>
+                          </div>
+                        </div>
+
+                        {/* Actions Row */}
+                        {isPending && (
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", padding: "0 0.875rem 0.875rem" }}>
+                            <form action={acceptBooking.bind(null, booking.id)}>
+                              <button type="submit" style={{
+                                width: "100%", padding: "0.5rem", background: "var(--emerald)",
+                                color: "white", border: "none", borderRadius: 8, fontSize: "0.75rem",
+                                fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center",
+                                justifyContent: "center", gap: "0.25rem",
+                              }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                Terima
+                              </button>
+                            </form>
+                            <form action={rejectBooking.bind(null, booking.id)}>
+                              <button type="submit" style={{
+                                width: "100%", padding: "0.5rem", background: "white",
+                                color: "var(--error)", border: "1px solid rgba(220,38,38,0.3)",
+                                borderRadius: 8, fontSize: "0.75rem", fontWeight: 800, cursor: "pointer",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem",
+                              }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                Tolak
+                              </button>
+                            </form>
+                          </div>
+                        )}
+                        {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
+                          <div style={{ padding: "0 0.875rem 0.875rem" }}>
+                            <ChatWidget
+                              bookingId={booking.id}
+                              currentUser={{ id: session!.id, name: session!.name!, photoUrl: profile?.user?.photoUrl, role: "MUTHAWIF" }}
+                              otherUser={{ id: booking.jamaahId, name: booking.jamaah.name, photoUrl: booking.jamaah.photoUrl, role: "JAMAAH" }}
+                              buttonLabel={`Chat dengan ${booking.jamaah.name}`}
+                              variant="primary"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  </React.Fragment>
                 );
               })}
 
@@ -552,27 +630,28 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
         </main>
       </div>
 
+      <MuthawifMobileNav currentTab="bookings" />
+
       <style>{`
-        .booking-row:hover {
+        .bm-row-desktop:hover {
           background: var(--ivory) !important;
         }
-        .bm-action-mobile { display: none; flex-direction: column; gap: 0.5rem; }
         @media (max-width: 900px) {
-          .booking-row {
-            grid-template-columns: 1fr 1fr !important;
+          .muthawif-dashboard .dashboard-sidebar-fixed { display: none !important; }
+          .muthawif-dashboard .bm-summary-stats { display: none !important; }
+          .muthawif-dashboard .bm-card-wrap {
+            border-bottom: none !important;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            padding: 0 !important;
           }
-          /* Sembunyikan kolom Aksi di grid mobile */
-          .bm-action-desktop { display: none !important; }
-          /* Tampilkan area aksi mobile full-width */
-          .bm-action-mobile { display: flex !important; }
-          /* Kolom 1 (jamaah) span full width */
-          .booking-row > div:nth-child(1) { grid-column: 1 / -1; }
-          /* Kolom 2,3 berdampingan */
-          .booking-row > div:nth-child(2) { }
-          .booking-row > div:nth-child(3) { text-align: right; }
-          /* Kolom 4,5 berdampingan */
-          .booking-row > div:nth-child(4) { }
-          .booking-row > div:nth-child(5) { justify-content: flex-end; display: flex; }
+          .muthawif-dashboard .bm-table-header { display: none !important; }
+          .muthawif-dashboard .bm-row-desktop { display: none !important; }
+          .muthawif-dashboard .bm-row-mobile { display: flex !important; }
         }
       `}</style>
     </div>

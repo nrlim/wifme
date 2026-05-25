@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { LayoutGrid, CalendarDays, ClipboardList, UserCheck, Wallet, BarChart3 } from "lucide-react";
 import { ProfileForm } from "./ProfileForm";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { DocumentUpload } from "./DocumentUpload";
@@ -11,6 +12,8 @@ import { CopyButton } from "../CopyButton";
 import MuthawifWallet from "@/components/wallet/MuthawifWallet";
 import { getWallet } from "@/actions/finance";
 import EarningsDashboard from "@/components/earnings/EarningsDashboard";
+import MuthawifMobileNav from "./MuthawifMobileNav";
+
 function VerificationTimeline({ currentStep }: { currentStep: number }) {
   const steps = [
     { num: 1, label: "Info Layanan", desc: "Wilayah, tarif & keahlian" },
@@ -273,9 +276,9 @@ export default async function MuthawifDashboardPage({
   };
 
   return (
-    <div className="dashboard-fullscreen">
+    <div className="dashboard-fullscreen muthawif-dashboard">
       {/* ══ SIDEBAR ══ */}
-      <aside className="dashboard-sidebar-fixed" style={{ background: "linear-gradient(170deg, #0d2818 0%, #1B6B4A 70%, #27956A 100%)", borderRight: "none" }}>
+      <aside className="dashboard-sidebar-fixed hide-mobile" style={{ background: "linear-gradient(170deg, #0d2818 0%, #1B6B4A 70%, #27956A 100%)", borderRight: "none" }}>
 
         {/* Brand header */}
         <div style={{ padding: "1.25rem 1.375rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.625rem" }}>
@@ -301,11 +304,11 @@ export default async function MuthawifDashboardPage({
           </div>
           <nav style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             {[
-              { id: "earnings", href: "/dashboard/muthawif?tab=earnings",  label: "Dashboard",           desc: "Pendapatan & analytics",  emoji: "📊",  sub: false },
-              { id: "schedule", href: "/dashboard/muthawif?tab=schedule",  label: "Jadwal",              desc: "Kelola ketersediaan",    emoji: "📅",  sub: false },
-              { id: "bookings", href: "/dashboard/muthawif/bookings",      label: "Pesanan",              desc: "Riwayat pesanan masuk",  emoji: "📋",  sub: false },
-              { id: "profile",  href: "/dashboard/muthawif?tab=profile",   label: "Profil Layanan",      desc: "Info, tarif & keahlian", emoji: "👤",  sub: false },
-              { id: "wallet",   href: "/dashboard/muthawif?tab=wallet",    label: "Dompet Muthawif",     desc: "Balans & penarikan",     emoji: "💰",  sub: false },
+              { id: "earnings", href: "/dashboard/muthawif?tab=earnings",  label: "Dashboard",           desc: "Pendapatan & analytics",  icon: BarChart3,     sub: false },
+              { id: "schedule", href: "/dashboard/muthawif?tab=schedule",  label: "Jadwal",              desc: "Kelola ketersediaan",    icon: CalendarDays,  sub: false },
+              { id: "bookings", href: "/dashboard/muthawif/bookings",      label: "Pesanan",              desc: "Riwayat pesanan masuk",  icon: ClipboardList, sub: false },
+              { id: "profile",  href: "/dashboard/muthawif?tab=profile",   label: "Profil Layanan",      desc: "Info, tarif & keahlian", icon: UserCheck,     sub: false },
+              { id: "wallet",   href: "/dashboard/muthawif?tab=wallet",    label: "Dompet Muthawif",     desc: "Balans & penarikan",     icon: Wallet,        sub: false },
             ].map((t) => {
               const isActive = t.id === "bookings" ? false : currentTab === t.id;
               return (
@@ -331,8 +334,8 @@ export default async function MuthawifDashboardPage({
                       width: 8, height: 1, background: "rgba(255,255,255,0.2)",
                     }} />
                   )}
-                  <div style={{ width: t.sub ? 26 : 34, height: t.sub ? 26 : 34, borderRadius: t.sub ? 7 : 9, background: isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: t.sub ? "0.8125rem" : "1rem", flexShrink: 0 }}>
-                    {t.emoji}
+                  <div style={{ width: t.sub ? 26 : 34, height: t.sub ? 26 : 34, borderRadius: t.sub ? 7 : 9, background: isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: isActive ? "white" : "rgba(255,255,255,0.7)" }}>
+                    <t.icon size={t.sub ? 14 : 18} strokeWidth={2.2} />
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ color: isActive ? "white" : t.sub ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.8)", fontWeight: isActive ? 700 : t.sub ? 500 : 600, fontSize: t.sub ? "0.8125rem" : "0.875rem", lineHeight: 1.2 }}>
@@ -353,9 +356,9 @@ export default async function MuthawifDashboardPage({
       </aside>
 
       <div className="dashboard-main-area">
-        <header className="dashboard-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <header className="dashboard-header flex justify-between items-center">
           <div>
-            <h2 style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--charcoal)" }}>
+            <h2 className="text-lg font-black text-[var(--charcoal)]">
               {TAB_TITLES_MAP[currentTab] || "Panel Muthawif"}
             </h2>
           </div>
@@ -368,15 +371,15 @@ export default async function MuthawifDashboardPage({
         </header>
 
         {/* Main Content Area */}
-        <main style={{ padding: "clamp(1rem, 4vw, 2rem)", overflowY: "auto", flex: 1, minHeight: 0 }}>
+        <main className="dashboard-content-scroll p-[clamp(1rem,4vw,2rem)] overflow-y-auto flex-1 min-h-0">
 
         {currentTab === "schedule" && (
           <div>
             {!profile ? (
-              <div style={{ padding: "3rem", textAlign: "center", background: "white", borderRadius: "16px", border: "1px dashed var(--border)" }}>
-                <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>📋</div>
-                <h3 style={{ fontWeight: 700, marginBottom: "0.5rem" }}>Profil belum dilengkapi</h3>
-                <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Lengkapi data layanan Anda terlebih dahulu sebelum mengelola jadwal.</p>
+              <div className="p-12 text-center bg-white rounded-2xl border border-dashed border-[var(--border)]">
+                <ClipboardList size={40} className="mx-auto mb-4 text-[var(--emerald)]" />
+                <h3 className="font-bold mb-2">Profil belum dilengkapi</h3>
+                <p className="text-[var(--text-muted)] text-sm">Lengkapi data layanan Anda terlebih dahulu sebelum mengelola jadwal.</p>
               </div>
             ) : (
               <AvailabilityCalendar availability={profile.availability} />
@@ -385,8 +388,7 @@ export default async function MuthawifDashboardPage({
         )}
 
         {currentTab === "profile" && (
-          <div className="card" style={{ padding: "1.5rem" }}>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 800, marginBottom: "1.5rem" }}>Update Informasi Layanan</h2>
+          <div className="profile-tab-wrapper">
             <ProfileForm
               profile={profile as any}
               userName={session.name}
@@ -397,107 +399,7 @@ export default async function MuthawifDashboardPage({
           </div>
         )}
 
-        {currentTab === "bookings" && (
-          <div>
-            {bookings.length === 0 ? (
-              <div style={{ padding: "4rem 2rem", textAlign: "center", background: "white", borderRadius: "20px", border: "1px solid var(--border)", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-                <div style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--ivory-dark)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                </div>
-                <div>
-                  <h3 style={{ fontWeight: 700, fontSize: "1.0625rem", marginBottom: "0.375rem" }}>Belum Ada Pesanan</h3>
-                  <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Pesanan dari Jamaah akan muncul di sini setelah akun Anda aktif.</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                  {bookings.map((booking) => {
-                    const color = STATUS_COLORS[booking.status] || { bg: "#eee", color: "#666" };
-                    const initials = booking.jamaah.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-                    const durationDays = Math.max(1, Math.round((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24)));
 
-                    return (
-                      <div key={booking.id} style={{ display: "flex", flexDirection: "column", background: "white", borderRadius: "16px", border: "1px solid var(--border)", boxShadow: "0 2px 8px rgba(0,0,0,0.02)", overflow: "hidden" }}>
-                        {/* Header (Booking ID & Status) */}
-                        <div style={{ padding: "0.875rem 1.5rem", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--ivory)", flexWrap: "wrap", gap: "1rem" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                            <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "1px" }}>ORDER ID</span>
-                            <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--charcoal)", fontFamily: "monospace", display: "flex", alignItems: "center" }}>
-                              #{(booking.id.includes("-") ? booking.id.split("-")[0] : booking.id.slice(0, 8)).toUpperCase()}
-                              <CopyButton text={booking.id} />
-                            </span>
-                          </div>
-                          <div style={{ display: "flex", gap: "0.5rem" }}>
-                            <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.8125rem", fontWeight: 600, background: color.bg, color: color.color }}>
-                              {STATUS_LABELS[booking.status] || booking.status}
-                            </span>
-                            {booking.paymentStatus === "PAID" && (
-                              <span style={{ padding: "0.25rem 0.75rem", borderRadius: "99px", fontSize: "0.8125rem", fontWeight: 700, background: "var(--emerald-pale)", color: "var(--emerald)" }}>
-                                Lunas
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Body */}
-                        <div style={{ padding: "1.5rem", display: "flex", flexWrap: "wrap", gap: "1.5rem", alignItems: "center" }}>
-                          {/* Profile Info */}
-                          <div style={{ display: "flex", gap: "1rem", alignItems: "center", flex: "1 1 250px" }}>
-                            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, var(--emerald), var(--emerald-light))", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "1.25rem", flexShrink: 0, overflow: "hidden" }}>
-                              {initials}
-                            </div>
-                            <div>
-                              <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600, marginBottom: "0.25rem" }}>
-                                Pesanan dari Jamaah
-                              </div>
-                              <h4 style={{ fontWeight: 800, fontSize: "1.125rem", color: "var(--charcoal)" }}>{booking.jamaah.name}</h4>
-                              <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.375rem", marginTop: "0.25rem" }}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/><path d="M9 4v16"/></svg>
-                                {booking.jamaah.email}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Schedule Info */}
-                          <div style={{ flex: "1 1 200px", display: "flex", gap: "2rem" }}>
-                            <div>
-                              <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600, marginBottom: "0.375rem" }}>Tanggal Pelaksanaan</div>
-                              <div style={{ fontWeight: 700, color: "var(--charcoal)", fontSize: "1rem" }}>{new Date(booking.startDate).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-                            </div>
-                            <div>
-                              <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600, marginBottom: "0.375rem" }}>Durasi</div>
-                              <div style={{ fontWeight: 700, color: "var(--charcoal)", fontSize: "1rem" }}>{durationDays} Hari</div>
-                            </div>
-                          </div>
-
-                          {/* Pricing & Action */}
-                          <div style={{ flex: "1 1 180px", textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "center", paddingTop: "0.5rem", borderTop: "1px solid var(--border)" }}>
-                            <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 600, marginBottom: "0.25rem" }}>Total Pendapatan</div>
-                            <div style={{ fontSize: "1.375rem", fontWeight: 800, color: booking.paymentStatus === "PAID" ? "var(--emerald)" : "var(--charcoal)" }}>Rp {booking.totalFee.toLocaleString("id-ID")}</div>
-                            <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.375rem" }}>
-                               {booking.paymentStatus === "PAID" ? "✅ Menunggu pelaksanaan" : "⏳ Menunggu pembayaran Jamaah"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div style={{ marginTop: "1rem", padding: "1.25rem 1.5rem", borderRadius: "16px", border: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
-                  <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-muted)" }}>Total {bookings.length} pesanan</span>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.125rem" }}>Total Pendapatan (Lunas)</div>
-                    <span style={{ fontWeight: 800, color: "var(--emerald)", fontSize: "1.125rem" }}>
-                      Rp {bookings.filter(b => b.paymentStatus === "PAID").reduce((s, b) => s + b.totalFee, 0).toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        )}
 
         {currentTab === "wallet" && walletData && (
           <MuthawifWallet wallet={walletData} userId={session.id} />
@@ -508,6 +410,12 @@ export default async function MuthawifDashboardPage({
         )}
         </main>
       </div>
+      <MuthawifMobileNav currentTab={currentTab} />
+      <style>{`
+        @media (max-width: 900px) {
+          .muthawif-dashboard .dashboard-sidebar-fixed { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }

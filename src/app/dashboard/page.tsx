@@ -916,7 +916,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                             fontSize: "0.6875rem", fontWeight: 800, textDecoration: "none"
                           }}
                         >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
                           Bayar
                         </Link>
                       )}
@@ -977,7 +977,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                     {/* Header */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.625rem 0.875rem", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                         <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--charcoal)" }}>Perjalanan • {startDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
                       </div>
                       <span style={{ padding: "0.15rem 0.4rem", borderRadius: 4, fontSize: "0.625rem", fontWeight: 800, background: color.bg, color: color.color, flexShrink: 0 }}>
@@ -1035,7 +1035,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                               fontSize: "0.6875rem", fontWeight: 800, textDecoration: "none"
                             }}
                           >
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
                             Bayar
                           </Link>
                         ) : null}
@@ -1119,20 +1119,20 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       show: session.role === "AMIR",
     },
     {
-      href: "/dashboard?tab=beranda",
-      label: "Riwayat Pesanan",
-      desc: "Semua pesanan umrah",
-      emoji: "📋",
-      tab: "beranda",
-      show: true,
-    },
-    {
       href: "/dashboard?tab=cari",
       label: "Cari Muthawif",
       desc: "Temukan muthawif tersedia",
       emoji: "🔍",
       tab: "cari",
       show: session.role === "JAMAAH",
+    },
+    {
+      href: "/dashboard?tab=beranda",
+      label: "Riwayat Pesanan",
+      desc: "Semua pesanan umrah",
+      emoji: "📋",
+      tab: "beranda",
+      show: true,
     },
     {
       href: "/dashboard?tab=muthawif",

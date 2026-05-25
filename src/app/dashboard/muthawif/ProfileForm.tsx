@@ -496,6 +496,8 @@ export function ProfileForm({
 
   const isStepperMode = !profile || profile.verificationStatus === "PENDING" || profile.verificationStatus === "REVIEW";
 
+  const [mobileView, setMobileView] = useState<"MENU" | "FORM">("MENU");
+
   /* State */
   const [bio, setBio] = useState(profile?.bio || "");
   const [priceRaw, setPriceRaw] = useState<number>(profile?.basePrice || 0);
@@ -544,7 +546,8 @@ export function ProfileForm({
       {/* Real hidden submit button, used to programmatically trigger form action */}
       <button type="submit" ref={submitBtnRef} style={{ display: "none" }} aria-hidden />
 
-      {/* ── Top hero banner ─────────────────────────────────── */}
+      {/* ── Top hero banner (Stepper only) ─────────────────────────────────── */}
+      {isStepperMode && (
       <div style={{
         background: `linear-gradient(135deg, #0d2818 0%, ${C.emerald} 55%, ${C.emeraldLight} 100%)`,
         borderRadius: 20, padding: "1.75rem 2rem", marginBottom: "1.5rem",
@@ -599,9 +602,10 @@ export function ProfileForm({
           </div>
         </div>
       </div>
+      )}
 
       {/* ── Main two-column layout ────────────────────────── */}
-      <div className="pf-layout">
+      <div className={`pf-layout ${!isStepperMode ? `dash-mode mobile-show-${mobileView.toLowerCase()}` : "stepper-mode"}`}>
 
         {/* LEFT: Section sidebar navigation */}
         <aside className="pf-sidebar">
@@ -616,14 +620,18 @@ export function ProfileForm({
                     key={sec.id}
                     sec={sec}
                     activeSection={activeSection}
-                    setActiveSection={setActiveSection}
+                    setActiveSection={(id) => {
+                      setActiveSection(id);
+                      if (!isStepperMode) setMobileView("FORM");
+                    }}
                     completionMap={completionMap}
                   />
                 ))}
               </nav>
             </div>
 
-            {/* Sidebar stats */}
+            {/* Sidebar stats (Stepper only) */}
+            {isStepperMode && (
             <div style={{ margin: "1rem 0 0", padding: "1rem", background: C.ivoryDark, borderRadius: 14, border: `1px solid ${C.border}` }}>
               <div style={{ fontSize: "0.5625rem", fontWeight: 900, color: C.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.625rem" }}>Status Pengisian</div>
               {SECTIONS.map((s) => {
@@ -641,6 +649,7 @@ export function ProfileForm({
               </div>
               <div style={{ fontSize: "0.625rem", color: C.muted, marginTop: "0.375rem", textAlign: "right", fontWeight: 700 }}>{filledCount}/{SECTIONS.length} terisi</div>
             </div>
+            )}
           </div>
         </aside>
 
@@ -651,6 +660,19 @@ export function ProfileForm({
             marginBottom: "1.5rem", paddingBottom: "1.25rem",
             borderBottom: `1px solid ${C.border}`,
           }}>
+            {!isStepperMode && (
+              <button
+                type="button"
+                className="pf-mobile-back-btn"
+                onClick={() => setMobileView("MENU")}
+                style={{ display: "none", background: "none", border: "none", padding: 0, marginBottom: "1.25rem", color: C.charcoal, fontWeight: 800, fontSize: "0.875rem", cursor: "pointer", alignItems: "center", gap: "0.375rem" }}
+              >
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: C.ivoryDark, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+                </div>
+                Menu Profil
+              </button>
+            )}
             <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
               <div style={{
                 width: 48, height: 48, borderRadius: 14, flexShrink: 0,
@@ -663,8 +685,14 @@ export function ProfileForm({
               </div>
               <div>
                 <div style={{ fontSize: "0.5625rem", fontWeight: 900, color: activeSecDef.accent, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>
-                  Langkah {activeSecDef.step} dari {SECTIONS.length}
-                  {!activeSecDef.required && <span style={{ marginLeft: "0.5rem", opacity: 0.7 }}>• Opsional</span>}
+                  {isStepperMode ? (
+                    <>
+                      Langkah {activeSecDef.step} dari {SECTIONS.length}
+                      {!activeSecDef.required && <span style={{ marginLeft: "0.5rem", opacity: 0.7 }}>• Opsional</span>}
+                    </>
+                  ) : (
+                    "Pengaturan Profil"
+                  )}
                 </div>
                 <h2 style={{ fontWeight: 900, fontSize: "1.1875rem", color: C.charcoal, margin: "0 0 0.25rem", lineHeight: 1.25 }}>
                   {activeSecDef.label}
@@ -694,7 +722,7 @@ export function ProfileForm({
       </div>
 
       {/* ── All-filled success banner ─────────────────────── */}
-      {allRequiredFilled && (
+      {allRequiredFilled && isStepperMode && (
         <div style={{
           margin: "1.25rem 0 0", padding: "1rem 1.25rem",
           background: "linear-gradient(135deg, #EBF5EF, #D1FAE5)",
@@ -716,7 +744,7 @@ export function ProfileForm({
       )}
 
       {/* ── Sticky CTA bar ───────────────────────────────── */}
-      <div style={{
+      <div className="pf-cta-bar" style={{
         position: "sticky", bottom: "1rem", zIndex: 30, marginTop: "1.25rem",
         padding: "0.875rem 1.25rem",
         background: "rgba(250,247,242,0.96)",
@@ -861,6 +889,34 @@ export function ProfileForm({
           }
           .pf-sidebar {
             min-height: auto;
+          }
+          
+          /* Native Menu Mode for Dashboard */
+          .pf-layout.dash-mode.mobile-show-menu .pf-content {
+            display: none;
+          }
+          .pf-layout.dash-mode.mobile-show-menu .pf-sidebar {
+            display: block;
+            border: none;
+            padding: 0;
+            background: transparent;
+          }
+          .pf-layout.dash-mode.mobile-show-menu .pf-sidebar nav button {
+            background: ${C.white} !important;
+            border: 1px solid ${C.border} !important;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
+          }
+          .pf-layout.dash-mode.mobile-show-form .pf-sidebar {
+            display: none;
+          }
+          .pf-layout.dash-mode.mobile-show-form .pf-mobile-back-btn {
+            display: flex !important;
+          }
+          
+          /* Hide CTA Bar when showing menu on mobile */
+          .pf-layout.dash-mode.mobile-show-menu ~ .pf-cta-bar {
+            display: none !important;
           }
         }
       `}</style>
