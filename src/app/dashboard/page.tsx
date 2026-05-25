@@ -1319,7 +1319,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
               {TAB_TITLES[currentTab] || "Dashboard"}
             </h2>
           </div>
-          <AmirHeaderPanel name={session.name} email={session.email} role={session.role} avatarUrl={userRecord?.photoUrl} />
+          <AmirHeaderPanel name={session.name} email={session.email} role={session.role} avatarUrl={userRecord?.photoUrl} muthawifProfile={currentMuthawifProfile} />
         </header>
 
         <main className="dashboard-content-scroll" style={{ padding: "clamp(1rem, 4vw, 2rem)", overflowY: "auto", flex: 1, minHeight: 0 }}>

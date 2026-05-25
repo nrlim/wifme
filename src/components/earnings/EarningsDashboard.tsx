@@ -504,7 +504,7 @@ function MuthawifEarningsDashboard({ data }: { data: MuthawifAnalytics }) {
             Tren Mingguan (8 Minggu)
           </div>
           <div style={{ height: 64 }}>
-            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+            <ResponsiveContainer width="99%" height="100%" minWidth={1} minHeight={1}>
               <AreaChart data={weeklyTrend} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
                 <defs>
                   <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
@@ -538,7 +538,7 @@ function MuthawifEarningsDashboard({ data }: { data: MuthawifAnalytics }) {
             <h3 style={{ fontSize: "0.9375rem", fontWeight: 800, color: "#2C2C2C" }}>Grafik Pendapatan Bulanan</h3>
             <p style={{ fontSize: "0.75rem", color: "#8A8A8A", marginTop: "0.125rem" }}>Pendapatan kotor vs bersih per bulan</p>
           </div>
-          <ResponsiveContainer width="100%" height={240} minWidth={1} minHeight={1}>
+          <ResponsiveContainer width="99%" height={240} minWidth={1} minHeight={1}>
             <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0EBE1" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8A8A8A" }} axisLine={false} tickLine={false} />
@@ -858,7 +858,7 @@ function AmirEarningsDashboard({ data }: { data: AmirAnalytics }) {
             <h3 style={{ fontSize: "0.9375rem", fontWeight: 800, color: "#2C2C2C" }}>Tren GMV & Komisi</h3>
             <p style={{ fontSize: "0.75rem", color: "#8A8A8A", marginTop: "0.125rem" }}>Nilai transaksi platform per bulan</p>
           </div>
-          <ResponsiveContainer width="100%" height={260} minWidth={1} minHeight={1}>
+          <ResponsiveContainer width="99%" height={260} minWidth={1} minHeight={1}>
             <BarChart data={gmvChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0EBE1" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8A8A8A" }} axisLine={false} tickLine={false} />
@@ -1083,6 +1083,20 @@ export default function EarningsDashboard({ initialRole }: { initialRole: string
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Suppress Recharts ResizeObserver warning (common bug when tab switches or flex containers expand)
+    const originalWarn = console.warn;
+    console.warn = (...args) => {
+      if (typeof args[0] === "string" && args[0].includes("The width(-1) and height(-1) of chart should be greater than 0")) {
+        return;
+      }
+      originalWarn(...args);
+    };
+    return () => {
+      console.warn = originalWarn;
+    };
+  }, []);
 
   const fetchData = useCallback(async (p: string) => {
     setLoading(true);

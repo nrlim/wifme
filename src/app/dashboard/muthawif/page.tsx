@@ -307,7 +307,7 @@ export default async function MuthawifDashboardPage({
               { id: "earnings", href: "/dashboard/muthawif?tab=earnings",  label: "Dashboard",           desc: "Pendapatan & analytics",  icon: BarChart3,     sub: false },
               { id: "schedule", href: "/dashboard/muthawif?tab=schedule",  label: "Jadwal",              desc: "Kelola ketersediaan",    icon: CalendarDays,  sub: false },
               { id: "bookings", href: "/dashboard/muthawif/bookings",      label: "Pesanan",              desc: "Riwayat pesanan masuk",  icon: ClipboardList, sub: false },
-              { id: "profile",  href: "/dashboard/muthawif?tab=profile",   label: "Profil Layanan",      desc: "Info, tarif & keahlian", icon: UserCheck,     sub: false },
+
               { id: "wallet",   href: "/dashboard/muthawif?tab=wallet",    label: "Dompet Muthawif",     desc: "Balans & penarikan",     icon: Wallet,        sub: false },
             ].map((t) => {
               const isActive = t.id === "bookings" ? false : currentTab === t.id;
@@ -367,6 +367,7 @@ export default async function MuthawifDashboardPage({
             email={session.email || ""}
             role={session.role}
             avatarUrl={profile?.user?.photoUrl}
+            muthawifProfile={profile}
           />
         </header>
 

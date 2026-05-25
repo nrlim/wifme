@@ -9,7 +9,7 @@ import { AmirHeaderPanel } from "../../AmirHeaderPanel";
 import ChatWidget from "@/components/ChatWidget";
 import MuthawifMobileNav from "../MuthawifMobileNav";
 import TableToolbar from "@/components/TableToolbar";
-import { CalendarDays, ClipboardList, UserCheck, Wallet } from "lucide-react";
+import { CalendarDays, ClipboardList, Wallet, BarChart3 } from "lucide-react";
 
 /* ─── Types ─── */
 interface PageProps {
@@ -165,7 +165,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
 
   const profile = await prisma.muthawifProfile.findUnique({
     where: { userId: session.id },
-    select: { user: { select: { photoUrl: true } } },
+    include: { user: true },
   });
 
   const params = await searchParams;
@@ -227,7 +227,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
       <aside className="dashboard-sidebar-fixed hide-mobile" style={{ background: "linear-gradient(170deg, #0d2818 0%, #1B6B4A 70%, #27956A 100%)", borderRight: "none" }}>
         {/* Brand */}
         <div style={{ padding: "1.25rem 1.375rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.625rem" }}>
-          <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #1B6B4A, #27956A)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
             </svg>
@@ -240,43 +240,48 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
           </div>
         </div>
 
-        {/* Nav */}
-        <div style={{ padding: "0.875rem 0.75rem", flex: 1, overflowY: "auto" }}>
-          {[
-            { href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",            desc: "Kelola ketersediaan",    icon: CalendarDays,  sub: false },
-            { href: "/dashboard/muthawif/bookings",     label: "Pesanan",            desc: "Riwayat pesanan masuk",  icon: ClipboardList, sub: false, active: true },
-            { href: "/dashboard/muthawif?tab=profile",  label: "Profil Layanan",    desc: "Info, tarif & keahlian", icon: UserCheck,     sub: false },
-            { href: "/dashboard/muthawif?tab=wallet",   label: "Dompet",             desc: "Balans Escrow",          icon: Wallet,        sub: false },
-          ].map((t) => (
-            <Link
-              key={t.href}
-              href={t.href}
-              style={{
-                display: "flex", alignItems: "center", gap: t.sub ? "0.5rem" : "0.75rem",
-                padding: t.sub ? "0.5rem 0.625rem 0.5rem 2.25rem" : "0.6875rem 0.75rem",
-                borderRadius: t.sub ? 10 : 12, textDecoration: "none", marginBottom: "0.25rem",
-                marginLeft: t.sub ? "0.5rem" : "0",
-                background: t.active ? "rgba(255,255,255,0.14)" : "transparent",
-                border: t.active ? "1px solid rgba(255,255,255,0.18)" : "1px solid transparent",
-                position: "relative",
-              }}
-            >
-              {t.sub && (
-                <div style={{
-                  position: "absolute", left: "0.875rem", top: "50%", transform: "translateY(-50%)",
-                  width: 8, height: 1, background: "rgba(255,255,255,0.2)",
-                }} />
-              )}
-              <div style={{ width: t.sub ? 26 : 34, height: t.sub ? 26 : 34, borderRadius: t.sub ? 7 : 9, background: t.active ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: t.active ? "white" : "rgba(255,255,255,0.7)" }}>
-                <t.icon size={t.sub ? 14 : 18} strokeWidth={2.2} />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ color: t.active ? "white" : t.sub ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.8)", fontWeight: t.active ? 700 : t.sub ? 500 : 600, fontSize: t.sub ? "0.8125rem" : "0.875rem", lineHeight: 1.2 }}>{t.label}</div>
-                <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.5625rem", marginTop: "0.1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.desc}</div>
-              </div>
-              {t.active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#E4B55A", flexShrink: 0 }} />}
-            </Link>
-          ))}
+        {/* Nav links */}
+        <div className="sidebar-scrollable" style={{ padding: "0.875rem 0.75rem", flex: 1, overflowY: "auto" }}>
+          <div style={{ fontSize: "0.5875rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", marginBottom: "0.375rem", padding: "0 0.25rem" }}>
+            MENU UTAMA
+          </div>
+          <nav style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            {[
+              { href: "/dashboard/muthawif?tab=earnings", label: "Dashboard",         desc: "Pendapatan & analytics", icon: BarChart3,     sub: false },
+              { href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",            desc: "Kelola ketersediaan",    icon: CalendarDays,  sub: false },
+              { href: "/dashboard/muthawif/bookings",     label: "Pesanan",            desc: "Riwayat pesanan masuk",  icon: ClipboardList, sub: false, active: true },
+              { href: "/dashboard/muthawif?tab=wallet",   label: "Dompet Muthawif",    desc: "Balans & penarikan",     icon: Wallet,        sub: false },
+            ].map((t) => (
+              <Link
+                key={t.href}
+                href={t.href}
+                style={{
+                  display: "flex", alignItems: "center", gap: t.sub ? "0.5rem" : "0.75rem",
+                  padding: t.sub ? "0.5rem 0.625rem 0.5rem 2.25rem" : "0.6875rem 0.75rem",
+                  borderRadius: t.sub ? 10 : 12, textDecoration: "none", marginBottom: "0.25rem",
+                  marginLeft: t.sub ? "0.5rem" : "0",
+                  background: t.active ? "rgba(255,255,255,0.14)" : "transparent",
+                  border: t.active ? "1px solid rgba(255,255,255,0.18)" : "1px solid transparent",
+                  position: "relative",
+                }}
+              >
+                {t.sub && (
+                  <div style={{
+                    position: "absolute", left: "0.875rem", top: "50%", transform: "translateY(-50%)",
+                    width: 8, height: 1, background: "rgba(255,255,255,0.2)",
+                  }} />
+                )}
+                <div style={{ width: t.sub ? 26 : 34, height: t.sub ? 26 : 34, borderRadius: t.sub ? 7 : 9, background: t.active ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: t.active ? "white" : "rgba(255,255,255,0.7)" }}>
+                  <t.icon size={t.sub ? 14 : 18} strokeWidth={2.2} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ color: t.active ? "white" : t.sub ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.8)", fontWeight: t.active ? 700 : t.sub ? 500 : 600, fontSize: t.sub ? "0.8125rem" : "0.875rem", lineHeight: 1.2 }}>{t.label}</div>
+                  <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.5625rem", marginTop: "0.1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.desc}</div>
+                </div>
+                {t.active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#E4B55A", flexShrink: 0 }} />}
+              </Link>
+            ))}
+          </nav>
         </div>
       </aside>
 
@@ -292,6 +297,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
             email={session.email || ""}
             role={session.role}
             avatarUrl={profile?.user?.photoUrl}
+            muthawifProfile={profile}
           />
         </header>
 

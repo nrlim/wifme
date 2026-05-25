@@ -223,42 +223,6 @@ export function DashboardHeader({
                   </>
                 )}
               </div>
-
-
-              {/* Quick actions - Hiding when not verified */}
-              {profile?.verificationStatus === "VERIFIED" && (
-                <div style={{ padding: "1.25rem 1.5rem" }}>
-                  <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>Kelola Akun</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                    {[
-                      {
-                        href: "/dashboard/muthawif?tab=profile",
-                        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-                        label: "Pengaturan Info Layanan & Keahlian",
-                        sub: "Tarif, biografi, wilayah, spesialisasi",
-                      }
-                    ].map(action => (
-                      <Link
-                        key={action.href}
-                        href={action.href}
-                        onClick={() => setPanelOpen(false)}
-                        style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.875rem 1rem", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--ivory)", textDecoration: "none", transition: "all 0.15s" }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--emerald)"; e.currentTarget.style.background = "var(--emerald-pale)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--ivory)"; }}
-                      >
-                        <div style={{ width: 36, height: 36, borderRadius: "10px", background: "white", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border)", color: "var(--charcoal)", flexShrink: 0 }}>
-                          {action.icon}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>{action.label}</div>
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>{action.sub}</div>
-                        </div>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Footer — logout */}
