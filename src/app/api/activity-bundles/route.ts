@@ -4,7 +4,11 @@ import { getSession } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const session = await getSession();
+    const isAdmin = session?.role === "AMIR";
+    
     const bundles = await prisma.activityBundle.findMany({
+      where: isAdmin ? undefined : { isActive: true },
       orderBy: { sortOrder: "asc" },
       include: {
         items: {
@@ -15,8 +19,8 @@ export async function GET() {
       }
     });
     return NextResponse.json({ data: bundles });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: "Terjadi kesalahan server." }, { status: 500 });
   }
 }
 
@@ -39,9 +43,9 @@ export async function POST(req: NextRequest) {
 
     const bundle = await prisma.activityBundle.create({
       data: {
-        name,
-        description,
-        price,
+        name: name ? String(name).trim() : "",
+        description: description ? String(description).trim() : null,
+        price: Number(price) || 0,
         sortOrder: finalSortOrder,
         isActive,
         items: {
@@ -60,7 +64,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ bundle }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: "Terjadi kesalahan server saat menyimpan data." }, { status: 500 });
   }
 }

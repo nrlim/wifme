@@ -2,9 +2,13 @@
 
 import { prisma } from "@/lib/prisma";
 import { getFeeConfig } from "@/lib/fee";
+import { getSession } from "@/lib/auth";
 
 export async function getBookingWizardData(muthawifId: string) {
   try {
+    const session = await getSession();
+    if (!session) return { success: false, error: "Unauthorized" };
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const activities = await prisma.activity.findMany({

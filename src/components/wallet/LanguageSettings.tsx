@@ -175,7 +175,7 @@ export default function LanguageSettings({
           </div>
 
           {/* Table */}
-          <div style={{ overflowX: 'auto' }}>
+          <div className="ls-desktop-table" style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 420 }}>
               <thead>
                 <tr style={{ background: '#FAFAFA' }}>
@@ -286,6 +286,43 @@ export default function LanguageSettings({
             </table>
           </div>
 
+          <div className="ls-mobile-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', padding: '1rem' }}>
+            {paginatedLanguages.map((lang, idx) => {
+              const globalIdx = (safePage - 1) * PAGE_SIZE + idx + 1;
+              const color = getLanguageColor(globalIdx - 1);
+              return (
+                <div key={lang} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, background: color.bg, border: `1px solid ${color.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: color.text, flexShrink: 0 }}>
+                        <Languages size={16} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--charcoal)' }}>{lang}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {lang.toLowerCase().replace(/\s+/g, '-')}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.625rem', borderRadius: 99, background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0', fontSize: '0.6875rem', fontWeight: 700 }}>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981' }} /> Aktif
+                    </span>
+                    <button type="button" onClick={() => handleDelete(lang)} disabled={isSaving} style={{ background: '#FEF2F2', color: '#EF4444', border: '1px solid #FECACA', borderRadius: 8, padding: '0.4rem 0.75rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 600, fontFamily: 'inherit' }}>
+                      <Trash2 size={14} /> Hapus
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {paginatedLanguages.length === 0 && (
+              <div style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+                <div style={{ color: '#CBD5E1', marginBottom: '0.75rem' }}><MessageCircle size={40} /></div>
+                <div style={{ fontWeight: 700, color: 'var(--charcoal)', fontSize: '0.9375rem' }}>Belum Ada Bahasa</div>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Klik "Tambah Bahasa" untuk mendaftarkan bahasa operasi pertama.</div>
+              </div>
+            )}
+          </div>
+
           {/* Pagination */}
           <div style={{ padding: '0.875rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
             <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
@@ -321,7 +358,7 @@ export default function LanguageSettings({
             backdropFilter: 'blur(4px)',
           }}
         >
-          <div style={{
+          <div className="ls-modal-container" style={{
             background: 'white', borderRadius: 20, width: '100%', maxWidth: 480,
             boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
             overflow: 'hidden',
@@ -444,6 +481,19 @@ export default function LanguageSettings({
         .ls-delete-btn:hover { background: #FEF2F2 !important; color: #EF4444 !important; border-color: #FECACA !important; }
         .ls-add-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(27,107,74,0.35) !important; }
         .ls-page-btn:hover { background: #F1F5F9 !important; }
+        .ls-mobile-list { display: none !important; }
+        @media (max-width: 768px) {
+          .ls-desktop-table { display: none !important; }
+          .ls-mobile-list { display: flex !important; }
+          .ls-modal-container {
+            margin-top: auto;
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            max-width: 100% !important;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+          }
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}</style>
     </>
   );

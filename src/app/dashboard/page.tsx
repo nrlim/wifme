@@ -22,6 +22,7 @@ import { CopyButton } from "./CopyButton";
 import { getFeeConfig, type FeeConfig } from "@/lib/fee";
 import MobileSidebarDrawer from "@/components/MobileSidebarDrawer";
 import JamaahMobileNav from "./JamaahMobileNav";
+import AmirMobileNav from "./AmirMobileNav";
 import EarningsDashboard from "@/components/earnings/EarningsDashboard";
 import PromoManagement from "@/components/wallet/PromoManagement";
 import { getPromotions } from "@/actions/promotions";
@@ -387,8 +388,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
         <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
 
           {/* ── KPI Cards Row ── */}
-          <div style={{
-            display: "grid",
+          <div className="hidden md:grid" style={{
             gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 160px), 1fr))",
             gap: "1rem",
           }}>
@@ -509,12 +509,11 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
           </div>
 
           {/* ── Revenue Hero Card ── */}
-          <div style={{
+          <div className="hidden md:flex" style={{
             background: "linear-gradient(135deg, var(--emerald) 0%, #1a8f62 50%, #27956A 100%)",
             borderRadius: 20,
             padding: "1.5rem 2rem",
             color: "white",
-            display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             flexWrap: "wrap",
@@ -1221,7 +1220,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
 
   return (
-    <div className={`dashboard-fullscreen${session.role === "JAMAAH" ? " jamaah-dashboard" : ""}`}>
+    <div className={`dashboard-fullscreen${session.role === "JAMAAH" ? " jamaah-dashboard" : ""}${session.role === "AMIR" ? " amir-dashboard" : ""}`}>
       {/* ══ SIDEBAR — wrapped in mobile drawer ══ */}
       <MobileSidebarDrawer brandLabel="PENDAMPING IBADAH UMROH">
 
@@ -1370,8 +1369,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
                   {/* Compact metric strip */}
-                  <div style={{
-                    display: "grid",
+                  <div className="hidden md:grid" style={{
                     gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                     gap: "1rem",
                     marginBottom: "1.5rem"
@@ -1457,6 +1455,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       </div>
 
       {session.role === "JAMAAH" && <JamaahMobileNav currentTab={currentTab} />}
+      {session.role === "AMIR" && <AmirMobileNav currentTab={currentTab} />}
 
       <style>{`
         @media (max-width: 768px) {
@@ -1533,6 +1532,35 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
           .jamaah-dashboard .jamaah-search-layout {
             gap: 0.85rem !important;
           }
+          
+          /* AMIR Dashboard Mobile Overrides */
+          .amir-dashboard .mob-topbar { display: none !important; }
+          .amir-dashboard .dashboard-sidebar-fixed { display: none !important; }
+          .amir-dashboard .dashboard-main-area {
+            min-height: 100dvh;
+            overflow: visible !important;
+            background: var(--ivory);
+          }
+          .amir-dashboard .dashboard-header {
+            position: sticky; top: 0; z-index: 120;
+            min-height: 56px;
+            padding: calc(0.5rem + env(safe-area-inset-top)) 1rem 0.5rem;
+            background: rgba(250,247,242,0.94);
+            border-bottom: 1px solid rgba(224,216,204,0.75);
+            backdrop-filter: blur(18px);
+          }
+          .amir-dashboard .dashboard-header h2 { font-size: 1rem !important; }
+          .amir-dashboard .dashboard-content-scroll {
+            overflow: visible !important;
+            padding: 0.85rem 0.75rem calc(6.25rem + env(safe-area-inset-bottom)) !important;
+          }
+          .amir-table-header { display: none !important; }
+          .amir-table-row { display: none !important; }
+          .amir-mobile-row { display: block !important; }
+          
+        }
+        @media (min-width: 769px) {
+          .amir-mobile-row { display: none !important; }
         }
       `}</style>
     </div>

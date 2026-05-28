@@ -5,7 +5,14 @@ import { getSession } from "@/lib/auth";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
-    const includeInactive = searchParams.get("includeInactive") === "true";
+    let includeInactive = searchParams.get("includeInactive") === "true";
+    
+    if (includeInactive) {
+      const session = await getSession();
+      if (!session || session.role !== "AMIR") {
+        includeInactive = false;
+      }
+    }
 
     const activities = await prisma.activity.findMany({
       where: includeInactive ? undefined : { isActive: true },

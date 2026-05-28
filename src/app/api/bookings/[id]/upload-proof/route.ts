@@ -14,6 +14,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { proofUrl } = body;
 
     if (!proofUrl || typeof proofUrl !== 'string') {
+      return NextResponse.json({ error: "URL bukti wajib diisi." }, { status: 400 });
+    }
+
+    try {
+      const parsedUrl = new URL(proofUrl);
+      if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+        throw new Error("Invalid protocol");
+      }
+    } catch {
       return NextResponse.json({ error: "URL bukti tidak valid." }, { status: 400 });
     }
 

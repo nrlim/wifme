@@ -19,7 +19,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate that the session user matches the jamaahId for security
-    const effectiveJamaahId = session.role === "JAMAAH" ? session.id : (jamaahId ?? session.id);
+    if (session.role !== "JAMAAH") {
+      return NextResponse.json({ valid: false, message: "Hanya Jamaah yang dapat memvalidasi promo." }, { status: 403 });
+    }
+    const effectiveJamaahId = session.id;
 
     const result = await validatePromoCode(code, bookingAmount, effectiveJamaahId);
     return NextResponse.json(result);

@@ -27,7 +27,8 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
     });
 
     return NextResponse.json({ activity });
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const error = err as { code?: string; message?: string };
     if (error.code === 'P2025') {
       return NextResponse.json({ error: "Kegiatan tidak ditemukan." }, { status: 404 });
     }
@@ -49,7 +50,8 @@ export async function DELETE(request: NextRequest, props: { params: Promise<{ id
     });
 
     return NextResponse.json({ activity });
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const error = err as { code?: string; message?: string };
     if (error.code === 'P2025') {
       return NextResponse.json({ error: "Kegiatan tidak ditemukan." }, { status: 404 });
     }

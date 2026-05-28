@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest) {
     );
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: "Terjadi kesalahan server saat memperbarui urutan." }, { status: 500 });
   }
 }

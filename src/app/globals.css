@@ -992,3 +992,37 @@ img {
   color: var(--emerald);
   vertical-align: middle;
 }
+
+/* ── AMIR Mobile Dashboard Redesign ── */
+@media (max-width: 768px) {
+  .amir-dashboard .mob-topbar {
+    display: none !important;
+  }
+  .amir-dashboard .dashboard-sidebar-fixed {
+    display: none !important;
+  }
+  .amir-dashboard .dashboard-main-area {
+    min-height: 100dvh;
+    overflow: visible !important;
+    background: var(--ivory);
+  }
+  .amir-dashboard .dashboard-header {
+    position: sticky;
+    top: 0;
+    z-index: 120;
+    min-height: 64px;
+    padding: calc(0.6rem + env(safe-area-inset-top)) 1rem 0.65rem;
+    background: rgba(250,247,242,0.94);
+    border-bottom: 1px solid rgba(224,216,204,0.75);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+  .amir-dashboard .dashboard-header h2 {
+    font-size: 1rem !important;
+    letter-spacing: -0.02em;
+  }
+  .amir-dashboard .dashboard-content-scroll {
+    overflow: visible !important;
+    padding: 0.85rem 0.75rem calc(6.25rem + env(safe-area-inset-bottom)) !important;
+  }
+}

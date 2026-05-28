@@ -17,20 +17,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: 'Bad request' }, { status: 400 });
     }
 
-    // Security Check: if MIDTRANS_SERVER_KEY is configured, signature is REQUIRED
+    // Security Check: MIDTRANS_SERVER_KEY must be configured and signature is REQUIRED
     const serverKey = process.env.MIDTRANS_SERVER_KEY;
-    if (serverKey) {
-      if (!signature_key) {
-        return NextResponse.json({ success: false, message: 'Signature missing' }, { status: 403 });
-      }
-      // SHA512(order_id + status_code + gross_amount + serverKey)
-      const expectedSignature = createHash('sha512')
-        .update(`${order_id}${status_code}${gross_amount}${serverKey}`)
-        .digest('hex');
+    if (!serverKey) {
+      return NextResponse.json({ success: false, message: 'Server key not configured' }, { status: 500 });
+    }
+    
+    if (!signature_key) {
+      return NextResponse.json({ success: false, message: 'Signature missing' }, { status: 403 });
+    }
+    
+    // SHA512(order_id + status_code + gross_amount + serverKey)
+    const expectedSignature = createHash('sha512')
+      .update(`${order_id}${status_code}${gross_amount}${serverKey}`)
+      .digest('hex');
 
-      if (expectedSignature !== signature_key) {
-        return NextResponse.json({ success: false, message: 'Invalid signature' }, { status: 403 });
-      }
+    if (expectedSignature !== signature_key) {
+      return NextResponse.json({ success: false, message: 'Invalid signature' }, { status: 403 });
     }
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
@@ -40,8 +43,9 @@ export async function POST(req: Request) {
       
       try {
         await internalProcessPayment(targetBookingId);
-      } catch (err: any) {
-        if (err.message !== 'Already paid') throw err;
+      } catch (err: unknown) {
+        const error = err as Error;
+        if (error.message !== 'Already paid') throw err;
       }
       
       return NextResponse.json({ success: true });

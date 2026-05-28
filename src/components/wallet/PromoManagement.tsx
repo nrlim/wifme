@@ -264,7 +264,7 @@ export default function PromoManagement({ initialData }: PromoManagementProps) {
           </div>
 
           {/* Row 1: Code + Type */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <div className="promo-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
               <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>Kode Promo *</span>
               <input
@@ -286,7 +286,7 @@ export default function PromoManagement({ initialData }: PromoManagementProps) {
           </div>
 
           {/* Row 2: Value + Min Amount */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <div className="promo-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
               <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 Nilai Diskon {form.type === "PERCENTAGE" ? "(%)" : "(IDR)"} *
@@ -317,7 +317,7 @@ export default function PromoManagement({ initialData }: PromoManagementProps) {
           </div>
 
           {/* Row 3: Max Usage + Expiry */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <div className="promo-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
               <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>Maks. Pemakaian (kosong=∞)</span>
               <input
@@ -344,7 +344,7 @@ export default function PromoManagement({ initialData }: PromoManagementProps) {
           </div>
 
           {/* Row 4: Description + Target */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <div className="promo-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
               <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>Deskripsi (opsional)</span>
               <input
@@ -525,6 +525,7 @@ export default function PromoManagement({ initialData }: PromoManagementProps) {
           .promo-th { display: none !important; }
           .promo-row { display: none !important; }
           .promo-mobile-card { display: flex !important; }
+          .promo-form-row { grid-template-columns: 1fr !important; }
         }
         input[type="text"], input[type="number"], input[type="date"], select {
           outline: none;

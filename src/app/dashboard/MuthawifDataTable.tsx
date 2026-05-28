@@ -140,7 +140,8 @@ export function MuthawifDataTable({
             <div style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>Coba ubah kata kunci atau pilih filter yang berbeda.</div>
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div>
+            <div className="muthawif-desktop-table" style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
               <thead>
                 <tr style={{ background: "var(--ivory)", borderBottom: "1px solid var(--border)" }}>
@@ -278,6 +279,74 @@ export function MuthawifDataTable({
               </tbody>
             </table>
           </div>
+
+          <div className="muthawif-mobile-list" style={{ display: "flex", flexDirection: "column", gap: "0.85rem", padding: "1rem" }}>
+            {muthawifs.map((profile) => {
+              const isExp = expandedId === profile.id;
+              const sm = STATUS_META[profile.verificationStatus] || STATUS_META.PENDING;
+              const getDocUrl = (p: string) => profile.documentsUrl.find((d: string) => d.startsWith(`${p}::`))?.split("::")[1] || "#";
+              
+              return (
+                <div key={profile.id} style={{ background: "white", borderRadius: 12, border: "1px solid var(--border)", padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--emerald-pale)", color: "var(--emerald)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0, overflow: "hidden", border: "1px solid var(--border)" }}>
+                        {profile.user.photoUrl ? <img src={profile.user.photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : profile.user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: "0.875rem", color: "var(--charcoal)" }}>{profile.user.name}</div>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{profile.user.email}</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: "0.75rem", color: "var(--charcoal)", fontWeight: 600 }}>
+                      {profile.location === "BOTH" ? "Makkah & Madinah" : profile.location || "–"}
+                    </div>
+                    <span style={{ background: sm.bg, color: sm.color, padding: "0.25rem 0.625rem", borderRadius: 99, fontSize: "0.6875rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                      {sm.dot && <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--error)", flexShrink: 0 }} />}
+                      {sm.label}
+                    </span>
+                  </div>
+                  
+                  <button onClick={() => setExpandedId(isExp ? null : profile.id)} style={{ width: "100%", padding: "0.625rem", borderRadius: 8, border: `1px solid ${isExp ? "var(--emerald)" : "var(--border)"}`, background: isExp ? "var(--emerald-pale)" : "white", color: isExp ? "var(--emerald)" : "var(--charcoal)", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                    {isExp ? "Tutup Detail" : "Lihat Detail"}
+                  </button>
+
+                  {isExp && (
+                    <div style={{ borderTop: "1px dashed var(--border)", paddingTop: "0.75rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                      <div>
+                        <div style={{ fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>Metadata Profil</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.75rem" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Pengalaman:</span><span style={{ fontWeight: 600 }}>{profile.experience} Tahun</span></div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Tarif Dasar:</span><span style={{ fontWeight: 600 }}>Rp {profile.basePrice?.toLocaleString("id-ID") || 0}</span></div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Bahasa:</span><span style={{ fontWeight: 600, textAlign: "right", maxWidth: "60%" }}>{profile.languages?.join(", ") || "–"}</span></div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div style={{ fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>Tindakan AMIR</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                          {profile.verificationStatus === "REVIEW" && (<>
+                            <form action={async () => { await approveMuthawif(profile.id); }}><button type="submit" className="btn btn-primary" style={{ width: "100%", justifyContent: "center", padding: "0.625rem", fontSize: "0.75rem" }}>✓ Setujui</button></form>
+                            <form action={async () => { await rejectMuthawif(profile.id); }}><button type="submit" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", color: "var(--error)", borderColor: "#FCA5A5", padding: "0.625rem", fontSize: "0.75rem" }}>✕ Tolak</button></form>
+                          </>)}
+                          {profile.verificationStatus === "VERIFIED" && (
+                            <form action={async () => { await suspendMuthawif(profile.id); }}><button type="submit" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", color: "var(--error)", borderColor: "#FCA5A5", padding: "0.625rem", fontSize: "0.75rem" }}>Cabut Akses (Suspend)</button></form>
+                          )}
+                          {profile.verificationStatus === "REJECTED" && (
+                            <form action={async () => { await activateMuthawif(profile.id); }}><button type="submit" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", color: "var(--emerald)", borderColor: "var(--emerald)", padding: "0.625rem", fontSize: "0.75rem" }}>Aktifkan Kembali</button></form>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          </div>
         )}
 
         {/* ── Pagination ── */}
@@ -314,6 +383,13 @@ export function MuthawifDataTable({
           </div>
         )}
       </div>
+      <style>{`
+        .muthawif-mobile-list { display: none !important; }
+        @media (max-width: 768px) {
+          .muthawif-desktop-table { display: none !important; }
+          .muthawif-mobile-list { display: flex !important; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -22,9 +22,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return await tx.activityBundle.update({
         where: { id },
         data: {
-          name,
-          description,
-          price,
+          name: name ? String(name).trim() : undefined,
+          description: description !== undefined ? (description ? String(description).trim() : null) : undefined,
+          price: price !== undefined ? Number(price) : undefined,
           sortOrder,
           isActive,
           items: {
@@ -44,8 +44,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     return NextResponse.json({ bundle });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: "Terjadi kesalahan server saat memperbarui data." }, { status: 500 });
   }
 }
 
@@ -64,7 +64,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     });
 
     return NextResponse.json({ bundle });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: "Terjadi kesalahan server saat menghapus data." }, { status: 500 });
   }
 }

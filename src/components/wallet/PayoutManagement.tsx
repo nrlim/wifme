@@ -135,7 +135,7 @@ export default function PayoutManagement({ payouts: initialPayoutData }: { payou
           </span>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
+        <div className="payout-desktop-table" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 680 }}>
             <thead>
               <tr style={{ background: 'var(--ivory)', borderBottom: '1px solid var(--border)' }}>
@@ -226,6 +226,57 @@ export default function PayoutManagement({ payouts: initialPayoutData }: { payou
           </table>
         </div>
 
+        <div className="payout-mobile-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', padding: '1rem' }}>
+          {data.items.length === 0 ? (
+            <div style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--ivory)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                <Banknote size={24} style={{ color: 'var(--text-muted)' }} />
+              </div>
+              <div style={{ fontWeight: 700, color: 'var(--charcoal)', marginBottom: '0.375rem' }}>Belum ada data penarikan</div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Permintaan penarikan dari Muthawif akan muncul di sini.</div>
+            </div>
+          ) : data.items.map((p) => (
+            <div key={p.id} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--emerald-pale)', color: 'var(--emerald)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8125rem', flexShrink: 0, border: '1px solid var(--border)' }}>
+                    {p.wallet.user.name[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--charcoal)' }}>{p.wallet.user.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.wallet.user.email}</div>
+                  </div>
+                </div>
+                <span style={{ padding: '0.25rem 0.625rem', borderRadius: 99, fontSize: '0.6875rem', fontWeight: 700, background: p.status === 'SUCCESS' ? 'var(--emerald-pale)' : p.status === 'PENDING' ? '#FEF9C3' : '#FEF2F2', color: p.status === 'SUCCESS' ? 'var(--emerald)' : p.status === 'PENDING' ? '#A16207' : '#DC2626' }}>
+                  {p.status === 'SUCCESS' ? 'Selesai' : p.status === 'PENDING' ? 'Menunggu' : 'Gagal'}
+                </span>
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--charcoal)', fontWeight: 600 }}>{p.bankName}</div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{p.accountNumber}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: p.status === 'SUCCESS' ? 'var(--emerald)' : 'var(--charcoal)' }}>{formatIDR(p.amount)}</div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{new Date(p.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                <button onClick={() => setSelectedPayout(p)} style={{ flex: 1, padding: '0.625rem', borderRadius: 8, border: '1px solid var(--border)', background: 'white', color: 'var(--charcoal)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Lihat Detail
+                </button>
+                {p.status === 'PENDING' && (
+                  <button onClick={() => handleApprove(p.id)} disabled={!!loadingId} style={{ flex: 1, padding: '0.625rem', borderRadius: 8, border: 'none', background: 'var(--emerald)', color: 'white', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {loadingId === p.id ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Setujui'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* Pagination */}
         {data.totalPages > 1 && (
           <div style={{ padding: '0.875rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -246,9 +297,9 @@ export default function PayoutManagement({ payouts: initialPayoutData }: { payou
 
       {/* ─── Detail Modal ─── */}
       {selectedPayout && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+        <div className="payout-modal-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} onClick={() => setSelectedPayout(null)} />
-          <div style={{ position: 'relative', background: 'white', borderRadius: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 32px 64px rgba(0,0,0,0.25)', overflow: 'hidden', animation: 'scaleIn 0.2s ease' }}>
+          <div className="payout-modal-container" style={{ position: 'relative', background: 'white', borderRadius: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 32px 64px rgba(0,0,0,0.25)', overflow: 'hidden', animation: 'scaleIn 0.2s ease' }}>
             <div style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)', padding: '2rem', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}><Banknote size={32} /></div>
               <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Konfirmasi Penarikan</div>
@@ -295,7 +346,26 @@ export default function PayoutManagement({ payouts: initialPayoutData }: { payou
           </div>
         </div>
       )}
-      <style>{`@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
+      <style>{`
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .payout-mobile-list { display: none !important; }
+        @media (max-width: 768px) {
+          .payout-desktop-table { display: none !important; }
+          .payout-mobile-list { display: flex !important; }
+          .payout-modal-container {
+            margin-top: auto;
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            max-width: 100% !important;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+          }
+          .payout-modal-overlay {
+            align-items: flex-end !important;
+            padding: 0 !important;
+          }
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      `}</style>
     </div>
   );
 }

@@ -171,7 +171,7 @@ export default function FeeSettings({ initialSettings }: { initialSettings: Sett
   const formatIDR = (v: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v);
 
   return (
-    <form onSubmit={handleSave} style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr min(420px, 38%)', gap: '2rem', alignItems: 'start' }}>
+    <form className="fee-settings-form" onSubmit={handleSave} style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr min(420px, 38%)', gap: '2rem', alignItems: 'start' }}>
       
       {/* ─── Left: Config Panel ─── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -370,7 +370,7 @@ export default function FeeSettings({ initialSettings }: { initialSettings: Sett
       </div>
 
       {/* ─── Right: Live Preview Panel ─── */}
-      <div style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <div className="preview-panel" style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         
         {/* Preview Header */}
         <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', borderRadius: 20, padding: '1.75rem', color: 'white' }}>
@@ -433,6 +433,23 @@ export default function FeeSettings({ initialSettings }: { initialSettings: Sett
           </p>
         </div>
       </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .fee-settings-form {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+            display: flex !important;
+            flex-direction: column-reverse !important;
+          }
+          .fee-settings-form section {
+            padding: 1.25rem !important;
+          }
+          .preview-panel {
+            position: static !important;
+            width: 100% !important;
+          }
+        }
+      `}</style>
     </form>
   );
 }

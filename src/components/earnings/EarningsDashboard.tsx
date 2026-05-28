@@ -749,16 +749,26 @@ function AmirEarningsDashboard({ data }: { data: AmirAnalytics }) {
   const { summary, gmvChartData, topEarners, pendingPayouts, recentTransactions } = data;
   const [txStatusFilter, setTxStatusFilter] = useState("ALL");
 
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 640);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 640);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const filteredTx =
     txStatusFilter === "ALL"
       ? recentTransactions
       : recentTransactions.filter((t) => t.status === txStatusFilter);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      {/* ── KPI Cards ── */}
-      <div
-        className="earn-grid"
+    <>
+      {/* ── DESKTOP DASHBOARD ── */}
+      {!isMobile && (
+      <div className="earn-desktop-only" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+        {/* ── KPI Cards ── */}
+        <div
+        className="hidden md:grid earn-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))",
@@ -1074,6 +1084,110 @@ function AmirEarningsDashboard({ data }: { data: AmirAnalytics }) {
         )}
       </div>
     </div>
+    )}
+
+      {/* ── MOBILE NATIVE HOME ── */}
+      {isMobile && (
+      <div className="earn-mobile-only" style={{ flexDirection: "column", gap: "1.25rem", paddingBottom: "5.5rem", margin: "-1rem -1rem 1rem -1rem", padding: "1.25rem 1.25rem 5.5rem 1.25rem", background: "var(--ivory)" }}>
+        {/* Welcome Hero Card */}
+        <div style={{
+          background: "linear-gradient(135deg, #0d1a2d 0%, #1e3a5f 55%, #2563EB 100%)",
+          borderRadius: 20, padding: "1.5rem 1.25rem", color: "white",
+          boxShadow: "0 4px 12px rgba(37,99,235,0.25)"
+        }}>
+          <div style={{ fontSize: "0.875rem", opacity: 0.8, marginBottom: "0.2rem" }}>Assalamu'alaikum,</div>
+          <div style={{ fontSize: "1.375rem", fontWeight: 800, marginBottom: "1.25rem" }}>Ringkasan Platform</div>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <div>
+              <div style={{ fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.7, marginBottom: "0.25rem" }}>
+                Gross Merchandise Value
+              </div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>
+                {fmtFull(summary.gmv)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+          <Link href="/dashboard?tab=penarikan" style={{
+            background: "white", padding: "1rem", borderRadius: 16, border: "1px solid #E0D8CC",
+            textDecoration: "none", color: "#2C2C2C", display: "flex", flexDirection: "column", gap: "0.5rem",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.03)"
+          }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#FEF2F2", color: "#C0392B", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "0.9375rem" }}>Payout</div>
+              <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>{summary.pendingPayoutsCount} Menunggu</div>
+            </div>
+          </Link>
+          <Link href="/dashboard?tab=muthawif" style={{
+            background: "white", padding: "1rem", borderRadius: 16, border: "1px solid #E0D8CC",
+            textDecoration: "none", color: "#2C2C2C", display: "flex", flexDirection: "column", gap: "0.5rem",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.03)"
+          }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F0F9FF", color: "#0EA5E9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "0.9375rem" }}>Muthawif</div>
+              <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>{summary.verifiedMuthawifs} Terverifikasi</div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Mini Stats List */}
+        <div style={{ background: "white", borderRadius: 16, border: "1px solid #E0D8CC" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid #E0D8CC" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#EBF5EF", color: "#1B6B4A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "#2C2C2C" }}>Komisi Platform</div>
+                <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Total fee kotor</div>
+              </div>
+            </div>
+            <div style={{ fontWeight: 900, color: "#1B6B4A", fontSize: "0.9375rem" }}>
+              {fmtFull(summary.totalCommission)}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid #E0D8CC" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FEF3C7", color: "#D97706", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "#2C2C2C" }}>GMV Periode Ini</div>
+                <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Transaksi berjalan</div>
+              </div>
+            </div>
+            <div style={{ fontWeight: 800, color: "#D97706", fontSize: "0.9375rem" }}>
+              {fmtFull(summary.periodGmv)}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#F3F4F6", color: "#4B5563", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "#2C2C2C" }}>Status Transaksi</div>
+                <div style={{ fontSize: "0.6875rem", color: "#8A8A8A", marginTop: "0.1rem" }}>Total layanan selesai</div>
+              </div>
+            </div>
+            <div style={{ fontWeight: 800, color: "#4B5563", fontSize: "0.9375rem" }}>
+              {summary.statusDistribution.COMPLETED} Selesai
+            </div>
+          </div>
+        </div>
+      </div>
+      )}
+    </>
   );
 }
 

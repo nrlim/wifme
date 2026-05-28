@@ -95,7 +95,7 @@ export async function internalProcessPayment(bookingId: string) {
       data: {
         status: 'CONFIRMED',
         paymentStatus: 'PAID',
-        paymentRef: `MID-${Date.now()}`,
+        paymentRef: `MID-${crypto.randomUUID()}`,
       },
     });
 
@@ -140,6 +140,13 @@ export async function settleEscrow(bookingId: string) {
     throw new Error('Unauthorized: only AMIR can settle escrow manually');
   }
 
+  return await internalSettleEscrow(bookingId);
+}
+
+/**
+ * INTERNAL USE ONLY: Settles escrow without session check.
+ */
+export async function internalSettleEscrow(bookingId: string) {
   return await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
@@ -281,7 +288,7 @@ export async function getPayouts(opts: { search?: string; status?: string; page?
   const { search = "", status = "ALL", page = 1 } = opts;
   const skip = (page - 1) * PAYOUT_PAGE_SIZE;
 
-  const where: any = {};
+  const where: Record<string, unknown> = {};
   const VALID_PAYOUT_STATUSES = ["PENDING", "COMPLETED", "FAILED"];
   if (status && status !== "ALL" && VALID_PAYOUT_STATUSES.includes(status)) {
     where.status = status;
@@ -352,14 +359,28 @@ export type FeeComponent = {
 };
 
 export async function getGlobalSettings() {
+  const session = await getSession();
+  if (!session) throw new Error('Unauthorized');
+
   const settings = await prisma.globalSetting.findUnique({
     where: { id: 'singleton' },
   });
 
   if (!settings) {
+    if (session.role !== 'AMIR') throw new Error('Settings not found');
     return await prisma.globalSetting.create({
       data: { id: 'singleton', feeType: 'PERCENT', feeValue: 5.0, feeComponents: [], minimumWithdrawal: 50000 }
     });
+  }
+
+  // Hide sensitive bank info from non-AMIR roles
+  if (session.role !== 'AMIR') {
+    return {
+      ...settings,
+      platformBankName: null,
+      platformBankAccount: null,
+      platformBankHolder: null,
+    };
   }
 
   return settings;

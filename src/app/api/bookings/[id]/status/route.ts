@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { settleEscrow } from "@/actions/finance";
 
 // Valid status transitions
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
@@ -43,6 +44,17 @@ export async function PATCH(
     }
 
     // Update
+    if (status === "COMPLETED" && booking.status !== "COMPLETED") {
+      try {
+        await settleEscrow(id);
+      } catch (err: unknown) {
+        return NextResponse.json({ error: "Gagal mencairkan dana escrow: " + (err instanceof Error ? err.message : String(err)) }, { status: 500 });
+      }
+      
+      const updated = await prisma.booking.findUnique({ where: { id } });
+      return NextResponse.json({ booking: updated });
+    }
+
     const updated = await prisma.booking.update({
       where: { id },
       data: { status },

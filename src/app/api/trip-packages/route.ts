@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
           muthawifId: true,
           startDate: true,
           endDate: true,
-          muthawif: { select: { id: true, name: true, email: true, photoUrl: true } },
+          muthawif: { select: { id: true, name: true, photoUrl: true } },
           status: true,
           totalFee: true,
           paymentStatus: true,
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
           isPublished: true,
         },
         include: {
-          muthawif: { select: { id: true, name: true, email: true, photoUrl: true } },
+          muthawif: { select: { id: true, name: true, photoUrl: true } },
           itineraries: {
             include: { logs: { orderBy: { checkInTime: "asc" } } },
             orderBy: { startTime: "asc" },

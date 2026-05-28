@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { internalSettleEscrow } from "@/actions/finance";
 
 /**
  * Auto-Status Cron Job
@@ -36,10 +37,13 @@ export async function GET(req: NextRequest) {
       select: { id: true },
     });
     if (toComplete.length > 0) {
-      await prisma.booking.updateMany({
-        where: { id: { in: toComplete.map(b => b.id) } },
-        data: { status: "COMPLETED" },
-      });
+      for (const b of toComplete) {
+        try {
+          await internalSettleEscrow(b.id);
+        } catch (err) {
+          console.error(`Failed to settle escrow for booking ${b.id}:`, err);
+        }
+      }
       results.completed = toComplete.length;
     }
 

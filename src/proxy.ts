@@ -72,6 +72,37 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Protect other pages
+  const otherProtectedPages = ['/booking', '/agenda', '/muthawif/wallet'];
+  if (otherProtectedPages.some(p => pathname.startsWith(p))) {
+    const token = request.cookies.get("wifme_token")?.value;
+    if (!token) {
+      return NextResponse.redirect(new URL(`/auth/login?redirect=${pathname}`, request.url));
+    }
+    const payload = await verifyJWT(token);
+    if (!payload) {
+      return NextResponse.redirect(new URL(`/auth/login?redirect=${pathname}`, request.url));
+    }
+  }
+
+  // Protect API routes
+  const protectedApiPaths = [
+    '/api/bookings',
+    '/api/chat',
+    '/api/muthawif',
+    '/api/reviews'
+  ];
+  if (protectedApiPaths.some(p => pathname.startsWith(p))) {
+    const token = request.cookies.get("wifme_token")?.value;
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const payload = await verifyJWT(token);
+    if (!payload) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   return NextResponse.next();
 }
 
@@ -81,5 +112,12 @@ export const config = {
     "/dashboard/muthawif/:path*",
     "/itinerary/:path*",
     "/chat/:path*",
+    "/booking/:path*",
+    "/agenda/:path*",
+    "/muthawif/wallet/:path*",
+    "/api/bookings/:path*",
+    "/api/chat/:path*",
+    "/api/muthawif/:path*",
+    "/api/reviews/:path*",
   ],
 };

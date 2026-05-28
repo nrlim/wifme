@@ -25,15 +25,28 @@ export async function POST(req: NextRequest) {
     const sanitizedNotes = notes ? String(notes).trim().slice(0, 1000) : null;
     const sanitizedPromoCode = promoCode ? String(promoCode).trim().toUpperCase() : null;
 
+    // Fetch secure prices from database
+    const activityIds = items.map((i: { activityId: string }) => String(i.activityId));
+    const dbActivities = await prisma.activity.findMany({
+      where: { id: { in: activityIds } },
+      select: { id: true, price: true }
+    });
+    const priceMap = new Map(dbActivities.map(a => [a.id, a.price]));
+
     // Parse and validate items
-    const parsedItems = items.map((item: any) => {
+    const parsedItems = items.map((item: { activityId: string; date: string; timeSlot?: string }) => {
       const date = new Date(item.date);
       if (isNaN(date.getTime())) throw new Error("Format tanggal tidak valid");
+      
+      const actId = String(item.activityId);
+      const securePrice = priceMap.get(actId);
+      if (securePrice === undefined) throw new Error(`Activity ${actId} tidak ditemukan`);
+
       return {
-        activityId: String(item.activityId),
+        activityId: actId,
         date: date,
         timeSlot: item.timeSlot ? String(item.timeSlot) : null,
-        price: Number(item.price),
+        price: securePrice,
       };
     });
 
@@ -127,16 +140,18 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ booking }, { status: 201 });
-  } catch (error: any) {
-    if (error.message === "CONFLICT") {
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    
+    if (errorMessage === "CONFLICT") {
       return NextResponse.json(
         { error: "Muthawif tidak tersedia pada jadwal tersebut." },
         { status: 409 }
       );
     }
     // Promo-specific errors
-    if (error.message?.startsWith("PROMO:")) {
-      const promoKey = error.message.replace("PROMO:", "");
+    if (errorMessage.startsWith("PROMO:")) {
+      const promoKey = errorMessage.replace("PROMO:", "");
       const promoMessages: Record<string, string> = {
         PROMO_INVALID: "Kode promo tidak valid atau sudah tidak aktif.",
         PROMO_EXPIRED: "Kode promo sudah kadaluarsa.",
@@ -149,6 +164,11 @@ export async function POST(req: NextRequest) {
         { status: 422 }
       );
     }
+    
+    if (errorMessage.includes("tidak ditemukan") || errorMessage === "Format tanggal tidak valid") {
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
+    }
+    
     return NextResponse.json({ error: "Terjadi kesalahan server." }, { status: 500 });
   }
 }
