@@ -49,11 +49,8 @@ export default function MobileSidebarDrawer({ brandLabel = "DASHBOARD", children
         flexShrink: 0,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-              <circle cx="12" cy="9" r="2.5"/>
-            </svg>
+          <div style={{ width: 30, height: 30, borderRadius: 8, overflow: "hidden" }}>
+            <img src="/logo-icon.png" alt="Wifme" width={30} height={30} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
           <div>
             <div style={{ color: "white", fontWeight: 900, fontSize: "0.9375rem", letterSpacing: "-0.02em", lineHeight: 1 }}>

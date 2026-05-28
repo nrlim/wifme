@@ -156,7 +156,7 @@ export function InstallPrompt() {
             </button>
             <div className="wifme-pwa-ios-header">
               <Image
-                src="/icon-192x192.png"
+                src="/logo-icon.png"
                 alt="Wif-Me"
                 width={48}
                 height={48}
@@ -222,7 +222,7 @@ export function InstallPrompt() {
 
         <div className="wifme-pwa-content">
           <Image
-            src="/icon-192x192.png"
+            src="/logo-icon.png"
             alt="Wif-Me"
             width={40}
             height={40}

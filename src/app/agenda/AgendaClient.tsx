@@ -382,10 +382,8 @@ export default function AgendaClient({ packages: initialPackages, role, userName
       <MobileSidebarDrawer brandLabel="AGENDA PERJALANAN">
         {/* Brand */}
         <div style={{ padding: "1.25rem 1.25rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.625rem" }}>
-          <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
-            </svg>
+          <div style={{ width: 34, height: 34, borderRadius: 9, overflow: "hidden" }}>
+            <img src="/logo-icon.png" alt="Wifme" width={34} height={34} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
           <div>
             <div style={{ color: "white", fontWeight: 900, fontSize: "1rem", letterSpacing: "-0.02em", lineHeight: 1 }}>Wif<span style={{ color: "#E4B55A" }}>–Me</span></div>

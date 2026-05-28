@@ -718,11 +718,8 @@ export default async function HomePage() {
             {/* Brand Column */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", marginBottom: "1.25rem" }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, var(--emerald), #27956A)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                    <circle cx="12" cy="9" r="2.5" />
-                  </svg>
+                <div style={{ width: 32, height: 32, borderRadius: 8, overflow: "hidden" }}>
+                  <img src="/logo-icon.png" alt="Wifme" width={32} height={32} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
                 <span style={{ color: "white", fontWeight: 800, fontSize: "1.125rem", letterSpacing: "-0.02em" }}>Wif<span style={{ color: "var(--gold)" }}>-Me</span></span>
               </div>

@@ -92,16 +92,10 @@ function LoginForm() {
               width: 40,
               height: 40,
               borderRadius: "11px",
-              background: "linear-gradient(135deg, var(--emerald-light), var(--emerald))",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              overflow: "hidden",
               boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
             }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-                <circle cx="12" cy="9" r="2.5"/>
-              </svg>
+              <img src="/logo-icon.png" alt="Wifme" width={40} height={40} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <span style={{ fontSize: "1.375rem", fontWeight: 800, color: "white" }}>
               Wif<span style={{ color: "var(--gold)" }}>-Me</span>
@@ -115,7 +109,7 @@ function LoginForm() {
 
         <div style={{
           background: "var(--white)",
-          borderRadius: "var(--radius-xl)",
+          borderRadius: "var(--radius-md)",
           padding: "clamp(1.5rem, 5vw, 2.25rem)",
           boxShadow: "var(--shadow-md)",
           border: "1px solid var(--border)",
