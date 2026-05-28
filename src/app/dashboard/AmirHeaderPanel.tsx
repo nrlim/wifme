@@ -12,6 +12,7 @@ export function AmirHeaderPanel({
   role,
   avatarUrl,
   muthawifProfile,
+  whatsappNumber,
 }: {
   name: string;
   email: string;
@@ -23,7 +24,9 @@ export function AmirHeaderPanel({
     experience?: number;
     operatingAreas?: string[];
     languages?: string[];
+    verificationStatus?: string;
   } | null;
+  whatsappNumber?: string | null;
 }) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -160,6 +163,33 @@ export function AmirHeaderPanel({
                       <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", display: "block", textAlign: "left", marginBottom: "0.2rem" }}>Nama Lengkap</label>
                       <input name="name" defaultValue={name} required style={{ width: "100%", padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--border)", fontSize: "0.8125rem" }} />
                     </div>
+                    <div style={{ marginBottom: "0.5rem" }}>
+                      <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", display: "block", textAlign: "left", marginBottom: "0.2rem" }}>
+                        Nomor WhatsApp <span style={{ fontWeight: 400 }}>(Mulai dengan 8xx atau 628xx)</span>
+                      </label>
+                      <div style={{ position: "relative" }}>
+                        <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--charcoal)", fontWeight: 700, fontSize: "0.8125rem", pointerEvents: "none" }}>+62</span>
+                        <input
+                          name="whatsappNumber"
+                          defaultValue={whatsappNumber?.replace(/^62/, "") || ""}
+                          disabled={role === "MUTHAWIF"}
+                          style={{
+                            width: "100%",
+                            padding: "0.5rem 0.5rem 0.5rem 2.5rem",
+                            borderRadius: "8px",
+                            border: "1px solid var(--border)",
+                            fontSize: "0.8125rem",
+                            background: role === "MUTHAWIF" ? "var(--ivory-dark)" : "white",
+                            color: role === "MUTHAWIF" ? "var(--text-muted)" : "var(--charcoal)",
+                          }}
+                        />
+                      </div>
+                      {role === "MUTHAWIF" && (
+                        <div style={{ fontSize: "0.625rem", color: "var(--gold)", marginTop: "0.25rem", display: "flex", gap: "0.25rem", alignItems: "center" }}>
+                          <span>ℹ</span> Hubungi Admin/Amir untuk mengubah nomor WhatsApp.
+                        </div>
+                      )}
+                    </div>
                     <button type="submit" style={{ width: "100%", background: "var(--emerald)", color: "white", fontWeight: 700, fontSize: "0.8125rem", padding: "0.625rem", borderRadius: "8px", border: "none", cursor: "pointer", marginTop: "0.5rem" }}>Simpan Perubahan</button>
                   </form>
                 ) : (
@@ -168,8 +198,23 @@ export function AmirHeaderPanel({
                       {avatarUrl ? <img src={avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--charcoal)" }}>{name}</div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem" }}>
+                        <div style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--charcoal)" }}>{name}</div>
+                        {(role !== "MUTHAWIF" || muthawifProfile?.verificationStatus === "VERIFIED") && (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--emerald)" stroke="var(--emerald)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <title>Akun Terverifikasi</title>
+                            <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" />
+                            <path d="m9 12 2 2 4-4" stroke="white" strokeWidth="3" fill="none" />
+                          </svg>
+                        )}
+                      </div>
                       <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>{email}</div>
+                      {whatsappNumber && (
+                        <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.375rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem" }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                          +{whatsappNumber}
+                        </div>
+                      )}
                       <span style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", marginTop: "0.625rem", background: "var(--emerald)", color: "white", fontSize: "0.6875rem", fontWeight: 700, padding: "0.3rem 0.75rem", borderRadius: "99px" }}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
                         {ROLE_LABEL[role] || role}
@@ -231,17 +276,6 @@ export function AmirHeaderPanel({
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* General Profile (Jamaah/Amir) */}
-              {role !== "MUTHAWIF" && (
-                <div style={{ padding: "1.5rem", borderBottom: "1px solid var(--border)", background: "#FAFAFA", textAlign: "center" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--emerald-pale)", color: "var(--emerald)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 0.75rem" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-                  </div>
-                  <div style={{ fontSize: "0.8125rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "0.25rem" }}>Akun Terverifikasi</div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Anda memiliki akses penuh sebagai {ROLE_LABEL[role] || role}</div>
                 </div>
               )}
 

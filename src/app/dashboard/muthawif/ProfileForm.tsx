@@ -14,6 +14,7 @@ type Profile = {
   languages: string[];
   specializations: string[];
   verificationStatus: string;
+  user?: { whatsappNumber: string | null };
 };
 
 /* ── Tokens ─────────────────────────────────────────────────── */
@@ -286,7 +287,7 @@ function SectionContent({
   selectedSpecs, setSelectedSpecs,
   selectedLangs, setSelectedLangs,
   supportedLocations, supportedServices, supportedLanguages,
-  activeSecDef,
+  activeSecDef, whatsappNumber,
 }: {
   activeSection: SectionId;
   bio: string; setBio: (v: string) => void;
@@ -297,6 +298,7 @@ function SectionContent({
   selectedLangs: string[]; setSelectedLangs: (v: string[]) => void;
   supportedLocations: string[]; supportedServices: string[]; supportedLanguages: string[];
   activeSecDef: SectionDef;
+  whatsappNumber: string | null;
 }) {
   switch (activeSection) {
 
@@ -304,6 +306,23 @@ function SectionContent({
     case "bio":
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div>
+            <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: C.charcoal, marginBottom: "0.4rem" }}>
+              Nomor WhatsApp
+            </label>
+            <div style={{ position: "relative" }}>
+              <span style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: C.charcoal, fontWeight: 700, fontSize: "0.875rem", pointerEvents: "none" }}>+62</span>
+              <input
+                type="text"
+                disabled
+                value={whatsappNumber || "Belum diisi"}
+                style={{ ...iStyle, paddingLeft: "3rem", background: C.ivoryDark, color: C.muted }}
+              />
+            </div>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: "0.375rem", display: "flex", gap: "0.25rem", alignItems: "center" }}>
+              <span style={{ color: C.gold }}>ℹ</span> Untuk mengubah nomor WhatsApp Anda, silakan hubungi Amir/Admin.
+            </p>
+          </div>
           <div>
             <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: C.charcoal, marginBottom: "0.4rem" }}>
               Biografi Lengkap <span style={{ color: C.error }}>*</span>
@@ -717,6 +736,7 @@ export function ProfileForm({
             supportedServices={supportedServices}
             supportedLanguages={supportedLanguages}
             activeSecDef={activeSecDef}
+            whatsappNumber={profile?.user?.whatsappNumber || null}
           />
         </div>
       </div>

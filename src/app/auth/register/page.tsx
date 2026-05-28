@@ -13,6 +13,7 @@ function RegisterForm() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    whatsappNumber: "",
     password: "",
     confirmPassword: "",
     role: defaultRole,
@@ -43,6 +44,7 @@ function RegisterForm() {
         body: JSON.stringify({
           name: form.name,
           email: form.email,
+          whatsappNumber: form.whatsappNumber,
           password: form.password,
           role: form.role,
         }),
@@ -199,6 +201,28 @@ function RegisterForm() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
               />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="reg-whatsapp">Nomor WhatsApp <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(Mulai dengan 8xx atau 628xx)</span></label>
+              <div style={{ position: "relative" }}>
+                <span style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "var(--charcoal)", fontWeight: 700, fontSize: "0.875rem", pointerEvents: "none" }}>+62</span>
+                <input
+                  id="reg-whatsapp"
+                  type="tel"
+                  className="form-input"
+                  placeholder="81234567890"
+                  value={form.whatsappNumber}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/\D/g, "");
+                    if (val.startsWith("62")) val = val.substring(2);
+                    else if (val.startsWith("0")) val = val.substring(1);
+                    setForm({ ...form, whatsappNumber: val });
+                  }}
+                  style={{ paddingLeft: "3rem" }}
+                  required
+                />
+              </div>
             </div>
 
             <div className="form-group">

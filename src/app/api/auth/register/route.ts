@@ -2,15 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signJWT } from "@/lib/auth";
+import { formatWhatsAppNumber } from "@/lib/phone";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, email, password, role } = body;
+    const { name, email, whatsappNumber, password, role } = body;
 
     // Input validation
-    if (!name || !email || !password) {
+    if (!name || !email || !whatsappNumber || !password) {
       return NextResponse.json({ error: "Semua field wajib diisi." }, { status: 400 });
+    }
+    const formattedWhatsapp = formatWhatsAppNumber(whatsappNumber);
+    if (formattedWhatsapp.length < 9) {
+      return NextResponse.json({ error: "Format nomor WhatsApp tidak valid." }, { status: 400 });
     }
     const trimmedName = String(name).trim().slice(0, 100);
     const trimmedEmail = String(email).trim().toLowerCase();
@@ -36,6 +41,7 @@ export async function POST(req: NextRequest) {
         data: {
           name: trimmedName,
           email: trimmedEmail,
+          whatsappNumber: formattedWhatsapp,
           password: hashed,
           role: sanitizedRole,
         },

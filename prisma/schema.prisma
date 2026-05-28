@@ -59,6 +59,7 @@ model User {
   bookingsAsJamaah   Booking[]        @relation("JamaahBookings")
   bookingsAsMuthawif Booking[]        @relation("MuthawifBookings")
   tripPackages       TripPackage[]    @relation("MuthawifPackages")
+  whatsappNumber     String?
   reviewsGiven       Review[]         @relation("ReviewsGiven")
   wallet             Wallet?
   sentMessages       ChatMessage[]    @relation("SentMessages")

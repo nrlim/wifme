@@ -6,7 +6,7 @@ import Link from "next/link";
 import { CopyButton } from "../../CopyButton";
 import { DashboardHeader } from "../DashboardHeader";
 import { AmirHeaderPanel } from "../../AmirHeaderPanel";
-import ChatWidget from "@/components/ChatWidget";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import MuthawifMobileNav from "../MuthawifMobileNav";
 import TableToolbar from "@/components/TableToolbar";
 import { CalendarDays, ClipboardList, Wallet, BarChart3 } from "lucide-react";
@@ -41,24 +41,6 @@ const PAYMENT_LABELS: Record<string, { label: string; bg: string; color: string 
   PAID:   { label: "Lunas",   bg: "rgba(27,107,74,0.1)",  color: "#1B6B4A" },
   UNPAID: { label: "Belum",   bg: "rgba(196,151,59,0.1)", color: "#92700A" },
 };
-
-/* ─── Server Action: Accept booking ─── */
-async function acceptBooking(bookingId: string) {
-  "use server";
-  await prisma.booking.update({
-    where: { id: bookingId },
-    data: { status: "CONFIRMED" },
-  });
-}
-
-/* ─── Server Action: Reject booking ─── */
-async function rejectBooking(bookingId: string) {
-  "use server";
-  await prisma.booking.update({
-    where: { id: bookingId },
-    data: { status: "CANCELLED" },
-  });
-}
 
 /* ─── Stat Card ─── */
 function StatCard({ label, value, sub, color = "var(--emerald)" }: { label: string; value: string | number; sub?: string; color?: string }) {
@@ -216,9 +198,6 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
 
   const countByStatus = Object.fromEntries(allStats.map(s => [s.status, s._count.id]));
   const totalAll = Object.values(countByStatus).reduce((a, b) => a + b, 0);
-
-  const boundAccept = acceptBooking.bind(null, "");
-  const boundReject = rejectBooking.bind(null, "");
 
   return (
     <div className="dashboard-fullscreen muthawif-dashboard">
@@ -472,53 +451,27 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                     {/* Col 6: Action (desktop only) */}
                     <div className="bm-action-desktop" style={{ display: "flex", flexDirection: "column", gap: "0.375rem", minWidth: "max-content" }}>
                       {isPending ? (
-                        <>
-                          <form action={acceptBooking.bind(null, booking.id)}>
-                            <button type="submit" style={{
-                              display: "flex", alignItems: "center", gap: "0.3rem",
-                              padding: "0.375rem 0.75rem",
-                              background: "var(--emerald)",
-                              color: "white",
-                              border: "none",
-                              borderRadius: 8,
-                              fontSize: "0.75rem",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              width: "100%",
-                              justifyContent: "center",
-                              whiteSpace: "nowrap",
-                            }}>
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                              Terima
-                            </button>
-                          </form>
-                          <form action={rejectBooking.bind(null, booking.id)}>
-                            <button type="submit" style={{
-                              display: "flex", alignItems: "center", gap: "0.3rem",
-                              padding: "0.375rem 0.75rem",
-                              background: "white",
-                              color: "var(--error)",
-                              border: "1px solid rgba(220,38,38,0.25)",
-                              borderRadius: 8,
-                              fontSize: "0.75rem",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              width: "100%",
-                              justifyContent: "center",
-                              whiteSpace: "nowrap",
-                            }}>
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                              Tolak
-                            </button>
-                          </form>
-                        </>
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: "0.3rem",
+                          padding: "0.375rem 0.75rem",
+                          background: "var(--ivory-dark)",
+                          color: "var(--text-muted)",
+                          border: "1px dashed var(--border)",
+                          borderRadius: 8,
+                          fontSize: "0.6875rem",
+                          fontWeight: 700,
+                          justifyContent: "center",
+                          whiteSpace: "nowrap",
+                        }}>
+                          Menunggu Konfirmasi Admin
+                        </div>
                       ) : (booking.status === "CONFIRMED" || booking.status === "COMPLETED") ? (
-                        <ChatWidget
+                        <WhatsAppButton
+                          phoneNumber={null}
+                          recipientName={booking.jamaah.name}
                           bookingId={booking.id}
-                          currentUser={{ id: session.id, name: session.name!, photoUrl: profile?.user?.photoUrl, role: "MUTHAWIF" }}
-                          otherUser={{ id: booking.jamaahId, name: booking.jamaah.name, photoUrl: booking.jamaah.photoUrl, role: "JAMAAH" }}
-                          buttonLabel="💬 Chat Jamaah"
                           variant="compact"
+                          isMuthawifView={true}
                         />
                       ) : (
                         <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontStyle: "italic" }}>—</span>
@@ -557,12 +510,12 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                           </div>
                           {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
                             <div style={{ flexShrink: 0 }}>
-                              <ChatWidget
+                              <WhatsAppButton
+                                phoneNumber={null}
+                                recipientName={booking.jamaah.name}
                                 bookingId={booking.id}
-                                currentUser={{ id: session!.id, name: session!.name!, photoUrl: profile?.user?.photoUrl, role: "MUTHAWIF" }}
-                                otherUser={{ id: booking.jamaahId, name: booking.jamaah.name, photoUrl: booking.jamaah.photoUrl, role: "JAMAAH" }}
-                                buttonLabel="Chat"
                                 variant="compact"
+                                isMuthawifView={true}
                               />
                             </div>
                           )}
@@ -584,39 +537,25 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
 
                         {/* Actions Row */}
                         {isPending && (
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", padding: "0 0.875rem 0.875rem" }}>
-                            <form action={acceptBooking.bind(null, booking.id)}>
-                              <button type="submit" style={{
-                                width: "100%", padding: "0.5rem", background: "var(--emerald)",
-                                color: "white", border: "none", borderRadius: 8, fontSize: "0.75rem",
-                                fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center",
-                                justifyContent: "center", gap: "0.25rem",
-                              }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                Terima
-                              </button>
-                            </form>
-                            <form action={rejectBooking.bind(null, booking.id)}>
-                              <button type="submit" style={{
-                                width: "100%", padding: "0.5rem", background: "white",
-                                color: "var(--error)", border: "1px solid rgba(220,38,38,0.3)",
-                                borderRadius: 8, fontSize: "0.75rem", fontWeight: 800, cursor: "pointer",
-                                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem",
-                              }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                Tolak
-                              </button>
-                            </form>
+                          <div style={{ padding: "0 0.875rem 0.875rem" }}>
+                            <div style={{
+                              width: "100%", padding: "0.5rem", background: "var(--ivory-dark)",
+                              color: "var(--text-muted)", border: "1px dashed var(--border)", borderRadius: 8, fontSize: "0.75rem",
+                              fontWeight: 700, display: "flex", alignItems: "center",
+                              justifyContent: "center", gap: "0.25rem", textAlign: "center"
+                            }}>
+                              Menunggu Konfirmasi Admin
+                            </div>
                           </div>
                         )}
                         {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
                           <div style={{ padding: "0 0.875rem 0.875rem" }}>
-                            <ChatWidget
-                              bookingId={booking.id}
-                              currentUser={{ id: session!.id, name: session!.name!, photoUrl: profile?.user?.photoUrl, role: "MUTHAWIF" }}
-                              otherUser={{ id: booking.jamaahId, name: booking.jamaah.name, photoUrl: booking.jamaah.photoUrl, role: "JAMAAH" }}
-                              buttonLabel={`Chat dengan ${booking.jamaah.name}`}
-                              variant="primary"
+                            <WhatsAppButton
+                                phoneNumber={null}
+                                recipientName={booking.jamaah.name}
+                                bookingId={booking.id}
+                                variant="primary"
+                                isMuthawifView={true}
                             />
                           </div>
                         )}

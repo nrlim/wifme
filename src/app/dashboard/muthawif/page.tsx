@@ -127,7 +127,7 @@ export default async function MuthawifDashboardPage({
     prisma.muthawifProfile.findUnique({
       where: { userId: session.id },
       include: {
-        user: { select: { photoUrl: true } },
+        user: { select: { photoUrl: true, whatsappNumber: true } },
         availability: {
           where: {
             date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
@@ -188,6 +188,7 @@ export default async function MuthawifDashboardPage({
           name={session.name || "Muthawif"} 
           email={session.email || ""} 
           avatarUrl={profile?.user?.photoUrl} 
+          whatsappNumber={profile?.user?.whatsappNumber}
           title={stepTitles[currentStepNum]} 
         />
         

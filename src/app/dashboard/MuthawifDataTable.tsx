@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition, useRef } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { approveMuthawif, rejectMuthawif, suspendMuthawif, activateMuthawif } from "./actions";
+import { approveMuthawif, rejectMuthawif, suspendMuthawif, activateMuthawif, updateMuthawifPhone } from "./actions";
 
 type Muthawif = any;
 type Counts = { total: number; REVIEW: number; VERIFIED: number; PENDING: number; REJECTED: number };
@@ -212,6 +212,25 @@ export function MuthawifDataTable({
                               <div>
                                 <div style={{ fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "1rem" }}>Metadata Profil</div>
                                 <table style={{ width: "100%", fontSize: "0.875rem" }}><tbody>
+                                  <tr>
+                                    <td style={{ padding: "0.5rem 0", color: "var(--text-muted)", width: 110, verticalAlign: "middle" }}>WhatsApp</td>
+                                    <td style={{ padding: "0.5rem 0", fontWeight: 600, color: "var(--charcoal)" }}>
+                                      <form action={async (fd) => { await updateMuthawifPhone(profile.userId, fd); }} style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                                        <div style={{ position: "relative" }}>
+                                          <span style={{ position: "absolute", left: "0.625rem", top: "50%", transform: "translateY(-50%)", fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-muted)", pointerEvents: "none" }}>+</span>
+                                          <input 
+                                            name="whatsappNumber"
+                                            defaultValue={profile.user.whatsappNumber || ""}
+                                            placeholder="628..." 
+                                            style={{ width: "130px", padding: "0.375rem 0.5rem 0.375rem 1.25rem", borderRadius: "6px", border: "1px solid var(--border)", fontSize: "0.8125rem", outline: "none", fontWeight: 600, fontFamily: "inherit" }}
+                                            onFocus={e => e.target.style.borderColor = "var(--emerald)"}
+                                            onBlur={e => e.target.style.borderColor = "var(--border)"}
+                                          />
+                                        </div>
+                                        <button type="submit" style={{ padding: "0.375rem 0.625rem", borderRadius: "6px", background: "var(--emerald-pale)", color: "var(--emerald)", fontWeight: 700, fontSize: "0.75rem", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>Simpan</button>
+                                      </form>
+                                    </td>
+                                  </tr>
                                   {[
                                     ["Pengalaman", `${profile.experience} Tahun`],
                                     ["Tarif Dasar", `Rp ${profile.basePrice?.toLocaleString("id-ID") || 0}`],
@@ -319,6 +338,16 @@ export function MuthawifDataTable({
                       <div>
                         <div style={{ fontSize: "0.6875rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>Metadata Profil</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.75rem" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ color: "var(--text-muted)" }}>WhatsApp:</span>
+                            <form action={async (fd) => { await updateMuthawifPhone(profile.userId, fd); }} style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
+                              <div style={{ position: "relative" }}>
+                                <span style={{ position: "absolute", left: "0.5rem", top: "50%", transform: "translateY(-50%)", fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", pointerEvents: "none" }}>+</span>
+                                <input name="whatsappNumber" defaultValue={profile.user.whatsappNumber || ""} placeholder="628..." style={{ width: "100px", padding: "0.25rem 0.375rem 0.25rem 1.125rem", borderRadius: "6px", border: "1px solid var(--border)", fontSize: "0.75rem", outline: "none", fontWeight: 600, fontFamily: "inherit" }} />
+                              </div>
+                              <button type="submit" style={{ padding: "0.25rem 0.5rem", borderRadius: "6px", background: "var(--emerald-pale)", color: "var(--emerald)", fontWeight: 700, fontSize: "0.6875rem", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>Simpan</button>
+                            </form>
+                          </div>
                           <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Pengalaman:</span><span style={{ fontWeight: 600 }}>{profile.experience} Tahun</span></div>
                           <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Tarif Dasar:</span><span style={{ fontWeight: 600 }}>Rp {profile.basePrice?.toLocaleString("id-ID") || 0}</span></div>
                           <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Bahasa:</span><span style={{ fontWeight: 600, textAlign: "right", maxWidth: "60%" }}>{profile.languages?.join(", ") || "–"}</span></div>

@@ -13,7 +13,6 @@ interface Props {
 const menuItems = [
   { href: "/dashboard?tab=beranda", label: "Pesanan", desc: "Riwayat dan status Booking", icon: ClipboardList, tab: "beranda" },
   { href: "/dashboard?tab=cari", label: "Cari Muthawif", desc: "Temukan Muthawif tersedia", icon: Search, tab: "cari" },
-  { href: "/dashboard?tab=pengaturan", label: "Pengaturan", desc: "Ubah profil & sandi", icon: User, tab: "pengaturan" },
 ];
 
 export default function JamaahMobileNav({ currentTab }: Props) {
@@ -48,7 +47,6 @@ export default function JamaahMobileNav({ currentTab }: Props) {
 
   const isOrders = currentTab === "beranda";
   const isSearch = currentTab === "cari";
-  const isProfile = currentTab === "pengaturan";
 
   const navItemClass = (active: boolean) =>
     `flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-[var(--radius-sm)] text-[0.7rem] font-extrabold no-underline touch-manipulation transition-colors ${

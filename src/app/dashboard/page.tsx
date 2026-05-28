@@ -7,7 +7,7 @@ import { MuthawifDataTable } from "./MuthawifDataTable";
 import { AmirHeaderPanel } from "./AmirHeaderPanel";
 import DashboardSearchForm from "./DashboardSearchForm";
 import DashboardSearchList from "./DashboardSearchList";
-import ChatWidget from "@/components/ChatWidget";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import BookingStatusButton from "./BookingStatusButton";
 import PaymentVerificationButton from "./PaymentVerificationButton";
 import ReviewButton from "@/components/ReviewButton";
@@ -29,7 +29,8 @@ import { getPromotions } from "@/actions/promotions";
 import ActivityManagement from "@/components/admin/ActivityManagement";
 import TableToolbar from "@/components/TableToolbar";
 import Pagination from "@/components/Pagination";
-import { BarChart3, Search, ClipboardList, Users, Banknote, Settings, Tag, MapPin, Briefcase, Languages, ListTodo, CreditCard } from "lucide-react";
+// Removed unused import
+import { BarChart3, Search, ClipboardList, Users, Banknote, Settings, Tag, MapPin, Briefcase, Languages, ListTodo, CreditCard, UserCog } from "lucide-react";
 
 // Types corresponding to Next.js 15/16 App Router
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -50,12 +51,13 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
 
 type DashboardBooking = Prisma.BookingGetPayload<{
   include: {
-    jamaah: { select: { name: true; email: true } };
+    jamaah: { select: { name: true; email: true; whatsappNumber: true } };
     muthawif: {
       select: {
         id: true;
         name: true;
         photoUrl: true;
+        whatsappNumber: true;
         profile: {
           select: {
             basePrice: true;
@@ -139,8 +141,8 @@ async function getBookingsForUser(opts: {
     prisma.booking.findMany({
       where: whereClause,
       include: {
-        jamaah: { select: { name: true, email: true } },
-        muthawif: { select: { id: true, name: true, photoUrl: true, profile: { select: { basePrice: true, operatingAreas: true, rating: true, totalReviews: true, experience: true, bio: true, specializations: true, languages: true } } } },
+        jamaah: { select: { name: true, email: true, whatsappNumber: true } },
+        muthawif: { select: { id: true, name: true, photoUrl: true, whatsappNumber: true, profile: { select: { basePrice: true, operatingAreas: true, rating: true, totalReviews: true, experience: true, bio: true, specializations: true, languages: true } } } },
         review: { select: { id: true } },
       },
       orderBy,
@@ -149,7 +151,7 @@ async function getBookingsForUser(opts: {
     })
   ]);
 
-  return { items, total, page, totalPages: Math.ceil(total / PAGE_SIZE) };
+  return { items: items as DashboardBooking[], total, page, totalPages: Math.ceil(total / PAGE_SIZE) };
 }
 
 const PAGE_SIZE = 10;
@@ -220,11 +222,11 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
   const mSort = typeof searchParams?.sort === "string" ? searchParams.sort : "terbaru";
 
-  let bookingData: Awaited<ReturnType<typeof getBookingsForUser>> = { items: [], total: 0, page: 1, totalPages: 0 };
+  let bookingData: { items: DashboardBooking[]; total: number; page: number; totalPages: number } = { items: [], total: 0, page: 1, totalPages: 0 };
   let muthawifData: Awaited<ReturnType<typeof getMuthawifsPaginated>> = { items: [], total: 0, page: 1, totalPages: 0 };
   let muthawifCounts = { total: 0, review: 0, verified: 0, pending: 0 };
   let currentMuthawifProfile = null;
-  let userRecord = null;
+  let userRecord: { photoUrl: string | null; whatsappNumber: string | null } | null = null;
   let dbError = false;
   let foundMuthawifs: DashboardSearchMuthawif[] = [];
 
@@ -272,7 +274,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
     }
     userRecord = await prisma.user.findUnique({
       where: { id: session.id },
-      select: { photoUrl: true },
+      select: { photoUrl: true, whatsappNumber: true },
     });
 
     // Native inline search for JAMAAH inside dashboard
@@ -894,11 +896,10 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                     <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", minWidth: 0, padding: "0 0 0 0.5rem", gap: "0.375rem" }}>
                       {/* Tombol Chat Drawer — tampil untuk booking CONFIRMED/COMPLETED */}
                       {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
-                        <ChatWidget
+                        <WhatsAppButton
+                          phoneNumber={booking.muthawif.whatsappNumber}
+                          recipientName={booking.muthawif.name}
                           bookingId={booking.id}
-                          currentUser={{ id: session.id, name: session.name!, photoUrl: userRecord?.photoUrl, role: session.role as "JAMAAH" | "MUTHAWIF" }}
-                          otherUser={{ id: booking.muthawif.id, name: booking.muthawif.name, photoUrl: booking.muthawif.photoUrl, role: "MUTHAWIF" }}
-                          buttonLabel="Chat"
                           variant="compact"
                         />
                       )}
@@ -949,11 +950,10 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                     )}
                     {/* Tombol Chat — CONFIRMED atau COMPLETED */}
                     {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
-                      <ChatWidget
+                      <WhatsAppButton
+                        phoneNumber={booking.muthawif.whatsappNumber}
+                        recipientName={booking.muthawif.name}
                         bookingId={booking.id}
-                        currentUser={{ id: session.id, name: session.name!, photoUrl: userRecord?.photoUrl, role: session.role as "JAMAAH" | "MUTHAWIF" }}
-                        otherUser={{ id: booking.muthawif.id, name: booking.muthawif.name, photoUrl: booking.muthawif.photoUrl, role: "MUTHAWIF" }}
-                        buttonLabel={`Chat dengan ${booking.muthawif.name}`}
                         variant="primary"
                       />
                     )}
@@ -1003,11 +1003,10 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                         </div>
                         {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
                           <div style={{ flexShrink: 0 }}>
-                            <ChatWidget
+                            <WhatsAppButton
+                              phoneNumber={booking.muthawif.whatsappNumber}
+                              recipientName={booking.muthawif.name}
                               bookingId={booking.id}
-                              currentUser={{ id: session.id, name: session.name!, photoUrl: userRecord?.photoUrl, role: session.role as "JAMAAH" | "MUTHAWIF" }}
-                              otherUser={{ id: booking.muthawif.id, name: booking.muthawif.name, photoUrl: booking.muthawif.photoUrl, role: "MUTHAWIF" }}
-                              buttonLabel="Chat"
                               variant="compact"
                             />
                           </div>
@@ -1316,7 +1315,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
               {TAB_TITLES[currentTab] || "Dashboard"}
             </h2>
           </div>
-          <AmirHeaderPanel name={session.name} email={session.email} role={session.role} avatarUrl={userRecord?.photoUrl} muthawifProfile={currentMuthawifProfile} />
+          <AmirHeaderPanel name={session.name} email={session.email} role={session.role} avatarUrl={userRecord?.photoUrl} whatsappNumber={userRecord?.whatsappNumber} muthawifProfile={currentMuthawifProfile} />
         </header>
 
         <main className="dashboard-content-scroll" style={{ padding: "clamp(1rem, 4vw, 2rem)", overflowY: "auto", flex: 1, minHeight: 0 }}>

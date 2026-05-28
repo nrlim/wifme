@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession, signJWT } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { formatWhatsAppNumber } from "@/lib/phone";
 
 type ActionState = {
   success: boolean;
@@ -21,20 +22,30 @@ export async function updateUserProfile(
 
   const name = formData.get("name") as string;
   const photoUrl = formData.get("photoUrl") as string;
+  const rawWhatsapp = formData.get("whatsappNumber") as string | null;
 
   if (!name || name.trim() === "") {
     return { success: false, message: "Nama tidak boleh kosong" };
   }
 
   try {
+    const updateData: any = {
+      name,
+      // @ts-ignore: Prisma client typings are stale until dev restart
+      photoUrl: photoUrl || null,
+    };
+
+    if (rawWhatsapp !== null && rawWhatsapp !== undefined) {
+      const formatted = formatWhatsAppNumber(rawWhatsapp);
+      if (formatted.length >= 9) {
+        updateData.whatsappNumber = formatted;
+      }
+    }
+
     // Update User
     await prisma.user.update({
       where: { id: session.id },
-      data: {
-        name,
-        // @ts-ignore: Prisma client typings are stale until dev restart
-        photoUrl: photoUrl || null,
-      },
+      data: updateData,
     });
 
     // If muthawif, we also update muthawif profile photoUrl if they have one so it stays in sync
