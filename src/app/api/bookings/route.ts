@@ -2,6 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { applyPromoCodeTx } from "@/actions/promotions";
+import { z } from "zod";
+
+const bookingItemSchema = z.object({
+  activityId: z.string().min(1),
+});
+
+const createBookingSchema = z.object({
+  muthawifId: z.string().min(1),
+  startDate: z.string().min(1),
+  items: z.array(bookingItemSchema).min(1).max(60),
+  notes: z.string().max(1000).optional().nullable(),
+  promoCode: z.string().max(64).optional().nullable(),
+  bundleId: z.string().min(1).optional().nullable(),
+});
+
+function parseDateOnly(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,12 +42,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { muthawifId, items, notes, promoCode, bundleId } = body;
+    const rawBody: unknown = await req.json();
+    const parsedBody = createBookingSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return NextResponse.json({ error: "Data pesanan tidak lengkap atau tidak valid." }, { status: 400 });
+    }
+    const { muthawifId, startDate: startDateInput, items, notes, promoCode, bundleId } = parsedBody.data;
 
-    // Input Validation
-    if (!muthawifId || typeof muthawifId !== 'string' || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: "Data pesanan tidak lengkap." }, { status: 400 });
+    const startDate = parseDateOnly(startDateInput);
+    if (!startDate) {
+      return NextResponse.json({ error: "Format tanggal keberangkatan tidak valid." }, { status: 400 });
     }
     // Prevent self-booking
     if (session.id === muthawifId) {
@@ -25,62 +61,84 @@ export async function POST(req: NextRequest) {
     const sanitizedNotes = notes ? String(notes).trim().slice(0, 1000) : null;
     const sanitizedPromoCode = promoCode ? String(promoCode).trim().toUpperCase() : null;
 
-    // Fetch secure prices from database
-    const activityIds = items.map((i: { activityId: string }) => String(i.activityId));
-    const dbActivities = await prisma.activity.findMany({
-      where: { id: { in: activityIds } },
-      select: { id: true, price: true }
-    });
-    const priceMap = new Map(dbActivities.map(a => [a.id, a.price]));
-
-    // Parse and validate items
-    const parsedItems = items.map((item: { activityId: string; date: string; timeSlot?: string }) => {
-      const date = new Date(item.date);
-      if (isNaN(date.getTime())) throw new Error("Format tanggal tidak valid");
-      
-      const actId = String(item.activityId);
-      const securePrice = priceMap.get(actId);
-      if (securePrice === undefined) throw new Error(`Activity ${actId} tidak ditemukan`);
-
-      return {
-        activityId: actId,
-        date: date,
-        timeSlot: item.timeSlot ? String(item.timeSlot) : null,
-        price: securePrice,
-      };
-    });
-
-    // Check backdated
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const hasPastDate = parsedItems.some((item) => item.date < today);
-    if (hasPastDate) {
-      return NextResponse.json({ error: "Tanggal pemesanan tidak boleh di masa lalu." }, { status: 400 });
+    const uniqueActivityIds = Array.from(new Set(items.map((item) => item.activityId)));
+    if (uniqueActivityIds.length !== items.length) {
+      return NextResponse.json({ error: "Kegiatan tidak boleh duplikat dalam satu pesanan." }, { status: 400 });
     }
 
-    const startDates = parsedItems.map(i => i.date.getTime());
-    const startDate = new Date(Math.min(...startDates));
-    const endDate = new Date(Math.max(...startDates));
-    const durationInt = parsedItems.length;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (startDate < today) {
+      return NextResponse.json({ error: "Tanggal keberangkatan tidak boleh di masa lalu." }, { status: 400 });
+    }
 
     const booking = await prisma.$transaction(async (tx) => {
-      // Check for date conflicts (1 date = 1 activity constraint will be handled by unique constraint on BookingItem)
-      // But we also might want to check if Muthawif is already booked by ANOTHER jamaah? 
-      // The current system checks if the muthawif is fully booked. Since dates don't have to be continuous,
-      // it's tricky. Let's just create it and let the muthawif/admin manage. Or we can keep the simple overlap check:
-      // A muthawif can only handle one booking per day maybe? We skip conflict check for now since it's activity-based.
+      const muthawif = await tx.user.findFirst({
+        where: { id: muthawifId, role: "MUTHAWIF", profile: { verificationStatus: "VERIFIED" } },
+        select: { id: true, profile: { select: { id: true } } },
+      });
+      if (!muthawif?.profile) throw new Error("Muthawif tidak ditemukan");
 
-      // 2. Pricing and Profile Calculation
+      const dbActivities = await tx.activity.findMany({
+        where: { id: { in: uniqueActivityIds }, isActive: true },
+        select: { id: true, price: true, durationDays: true },
+      });
+      if (dbActivities.length !== uniqueActivityIds.length) throw new Error("Kegiatan tidak ditemukan");
+
+      const activityMap = new Map(dbActivities.map((activity) => [activity.id, activity]));
+      const parsedItems = uniqueActivityIds.map((activityId) => {
+        const activity = activityMap.get(activityId);
+        if (!activity) throw new Error("Kegiatan tidak ditemukan");
+        return {
+          activityId,
+          price: activity.price,
+          durationDays: activity.durationDays,
+        };
+      });
+
+      const totalDurationDays = parsedItems.reduce((sum, item) => sum + item.durationDays, 0);
+      const endDate = addDays(startDate, totalDurationDays);
+
+      // 2. Pricing and availability validation
       const settings = await tx.globalSetting.findUnique({ where: { id: "singleton" } });
 
       let baseFee = 0;
       if (bundleId) {
-        const bdl = await tx.activityBundle.findUnique({ where: { id: bundleId } });
+        const bdl = await tx.activityBundle.findFirst({
+          where: { id: bundleId, isActive: true },
+          include: { items: { select: { activityId: true } } },
+        });
         if (!bdl) throw new Error("Paket Bundling tidak ditemukan");
+        const bundleActivityIds = bdl.items.map((item) => item.activityId).sort();
+        const requestedActivityIds = [...uniqueActivityIds].sort();
+        if (bundleActivityIds.length !== requestedActivityIds.length || bundleActivityIds.some((id, index) => id !== requestedActivityIds[index])) {
+          throw new Error("Paket Bundling tidak sesuai dengan kegiatan yang dipilih");
+        }
         baseFee = bdl.price;
       } else {
         baseFee = parsedItems.reduce((sum, item) => sum + item.price, 0);
       }
+
+      const conflictingBooking = await tx.booking.findFirst({
+        where: {
+          muthawifId,
+          status: { in: ["PENDING", "PAYMENT_REVIEW", "CONFIRMED"] },
+          startDate: { lt: endDate },
+          endDate: { gt: startDate },
+        },
+        select: { id: true },
+      });
+      if (conflictingBooking) throw new Error("CONFLICT");
+
+      const blockedAvailability = await tx.availability.findFirst({
+        where: {
+          profileId: muthawif.profile.id,
+          date: { gte: startDate, lt: endDate },
+          status: { in: ["OFF", "BOOKED"] },
+        },
+        select: { id: true },
+      });
+      if (blockedAvailability) throw new Error("CONFLICT");
       let serviceFee = 0;
       if (settings) {
         if (settings.feeType === "PERCENT") {
@@ -127,12 +185,15 @@ export async function POST(req: NextRequest) {
           paymentStatus: "UNPAID",
           paymentDeadline,
           items: {
-            create: parsedItems.map(item => ({
-              activityId: item.activityId,
-              date: item.date,
-              timeSlot: item.timeSlot,
-              price: item.price,
-            }))
+            create: parsedItems.map((item, index) => {
+              const previousDays = parsedItems.slice(0, index).reduce((sum, previousItem) => sum + previousItem.durationDays, 0);
+              return {
+                activityId: item.activityId,
+                date: addDays(startDate, previousDays),
+                timeSlot: null,
+                price: item.price,
+              };
+            })
           }
         },
         include: { items: true }
@@ -165,7 +226,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    if (errorMessage.includes("tidak ditemukan") || errorMessage === "Format tanggal tidak valid") {
+    if (errorMessage.includes("tidak ditemukan") || errorMessage.includes("tidak sesuai") || errorMessage.includes("tanggal")) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
     

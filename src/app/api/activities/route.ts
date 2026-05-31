@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { z } from "zod";
+
+const activityCreateSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  description: z.string().trim().max(1000).optional().nullable(),
+  price: z.coerce.number().finite().min(0).max(1_000_000_000),
+  location: z.enum(["MAKKAH", "MADINAH", "BOTH"]).optional().nullable().or(z.literal("")),
+  durationDays: z.coerce.number().int().min(1).max(60).default(1),
+  isActive: z.boolean().optional(),
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,12 +42,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { name, description, price, location, duration, isActive } = body;
-
-    if (!name || typeof price !== "number") {
-      return NextResponse.json({ error: "Nama dan harga wajib diisi dengan benar." }, { status: 400 });
+    const rawBody: unknown = await request.json();
+    const parsed = activityCreateSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Data kegiatan tidak valid." }, { status: 400 });
     }
+    const { name, description, price, location, durationDays, isActive } = parsed.data;
 
     let finalSortOrder = 0;
     const lastActivity = await prisma.activity.findFirst({
@@ -51,9 +61,9 @@ export async function POST(request: NextRequest) {
       data: {
         name: String(name).trim(),
         description: description ? String(description).trim() : null,
-        price,
-        location: location ? String(location).trim() : null,
-        duration: duration ? String(duration).trim() : null,
+        price: Math.round(price),
+        location: location ? location : null,
+        durationDays,
         sortOrder: finalSortOrder,
         isActive: typeof isActive === "boolean" ? isActive : true,
       },

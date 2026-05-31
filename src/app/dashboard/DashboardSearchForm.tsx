@@ -2,31 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, MapPin, Clock, Search } from "lucide-react";
-
-const LOCATIONS = [
-  { value: "ALL", label: "Semua Lokasi" },
-  { value: "MAKKAH", label: "Makkah" },
-  { value: "MADINAH", label: "Madinah" },
-  { value: "BOTH", label: "Makkah & Madinah" },
-];
+import { Calendar, MapPin, Search } from "lucide-react";
 
 export default function DashboardSearchForm({
   initialStartDate,
-  initialDuration,
   initialLocation,
+  supportedLocations = ["Makkah", "Madinah"],
 }: {
   initialStartDate?: string;
-  initialDuration?: string;
   initialLocation?: string;
+  supportedLocations?: string[];
 }) {
   const router = useRouter();
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
+  const locationOptions = ["ALL", ...supportedLocations.filter((loc) => loc.trim().length > 0)];
+
   const [form, setForm] = useState({
     startDate: initialStartDate || "",
-    duration: initialDuration || "7",
     location: initialLocation || "ALL",
   });
   const [loading, setLoading] = useState(false);
@@ -36,7 +30,6 @@ export default function DashboardSearchForm({
     setLoading(true);
     const params = new URLSearchParams({
       startDate: form.startDate,
-      duration: form.duration,
       location: form.location,
     });
     router.push(`/dashboard?tab=cari&${params.toString()}`);
@@ -61,21 +54,6 @@ export default function DashboardSearchForm({
           </div>
         </div>
 
-        <div className="nmf-input-group">
-          <div className="nmf-icon"><Clock size={18} /></div>
-          <div className="nmf-field">
-            <label htmlFor="dashboard-search-duration">Durasi (Hari)</label>
-            <input 
-              id="dashboard-search-duration" 
-              type="number" 
-              min="1" 
-              max="60" 
-              value={form.duration} 
-              onChange={(e) => setForm({ ...form, duration: e.target.value })} 
-              required 
-            />
-          </div>
-        </div>
 
         <div className="nmf-input-group">
           <div className="nmf-icon"><MapPin size={18} /></div>
@@ -86,8 +64,8 @@ export default function DashboardSearchForm({
               value={form.location} 
               onChange={(e) => setForm({ ...form, location: e.target.value })}
             >
-              {LOCATIONS.map((loc) => (
-                <option key={loc.value} value={loc.value}>{loc.label}</option>
+              {locationOptions.map((loc) => (
+                <option key={loc} value={loc}>{loc === "ALL" ? "Semua Lokasi" : loc}</option>
               ))}
             </select>
           </div>

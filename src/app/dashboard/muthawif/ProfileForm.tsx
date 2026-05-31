@@ -552,7 +552,7 @@ export function ProfileForm({
   const activeSecDef = SECTIONS.find((s) => s.id === activeSection)!;
 
   return (
-    <form action={formAction}>
+    <form action={formAction} className="pf-form-root">
       {/* Hidden fields */}
       <input type="hidden" name="operatingAreas" value={selectedAreas.join(",")} />
       <input type="hidden" name="specializations" value={selectedSpecs.join(",")} />
@@ -680,46 +680,59 @@ export function ProfileForm({
             borderBottom: `1px solid ${C.border}`,
           }}>
             {!isStepperMode && (
-              <button
-                type="button"
-                className="pf-mobile-back-btn"
-                onClick={() => setMobileView("MENU")}
-                style={{ display: "none", background: "none", border: "none", padding: 0, marginBottom: "1.25rem", color: C.charcoal, fontWeight: 800, fontSize: "0.875rem", cursor: "pointer", alignItems: "center", gap: "0.375rem" }}
-              >
-                <div style={{ width: 32, height: 32, borderRadius: 10, background: C.ivoryDark, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
-                </div>
-                Menu Profil
-              </button>
+              <div className="pf-mobile-header-row">
+                <button
+                  type="button"
+                  className="pf-mobile-back-btn"
+                  onClick={() => setMobileView("MENU")}
+                  style={{ display: "none", background: "none", border: "none", padding: 0, color: C.charcoal, fontWeight: 800, fontSize: "0.875rem", cursor: "pointer", alignItems: "center", gap: "0.375rem" }}
+                >
+                  <div style={{ width: 32, height: 32, borderRadius: 10, background: C.ivoryDark, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+                  </div>
+                  Menu Profil
+                </button>
+                <button
+                  type="button"
+                  className="pf-header-save-btn"
+                  onClick={() => { setSubmitAction("SAVE"); submitBtnRef.current?.click(); }}
+                  disabled={pending}
+                >
+                  {pending ? "Menyimpan..." : "Simpan"}
+                </button>
+              </div>
             )}
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: 14, flexShrink: 0,
-                background: `linear-gradient(135deg, ${activeSecDef.accentPale}, ${C.white})`,
-                border: `1.5px solid ${activeSecDef.accent}33`,
-                color: activeSecDef.accent,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                {activeSecDef.icon}
-              </div>
-              <div>
-                <div style={{ fontSize: "0.5625rem", fontWeight: 900, color: activeSecDef.accent, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>
-                  {isStepperMode ? (
-                    <>
-                      Langkah {activeSecDef.step} dari {SECTIONS.length}
-                      {!activeSecDef.required && <span style={{ marginLeft: "0.5rem", opacity: 0.7 }}>• Opsional</span>}
-                    </>
-                  ) : (
-                    "Pengaturan Profil"
-                  )}
+            <div className="pf-section-head-row" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", minWidth: 0 }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+                  background: `linear-gradient(135deg, ${activeSecDef.accentPale}, ${C.white})`,
+                  border: `1.5px solid ${activeSecDef.accent}33`,
+                  color: activeSecDef.accent,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {activeSecDef.icon}
                 </div>
-                <h2 style={{ fontWeight: 900, fontSize: "1.1875rem", color: C.charcoal, margin: "0 0 0.25rem", lineHeight: 1.25 }}>
-                  {activeSecDef.label}
-                </h2>
-                <p style={{ fontSize: "0.8125rem", color: C.muted, margin: 0, lineHeight: 1.65 }}>
-                  {activeSecDef.desc}
-                </p>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: "0.5625rem", fontWeight: 900, color: activeSecDef.accent, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>
+                    {isStepperMode ? (
+                      <>
+                        Langkah {activeSecDef.step} dari {SECTIONS.length}
+                        {!activeSecDef.required && <span style={{ marginLeft: "0.5rem", opacity: 0.7 }}>• Opsional</span>}
+                      </>
+                    ) : (
+                      "Pengaturan Profil"
+                    )}
+                  </div>
+                  <h2 style={{ fontWeight: 900, fontSize: "1.1875rem", color: C.charcoal, margin: "0 0 0.25rem", lineHeight: 1.25 }}>
+                    {activeSecDef.label}
+                  </h2>
+                  <p style={{ fontSize: "0.8125rem", color: C.muted, margin: 0, lineHeight: 1.65 }}>
+                    {activeSecDef.desc}
+                  </p>
+                </div>
               </div>
+
             </div>
           </div>
 
@@ -893,6 +906,9 @@ export function ProfileForm({
           box-shadow: 0 4px 20px rgba(0,0,0,0.03);
           min-height: 480px;
         }
+        .pf-header-save-btn {
+          display: none;
+        }
         .spinner {
           width: 14px;
           height: 14px;
@@ -921,19 +937,113 @@ export function ProfileForm({
             padding: 0;
             background: transparent;
           }
+          .pf-layout.dash-mode.mobile-show-menu .pf-sidebar > div {
+            position: static !important;
+          }
+          .pf-layout.dash-mode.mobile-show-menu .pf-sidebar nav {
+            gap: 0.75rem !important;
+          }
           .pf-layout.dash-mode.mobile-show-menu .pf-sidebar nav button {
+            min-height: 72px;
             background: ${C.white} !important;
-            border: 1px solid ${C.border} !important;
-            margin-bottom: 0.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            border-radius: 16px !important;
+            margin-bottom: 0 !important;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.045) !important;
+            padding: 0.875rem !important;
           }
           .pf-layout.dash-mode.mobile-show-form .pf-sidebar {
             display: none;
+          }
+          .pf-layout.dash-mode.mobile-show-form .pf-mobile-header-row {
+            display: flex !important;
           }
           .pf-layout.dash-mode.mobile-show-form .pf-mobile-back-btn {
             display: flex !important;
           }
           
+          .pf-form-root {
+            display: flex;
+            flex-direction: column;
+          }
+          .pf-layout {
+            order: 2;
+          }
+          .pf-cta-bar {
+            display: none !important;
+          }
+          .pf-content {
+            border-radius: 16px;
+            padding: 1rem;
+            min-height: auto;
+            border-color: rgba(0,0,0,0.08);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.045);
+          }
+          .pf-sidebar {
+            border-radius: 16px;
+          }
+          .pf-layout.dash-mode.mobile-show-form .pf-content {
+            display: block;
+          }
+          .pf-content > div:first-child {
+            margin-bottom: 1rem !important;
+            padding-bottom: 1rem !important;
+          }
+          .pf-mobile-header-row {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+          }
+          .pf-section-head-row {
+            align-items: flex-start !important;
+            gap: 0.75rem !important;
+          }
+          .pf-header-save-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 0 0.875rem;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, ${C.emerald}, ${C.emeraldLight});
+            color: ${C.white};
+            font-family: inherit;
+            font-size: 0.78rem;
+            font-weight: 900;
+            box-shadow: 0 4px 14px rgba(27,107,74,0.18);
+            white-space: nowrap;
+            flex-shrink: 0;
+          }
+          .pf-header-save-btn:disabled {
+            opacity: 0.65;
+          }
+          .pf-content > div:first-child h2 {
+            font-size: 1.05rem !important;
+          }
+          .pf-content > div:first-child p {
+            font-size: 0.76rem !important;
+            line-height: 1.5 !important;
+          }
+          .pf-cta-bar > div:first-child p:first-child {
+            font-size: 0.8rem !important;
+          }
+          .pf-cta-bar > div:first-child p:last-child {
+            font-size: 0.66rem !important;
+            line-height: 1.35;
+          }
+          .pf-cta-bar > div:last-child,
+          .pf-cta-bar > div:last-child > div,
+          .pf-cta-bar button {
+            width: 100%;
+            justify-content: center;
+          }
+          .pf-cta-bar button {
+            min-height: 46px;
+          }
+
           /* Hide CTA Bar when showing menu on mobile */
           .pf-layout.dash-mode.mobile-show-menu ~ .pf-cta-bar {
             display: none !important;

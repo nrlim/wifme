@@ -413,7 +413,27 @@ export default async function MuthawifDashboardPage({
       <MuthawifMobileNav currentTab={currentTab} />
       <style>{`
         @media (max-width: 900px) {
+          .muthawif-dashboard {
+            height: 100dvh !important;
+            min-height: 100dvh !important;
+            overflow: hidden !important;
+          }
           .muthawif-dashboard .dashboard-sidebar-fixed { display: none !important; }
+          .muthawif-dashboard .dashboard-main-area {
+            height: 100dvh;
+            min-height: 100dvh;
+            overflow: hidden !important;
+            background: var(--ivory);
+          }
+          .muthawif-dashboard .dashboard-content-scroll {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch;
+            padding: 0.85rem 0.75rem calc(6.25rem + env(safe-area-inset-bottom)) !important;
+          }
+          .muthawif-dashboard .profile-tab-wrapper {
+            padding-bottom: 1rem;
+          }
         }
       `}</style>
     </div>

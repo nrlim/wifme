@@ -37,6 +37,7 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Menunggu Konfirmasi",
+  PAYMENT_REVIEW: "Review Pembayaran",
   CONFIRMED: "Dikonfirmasi",
   CANCELLED: "Dibatalkan",
   COMPLETED: "Selesai",
@@ -44,10 +45,18 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   PENDING: { bg: "rgba(196,151,59,0.12)", color: "var(--gold)" },
+  PAYMENT_REVIEW: { bg: "#EFF6FF", color: "#2563EB" },
   CONFIRMED: { bg: "var(--emerald-pale)", color: "var(--emerald)" },
   CANCELLED: { bg: "#FEF2F2", color: "var(--error)" },
   COMPLETED: { bg: "#EFF6FF", color: "#2563EB" },
 };
+
+function buildOperatingAreaFilter(location?: string): Prisma.MuthawifProfileWhereInput {
+  if (!location || location === "ALL") return {};
+  if (location === "BOTH") return { operatingAreas: { hasEvery: ["Makkah", "Madinah"] } };
+  const normalized = location === "MAKKAH" ? "Makkah" : location === "MADINAH" ? "Madinah" : location;
+  return { operatingAreas: { has: normalized } };
+}
 
 type DashboardBooking = Prisma.BookingGetPayload<{
   include: {
@@ -120,7 +129,8 @@ async function getBookingsForUser(opts: {
 
   const VALID_BOOKING_STATUSES = ["PENDING", "PAYMENT_REVIEW", "CONFIRMED", "CANCELLED", "COMPLETED", "REJECTED"];
   if (status && status !== "ALL" && VALID_BOOKING_STATUSES.includes(status)) {
-    whereClause.status = status;
+    if (status === "PAYMENT_REVIEW") whereClause.paymentStatus = "PAYMENT_REVIEW";
+    else whereClause.status = status;
   }
 
   if (search.trim()) {
@@ -217,7 +227,6 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
   const mPage = typeof searchParams?.page === "string" ? Math.max(1, parseInt(searchParams.page, 10) || 1) : 1;
 
   const searchStartDate = typeof searchParams?.startDate === "string" ? searchParams.startDate : "";
-  const searchDuration = typeof searchParams?.duration === "string" ? searchParams.duration : "";
   const searchLocation = typeof searchParams?.location === "string" ? searchParams.location : "";
 
   const mSort = typeof searchParams?.sort === "string" ? searchParams.sort : "terbaru";
@@ -233,12 +242,13 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
   let payoutData: Awaited<ReturnType<typeof getPayouts>> = { items: [], total: 0, page: 1, totalPages: 0 };
   let globalSettings: GlobalSettingsForDashboard = null;
   let feeConfig: FeeConfig = { feeType: "PERCENT", feeValue: 0 };
+  let supportedLocations: string[] = ["Makkah", "Madinah"];
   let promoData: Awaited<ReturnType<typeof getPromotions>> = { items: [], total: 0, page: 1, totalPages: 0 };
   let activitiesData: Prisma.ActivityGetPayload<{}>[] = [];
   let activityBundlesData: Prisma.ActivityBundleGetPayload<{ include: { items: { include: { activity: true } } } }>[] = [];
 
   try {
-    [bookingData, feeConfig] = await Promise.all([
+    const [nextBookingData, nextFeeConfig, publicGlobalSetting] = await Promise.all([
       getBookingsForUser({
         userId: session.id,
         role: session.role,
@@ -248,7 +258,14 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
         page: mPage,
       }),
       getFeeConfig(),
+      prisma.globalSetting.findUnique({
+        where: { id: "singleton" },
+        select: { supportedLocations: true },
+      }),
     ]);
+    bookingData = nextBookingData;
+    feeConfig = nextFeeConfig;
+    supportedLocations = publicGlobalSetting?.supportedLocations?.length ? publicGlobalSetting.supportedLocations : supportedLocations;
     if (session.role === "AMIR") {
       const [nextMuthawifData, nextMuthawifCounts, nextPayoutData, nextGlobalSettings, nextPromoData, nextActivities, nextBundles] = await Promise.all([
         getMuthawifsPaginated({ search: mSearch, status: mStatus, page: mPage }),
@@ -278,15 +295,12 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
     });
 
     // Native inline search for JAMAAH inside dashboard
-    if (currentTab === "cari" && session.role === "JAMAAH" && searchStartDate && searchDuration) {
+    if (currentTab === "cari" && session.role === "JAMAAH" && searchStartDate) {
       const start = new Date(searchStartDate);
       const end = new Date(start);
-      end.setDate(end.getDate() + parseInt(searchDuration));
+      end.setDate(end.getDate() + 1);
 
-      // Build location filter: skip entirely for ALL, otherwise allow exact match OR "BOTH"
-      const locFilters = searchLocation && searchLocation !== "ALL"
-        ? { operatingAreas: { has: searchLocation } }
-        : {};
+      const locFilters = buildOperatingAreaFilter(searchLocation);
 
       foundMuthawifs = await prisma.muthawifProfile.findMany({
         where: {
@@ -297,7 +311,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
           user: {
             bookingsAsMuthawif: {
               none: {
-                status: { in: ["PENDING", "CONFIRMED"] },
+                status: { in: ["PENDING", "PAYMENT_REVIEW", "CONFIRMED"] },
                 AND: [
                   { startDate: { lt: end } },
                   { endDate: { gt: start } },
@@ -340,6 +354,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
         filters={[
           { label: "Semua", value: "ALL" },
           { label: "Menunggu", value: "PENDING" },
+          { label: "Review Pembayaran", value: "PAYMENT_REVIEW" },
           { label: "Dikonfirmasi", value: "CONFIRMED" },
           { label: "Selesai", value: "COMPLETED" },
           { label: "Dibatalkan", value: "CANCELLED" }
@@ -569,41 +584,13 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ marginBottom: "1rem" }}>{toolbar}</div>
 
-            <div style={{
+            <div className="amir-bookings-panel" style={{
               background: "white",
               borderRadius: 20,
               border: "1px solid var(--border)",
               boxShadow: "var(--shadow-sm)",
               overflow: "hidden",
             }}>
-              {/* Table Header */}
-              <div style={{
-                padding: "1.125rem 1.5rem",
-                borderBottom: "1px solid var(--border)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                background: "white",
-              }}>
-                <div>
-                  <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "0.125rem" }}>
-                    Daftar Transaksi
-                  </h3>
-                  <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
-                    Menampilkan {bookings.length} dari {bookingsTotal} transaksi terdaftar
-                  </p>
-                </div>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: "0.5rem",
-                  background: "var(--emerald-pale)", color: "var(--emerald)",
-                  padding: "0.375rem 0.875rem", borderRadius: 99,
-                  fontSize: "0.75rem", fontWeight: 800,
-                }}>
-                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--emerald)" }} />
-                  Live Data
-                </div>
-              </div>
-
               {/* Table — Desktop: full columns / Mobile: card-style */}
               {bookings.length === 0 ? (
                 <div style={{ padding: "4rem", textAlign: "center", color: "var(--text-muted)" }}>
@@ -614,7 +601,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                   {/* Desktop Table Header row */}
                   <div style={{
                     display: "grid",
-                    gridTemplateColumns: "1.2fr 1.5fr 1.5fr 120px 100px 130px",
+                    gridTemplateColumns: "1.1fr 1.35fr 1.35fr 110px 115px minmax(190px, 0.9fr)",
                     padding: "0.75rem 1.5rem",
                     background: "var(--ivory)",
                     borderBottom: "1px solid var(--border)",
@@ -633,6 +620,12 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                     const location = booking.muthawif.profile?.operatingAreas?.join(", ") || "—";
                     const shortId = booking.id.includes("-") ? booking.id.split("-")[0].toUpperCase() : booking.id.slice(0, 8).toUpperCase();
                     const isPaid = booking.paymentStatus === "PAID";
+                    const isPaymentReview = booking.paymentStatus === "PAYMENT_REVIEW";
+                    const paymentMeta = isPaid
+                      ? { label: "Lunas", bg: "rgba(27,107,74,0.1)", color: "#1B6B4A" }
+                      : isPaymentReview
+                        ? { label: "Review", bg: "#EFF6FF", color: "#2563EB" }
+                        : { label: "Belum", bg: "rgba(196,151,59,0.1)", color: "#92700A" };
 
                     return (
                       <div
@@ -645,7 +638,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                         {/* Desktop row */}
                         <div style={{
                           display: "grid",
-                          gridTemplateColumns: "1.2fr 1.5fr 1.5fr 120px 100px 130px",
+                          gridTemplateColumns: "1.1fr 1.35fr 1.35fr 110px 115px minmax(190px, 0.9fr)",
                           padding: "1rem 1.5rem",
                           gap: "1rem",
                           alignItems: "center",
@@ -692,15 +685,15 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                             <span style={{
                               display: "inline-flex", alignItems: "center", padding: "0.15rem 0.5rem",
                               borderRadius: 99, fontSize: "0.5625rem", fontWeight: 800,
-                              background: isPaid ? "rgba(27,107,74,0.1)" : "rgba(196,151,59,0.1)",
-                              color: isPaid ? "#1B6B4A" : "#92700A",
+                              background: paymentMeta.bg,
+                              color: paymentMeta.color,
                               marginTop: "0.25rem",
                             }}>
-                              {isPaid ? "Lunas" : "Belum"}
+                              {paymentMeta.label}
                             </span>
                           </div>
                           {/* Status */}
-                          <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", alignItems: "flex-start" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", alignItems: "stretch", minWidth: 0 }}>
                             <span style={{
                               display: "inline-flex", alignItems: "center", gap: "0.3rem",
                               padding: "0.25rem 0.625rem", borderRadius: 99,
@@ -711,11 +704,16 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                               <span style={{ width: 5, height: 5, borderRadius: "50%", background: statusColor.color, flexShrink: 0 }} />
                               {STATUS_LABELS[booking.status] || booking.status}
                             </span>
-                            <BookingStatusButton
-                              bookingId={booking.id}
-                              currentStatus={booking.status}
-                              endDate={booking.endDate.toISOString()}
-                            />
+                            {booking.paymentProofUrl && (
+                              <PaymentVerificationButton bookingId={booking.id} proofUrl={booking.paymentProofUrl} canVerify={isPaymentReview} />
+                            )}
+                            {!isPaymentReview && (
+                              <BookingStatusButton
+                                bookingId={booking.id}
+                                currentStatus={booking.status}
+                                endDate={booking.endDate.toISOString()}
+                              />
+                            )}
                           </div>
                         </div>
 
@@ -742,18 +740,23 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                               <div style={{ fontWeight: 800, fontSize: "0.9375rem", color: isPaid ? "var(--emerald)" : "var(--charcoal)" }}>
                                 Rp {booking.totalFee.toLocaleString("id-ID")}
                               </div>
-                              <div style={{ fontSize: "0.5625rem", fontWeight: 800, color: isPaid ? "var(--emerald)" : "var(--gold)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "0.125rem" }}>
-                                {isPaid ? "LUNAS" : "BELUM BAYAR"}
+                              <div style={{ fontSize: "0.5625rem", fontWeight: 800, color: paymentMeta.color, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "0.125rem" }}>
+                                {isPaymentReview ? "REVIEW PEMBAYARAN" : isPaid ? "LUNAS" : "BELUM BAYAR"}
                               </div>
                             </div>
                           </div>
                           {/* Mobile action CTA */}
-                          <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px dashed var(--border)" }}>
-                            <BookingStatusButton
-                              bookingId={booking.id}
-                              currentStatus={booking.status}
-                              endDate={booking.endDate.toISOString()}
-                            />
+                          <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px dashed var(--border)", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+                            {booking.paymentProofUrl && (
+                              <PaymentVerificationButton bookingId={booking.id} proofUrl={booking.paymentProofUrl} canVerify={isPaymentReview} />
+                            )}
+                            {!isPaymentReview && (
+                              <BookingStatusButton
+                                bookingId={booking.id}
+                                currentStatus={booking.status}
+                                endDate={booking.endDate.toISOString()}
+                              />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -904,8 +907,8 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                         />
                       )}
                       {/* Tombol Verifikasi Pembayaran (AMIR) */}
-                      {session.role === "AMIR" && isPaymentReview && (
-                        <PaymentVerificationButton bookingId={booking.id} proofUrl={booking.paymentProofUrl} />
+                      {session.role === "AMIR" && booking.paymentProofUrl && (
+                        <PaymentVerificationButton bookingId={booking.id} proofUrl={booking.paymentProofUrl} canVerify={isPaymentReview} />
                       )}
                       {/* Tombol Bayar / Upload Bukti (JAMAAH) */}
                       {session.role === "JAMAAH" && isUnpaid && (
@@ -943,9 +946,9 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                       </Link>
                     )}
                     {/* Tombol Verifikasi Pembayaran (AMIR) */}
-                    {session.role === "AMIR" && isPaymentReview && (
+                    {session.role === "AMIR" && booking.paymentProofUrl && (
                       <div style={{ width: "100%" }}>
-                        <PaymentVerificationButton bookingId={booking.id} proofUrl={booking.paymentProofUrl} />
+                        <PaymentVerificationButton bookingId={booking.id} proofUrl={booking.paymentProofUrl} canVerify={isPaymentReview} />
                       </div>
                     )}
                     {/* Tombol Chat — CONFIRMED atau COMPLETED */}
@@ -1334,26 +1337,26 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                 <div className="jamaah-search-card" style={{ background: "white", padding: "1.25rem 1.5rem", borderRadius: "16px", border: "1px solid var(--border)", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
                   <DashboardSearchForm
                     initialStartDate={searchStartDate}
-                    initialDuration={searchDuration}
                     initialLocation={searchLocation}
+                    supportedLocations={supportedLocations}
                   />
                 </div>
 
-                {!searchStartDate || !searchDuration ? (
+                {!searchStartDate ? (
                   <div style={{ textAlign: "center", padding: "4rem 2rem", background: "rgba(255,255,255,0.4)", borderRadius: "16px", border: "1px dashed var(--border)" }}>
                     <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--emerald-pale)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--emerald)", marginBottom: "1rem" }}>
                       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     </div>
                     <h3 style={{ fontSize: "1.125rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "0.5rem" }}>Cari Sesuai Rencana Ibadah</h3>
                     <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", maxWidth: "400px", margin: "0 auto", lineHeight: "1.6" }}>
-                      Tentukan tanggal, durasi, dan lokasi operasional di filter atas untuk menemukan Muthawif terbaik yang siap mendampingi Anda di Tanah Suci.
+                      Tentukan tanggal keberangkatan dan lokasi operasional di filter atas untuk menemukan Muthawif terbaik yang siap mendampingi Anda di Tanah Suci.
                     </p>
                   </div>
                 ) : (
                   <DashboardSearchList
                     muthawifs={foundMuthawifs}
                     startDate={searchStartDate}
-                    duration={searchDuration}
+                    location={searchLocation}
                     feeConfig={feeConfig}
                   />
                 )}
@@ -1463,8 +1466,9 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
             display: none !important;
           }
           .jamaah-dashboard .dashboard-main-area {
+            height: 100dvh;
             min-height: 100dvh;
-            overflow: visible !important;
+            overflow: hidden !important;
             background: var(--ivory);
           }
           .jamaah-dashboard .dashboard-header {
@@ -1483,7 +1487,9 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
             letter-spacing: -0.02em;
           }
           .jamaah-dashboard .dashboard-content-scroll {
-            overflow: visible !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch;
             padding: 0.85rem 0.75rem calc(6.25rem + env(safe-area-inset-bottom)) !important;
           }
           .jamaah-dashboard .jamaah-bookings-panel {
@@ -1493,15 +1499,15 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
             overflow: visible !important;
             display: flex;
             flex-direction: column;
-            gap: 0.85rem;
+            gap: 0.9rem;
           }
           .jamaah-dashboard .bk-card-wrap {
             border-bottom: none !important;
-            border-radius: 12px;
+            border-radius: 14px;
             background: #fff;
             border: 1px solid rgba(0,0,0,0.08);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            margin-bottom: 0.85rem;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.045);
+            margin-bottom: 0 !important;
             overflow: hidden;
             padding: 0 !important;
           }
@@ -1534,8 +1540,9 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
           .amir-dashboard .mob-topbar { display: none !important; }
           .amir-dashboard .dashboard-sidebar-fixed { display: none !important; }
           .amir-dashboard .dashboard-main-area {
+            height: 100dvh;
             min-height: 100dvh;
-            overflow: visible !important;
+            overflow: hidden !important;
             background: var(--ivory);
           }
           .amir-dashboard .dashboard-header {
@@ -1548,11 +1555,42 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
           }
           .amir-dashboard .dashboard-header h2 { font-size: 1rem !important; }
           .amir-dashboard .dashboard-content-scroll {
-            overflow: visible !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch;
             padding: 0.85rem 0.75rem calc(6.25rem + env(safe-area-inset-bottom)) !important;
+          }
+          .amir-dashboard .amir-bookings-panel {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+          }
+          .amir-dashboard .amir-list-header {
+            border-bottom: none !important;
+            border-radius: 14px;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.045);
+            padding: 1rem !important;
+            align-items: flex-start !important;
+            gap: 0.75rem;
+          }
+          .amir-dashboard .amir-list-header > div:last-child {
+            flex-shrink: 0;
           }
           .amir-table-header { display: none !important; }
           .amir-table-row { display: none !important; }
+          .amir-dashboard .amir-row {
+            border-bottom: none !important;
+            border-radius: 14px;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.045);
+            overflow: hidden;
+          }
           .amir-mobile-row { display: block !important; }
           
         }

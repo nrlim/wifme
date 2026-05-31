@@ -21,11 +21,20 @@ const LOCATION_LABELS: Record<string, string> = {
   ALL: "Semua Lokasi",
   MAKKAH: "Makkah",
   MADINAH: "Madinah",
+  Makkah: "Makkah",
+  Madinah: "Madinah",
   BOTH: "Makkah & Madinah",
 };
 
-async function fetchMuthawifs(startDate?: string, duration?: string, location?: string) {
-  if (!startDate || !duration) {
+function buildOperatingAreaFilter(location?: string) {
+  if (!location || location === "ALL") return {};
+  if (location === "BOTH") return { operatingAreas: { hasEvery: ["Makkah", "Madinah"] } };
+  const normalized = location === "MAKKAH" ? "Makkah" : location === "MADINAH" ? "Madinah" : location;
+  return { operatingAreas: { has: normalized } };
+}
+
+async function fetchMuthawifs(startDate?: string, location?: string) {
+  if (!startDate) {
     return prisma.muthawifProfile.findMany({
       where: { isAvailable: true, verificationStatus: "VERIFIED" },
       include: { user: { select: { id: true, name: true, email: true, photoUrl: true } } },
@@ -35,12 +44,9 @@ async function fetchMuthawifs(startDate?: string, duration?: string, location?: 
 
   const start = new Date(startDate);
   const end = new Date(start);
-  end.setDate(end.getDate() + parseInt(duration));
+  end.setDate(end.getDate() + 1);
 
-  const locationFilter =
-    location && location !== "ALL"
-      ? { operatingAreas: { has: location } }
-      : {};
+  const locationFilter = buildOperatingAreaFilter(location);
 
   return prisma.muthawifProfile.findMany({
     where: {
@@ -50,7 +56,7 @@ async function fetchMuthawifs(startDate?: string, duration?: string, location?: 
       user: {
         bookingsAsMuthawif: {
           none: {
-            status: { in: ["PENDING", "CONFIRMED"] },
+            status: { in: ["PENDING", "PAYMENT_REVIEW", "CONFIRMED"] },
             AND: [{ startDate: { lt: end } }, { endDate: { gt: start } }],
           },
         },
@@ -209,13 +215,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ? "/dashboard/muthawif"
     : "/dashboard";
 
-  const hasFilters = !!(startDate || duration || (location && location !== "ALL"));
+  const hasFilters = !!(startDate || (location && location !== "ALL"));
 
   // Fetch at page level — determines which layout to render
   let muthawifs: Awaited<ReturnType<typeof fetchMuthawifs>> = [];
   let fetchError = false;
   try {
-    muthawifs = await fetchMuthawifs(startDate, duration, location);
+    muthawifs = await fetchMuthawifs(startDate, location);
   } catch {
     fetchError = true;
   }
@@ -268,7 +274,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               </h1>
               <p style={{ color: "var(--text-muted)", fontSize: "0.9375rem", lineHeight: 1.65, maxWidth: 560, margin: "0 auto" }}>
                 {hasFilters
-                  ? `Menampilkan Muthawif tersedia${startDate ? ` mulai ${new Date(startDate).toLocaleDateString("id-ID", { day: "numeric", month: "long" })}` : ""}${duration ? ` · ${duration} hari` : ""}${location && location !== "ALL" ? ` · ${LOCATION_LABELS[location] || location}` : ""}`
+                  ? `Menampilkan Muthawif tersedia${startDate ? ` mulai ${new Date(startDate).toLocaleDateString("id-ID", { day: "numeric", month: "long" })}` : ""}${location && location !== "ALL" ? ` · ${LOCATION_LABELS[location] || location}` : ""}`
                   : "Muthawif berpengalaman & berlisensi siap mendampingi ibadah Anda di Tanah Suci."
                 }
               </p>

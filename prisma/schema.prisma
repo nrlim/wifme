@@ -144,7 +144,7 @@ model Activity {
   description String?
   price       Float
   location    String?
-  duration    String?
+  durationDays Int     @default(1)
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())

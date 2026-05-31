@@ -43,8 +43,15 @@ export async function PATCH(
       );
     }
 
-    // Update
+    // Complete booking and release escrow only after the trip is actually finished.
     if (status === "COMPLETED" && booking.status !== "COMPLETED") {
+      if (booking.paymentStatus !== "PAID") {
+        return NextResponse.json({ error: "Booking belum lunas sehingga dana escrow belum bisa dicairkan." }, { status: 422 });
+      }
+      if (booking.endDate > new Date()) {
+        return NextResponse.json({ error: "Perjalanan belum melewati tanggal selesai. Booking belum bisa ditandai selesai." }, { status: 422 });
+      }
+
       try {
         await settleEscrow(id);
       } catch (err: unknown) {

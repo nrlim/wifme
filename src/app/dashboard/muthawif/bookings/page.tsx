@@ -325,7 +325,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
               </p>
             </div>
           ) : (
-            <div style={{ background: "white", borderRadius: 16, border: "1px solid var(--border)", boxShadow: "0 4px 16px rgba(0,0,0,0.04)", overflow: "hidden" }}>
+            <div className="bm-list-container">
 
               {/* Table header */}
               <div className="bm-table-header" style={{
@@ -576,19 +576,50 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
       <MuthawifMobileNav currentTab="bookings" />
 
       <style>{`
+        .bm-list-container {
+          background: white;
+          border-radius: 16px;
+          border: 1px solid var(--border);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+          overflow: hidden;
+        }
         .bm-row-desktop:hover {
           background: var(--ivory) !important;
         }
         @media (max-width: 900px) {
+          .muthawif-dashboard .bm-list-container {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            overflow: visible !important;
+          }
+          .muthawif-dashboard {
+            height: 100dvh !important;
+            min-height: 100dvh !important;
+            overflow: hidden !important;
+          }
           .muthawif-dashboard .dashboard-sidebar-fixed { display: none !important; }
+          .muthawif-dashboard .dashboard-main-area {
+            height: 100dvh;
+            min-height: 100dvh;
+            overflow: hidden !important;
+            background: var(--ivory);
+          }
+          .muthawif-dashboard .dashboard-content-scroll {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch;
+            padding: 0.85rem 0.75rem calc(6.25rem + env(safe-area-inset-bottom)) !important;
+          }
           .muthawif-dashboard .bm-summary-stats { display: none !important; }
           .muthawif-dashboard .bm-card-wrap {
             border-bottom: none !important;
             border-radius: 12px;
             background: #fff;
             border: 1px solid rgba(0,0,0,0.08);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            margin-bottom: 0.75rem;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.045);
+            margin-bottom: 0.9rem;
             overflow: hidden;
             padding: 0 !important;
           }

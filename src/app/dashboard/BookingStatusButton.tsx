@@ -40,7 +40,7 @@ export default function BookingStatusButton({ bookingId, currentStatus, endDate 
     },
     CONFIRMED: isEndDatePassed
       ? {
-          label: "Tandai Selesai",
+          label: "Selesaikan & Cairkan Escrow",
           status: "COMPLETED",
           color: "#2563EB",
           bg: "#EFF6FF",
@@ -77,7 +77,7 @@ export default function BookingStatusButton({ bookingId, currentStatus, endDate 
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
         </svg>
-        Selesai: {endDateObj.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+        Bisa selesai: {endDateObj.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
       </div>
     );
   }
@@ -107,7 +107,7 @@ export default function BookingStatusButton({ bookingId, currentStatus, endDate 
   };
 
   return (
-    <div>
+    <div style={{ width: "100%" }}>
       <button
         onClick={handleClick}
         disabled={loading}
@@ -115,7 +115,9 @@ export default function BookingStatusButton({ bookingId, currentStatus, endDate 
         style={{
           display: "inline-flex",
           alignItems: "center",
+          justifyContent: "center",
           gap: "0.375rem",
+          width: "100%",
           padding: "0.3rem 0.75rem",
           borderRadius: 8,
           border: `1.5px solid ${next.color}`,
@@ -127,7 +129,9 @@ export default function BookingStatusButton({ bookingId, currentStatus, endDate 
           cursor: loading ? "not-allowed" : "pointer",
           opacity: loading ? 0.7 : 1,
           transition: "background 0.15s",
-          whiteSpace: "nowrap",
+          whiteSpace: "normal",
+          lineHeight: 1.2,
+          textAlign: "center",
         }}
         onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = next.bg; }}
         onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = "white"; }}

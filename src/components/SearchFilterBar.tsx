@@ -3,13 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const LOCATIONS = [
-  { value: "ALL", label: "Semua Lokasi" },
-  { value: "MAKKAH", label: "Makkah" },
-  { value: "MADINAH", label: "Madinah" },
-  { value: "BOTH", label: "Makkah & Madinah" },
-];
-
 interface SearchFilterBarProps {
   startDate?: string;
   duration?: string;
@@ -17,12 +10,6 @@ interface SearchFilterBarProps {
   supportedLocations?: string[];
   forceOpen?: boolean;
 }
-
-const DEFAULT_LOC_LABELS: Record<string, string> = {
-  ALL: "Semua Lokasi",
-  MAKKAH: "Makkah",
-  MADINAH: "Madinah",
-};
 
 export default function SearchFilterBar({
   startDate,
@@ -37,9 +24,10 @@ export default function SearchFilterBar({
 
   const [isEditing, setIsEditing] = useState(forceOpen);
   const [loading, setLoading] = useState(false);
+  const locationOptions = ["ALL", ...supportedLocations.filter((loc) => loc.trim().length > 0)];
+
   const [form, setForm] = useState({
     startDate: startDate || "",
-    duration: duration || "7",
     location: location || "ALL",
   });
 
@@ -49,17 +37,15 @@ export default function SearchFilterBar({
     setIsEditing(false);
     setForm({
       startDate: startDate || "",
-      duration: duration || "7",
       location: location || "ALL",
     });
-  }, [startDate, duration, location]);
+  }, [startDate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     const params = new URLSearchParams({
       startDate: form.startDate,
-      duration: form.duration,
       location: form.location,
     });
     router.push(`/search?${params.toString()}`);
@@ -90,7 +76,7 @@ export default function SearchFilterBar({
   };
 
   /* ── Active filter chips (read-only display) ── */
-  const chipCount = [startDate, duration, location && location !== "ALL"].filter(Boolean).length;
+  const chipCount = [startDate, location && location !== "ALL"].filter(Boolean).length;
 
   return (
     <>
@@ -114,17 +100,6 @@ export default function SearchFilterBar({
               <div style={chipValueStyle}>
                 {new Date(startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
               </div>
-            </div>
-          </div>
-        )}
-        {duration && (
-          <div style={chipStyle}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
-              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-            </svg>
-            <div>
-              <div style={chipLabelStyle}>Durasi</div>
-              <div style={chipValueStyle}>{duration} Hari</div>
             </div>
           </div>
         )}
@@ -225,7 +200,7 @@ export default function SearchFilterBar({
               </div>
               <div>
                 <div style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--charcoal)" }}>Ubah Kriteria Pencarian</div>
-                <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Perbarui tanggal, durasi, atau lokasi</div>
+                <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Perbarui tanggal keberangkatan atau lokasi</div>
               </div>
             </div>
 
@@ -247,23 +222,6 @@ export default function SearchFilterBar({
                 />
               </div>
 
-              {/* Duration */}
-              <div>
-                <label htmlFor="sfb-duration" style={labelBase}>⏱ Durasi (Hari)</label>
-                <input
-                  id="sfb-duration"
-                  type="number"
-                  min="1"
-                  max="60"
-                  placeholder="7"
-                  value={form.duration}
-                  onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                  required
-                  style={inputBase}
-                  onFocus={(e) => { e.target.style.borderColor = "var(--emerald)"; e.target.style.boxShadow = "0 0 0 3px rgba(27,107,74,0.1)"; }}
-                  onBlur={(e) => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
-                />
-              </div>
 
               {/* Location */}
               <div>
@@ -284,8 +242,8 @@ export default function SearchFilterBar({
                   onFocus={(e) => { e.target.style.borderColor = "var(--emerald)"; e.target.style.boxShadow = "0 0 0 3px rgba(27,107,74,0.1)"; }}
                   onBlur={(e) => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
                 >
-                  {LOCATIONS.map((loc) => (
-                    <option key={loc.value} value={loc.value}>{loc.label}</option>
+                  {locationOptions.map((loc) => (
+                    <option key={loc} value={loc}>{loc === "ALL" ? "Semua Lokasi" : loc}</option>
                   ))}
                 </select>
               </div>

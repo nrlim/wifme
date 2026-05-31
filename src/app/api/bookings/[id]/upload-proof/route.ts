@@ -50,6 +50,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data: {
         paymentProofUrl: proofUrl,
         paymentStatus: "PAYMENT_REVIEW",
+        status: "PAYMENT_REVIEW",
+        paymentRejectedReason: null,
       },
     });
 

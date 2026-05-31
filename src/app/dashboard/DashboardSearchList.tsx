@@ -26,11 +26,11 @@ interface Muthawif {
 interface Props {
   muthawifs: Muthawif[];
   startDate: string;
-  duration: string;
+  location?: string;
   feeConfig?: FeeConfig;
 }
 
-export default function DashboardSearchList({ muthawifs, startDate, duration, feeConfig }: Props) {
+export default function DashboardSearchList({ muthawifs, startDate, location, feeConfig }: Props) {
   const [selectedMuthawif, setSelectedMuthawif] = useState<Muthawif | null>(null);
 
   if (muthawifs.length === 0) {
@@ -57,7 +57,7 @@ export default function DashboardSearchList({ muthawifs, startDate, duration, fe
           Muthawif Tidak Tersedia
         </h3>
         <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", maxWidth: 320, margin: "0 auto" }}>
-          Tidak ada muthawif yang tersedia untuk jadwal tersebut. Coba ubah tanggal atau durasi.
+          Tidak ada Muthawif yang tersedia untuk tanggal dan lokasi tersebut. Coba ubah filter pencarian.
         </p>
       </div>
     );
@@ -82,7 +82,7 @@ export default function DashboardSearchList({ muthawifs, startDate, duration, fe
           background: "var(--ivory-dark)", padding: "0.25rem 0.75rem",
           borderRadius: 99, border: "1px solid var(--border)", fontWeight: 600,
         }}>
-          Durasi: {duration} hari
+          {location && location !== "ALL" ? `Lokasi: ${location === "BOTH" ? "Makkah & Madinah" : location}` : "Semua Lokasi"}
         </span>
       </div>
 
@@ -97,7 +97,6 @@ export default function DashboardSearchList({ muthawifs, startDate, duration, fe
             key={m.id}
             muthawif={m}
             startDate={startDate}
-            duration={duration}
             isLoggedIn={true}
             dashboardHref="/dashboard?tab=beranda"
             searchLocation="ALL"

@@ -153,7 +153,24 @@ export async function internalSettleEscrow(bookingId: string) {
     });
 
     if (!booking) throw new Error('Booking not found');
-    if (booking.status === 'COMPLETED') throw new Error('Already completed and settled');
+    if (booking.paymentStatus !== 'PAID') throw new Error('Booking payment is not paid');
+    if (booking.endDate > new Date()) throw new Error('Booking end date has not passed');
+
+    const existingSettlement = await tx.transaction.findFirst({
+      where: {
+        bookingId: booking.id,
+        type: 'ESCROW_SETTLEMENT',
+        status: 'SUCCESS',
+      },
+      select: { id: true },
+    });
+
+    if (existingSettlement) {
+      if (booking.status !== 'COMPLETED') {
+        await tx.booking.update({ where: { id: bookingId }, data: { status: 'COMPLETED' } });
+      }
+      return { success: true, alreadySettled: true };
+    }
 
     // Cari transaksi escrow-nya
     const escrowTx = await tx.transaction.findFirst({

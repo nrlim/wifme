@@ -69,6 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         where: { id },
         data: {
           paymentStatus: "UNPAID",
+          status: "PENDING",
           paymentProofUrl: null,
           paymentRejectedReason: "Bukti pembayaran tidak valid atau dana belum masuk.",
         },

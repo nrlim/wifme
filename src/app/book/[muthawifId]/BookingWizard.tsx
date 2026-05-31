@@ -28,8 +28,8 @@ interface Props {
   activities: Activity[];
   bundles: BundleType[];
   feeConfig: FeeConfig;
-  availabilities?: any[];
-  bookedItems?: any[];
+  availabilities?: unknown[];
+  bookedItems?: unknown[];
   onClose?: () => void;
 }
 
@@ -67,6 +67,17 @@ const formatBookingDate = (value: string) =>
 const MONTH_NAMES_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 const DAY_SHORT_ID = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
+const formatDurationDays = (days: number) => `${days} hari`;
+
+const getBundleDurationDays = (bundle: BundleType) =>
+  bundle.items.reduce((sum, item) => sum + item.activity.durationDays, 0);
+
+const addDaysToDateInput = (value: string, days: number) => {
+  const date = new Date(`${value}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split("T")[0];
+};
+
 export default function BookingWizard({
   muthawifId,
   muthawifName,
@@ -85,9 +96,7 @@ export default function BookingWizard({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedBundleId, setSelectedBundleId] = useState<string | null>(null);
 
-  const [activityDates, setActivityDates] = useState<Record<string, string>>({});
-  const [activityTimes, setActivityTimes] = useState<Record<string, string>>({});
-  const [calendarMonths, setCalendarMonths] = useState<Record<string, { month: number; year: number }>>({});
+  const [startDate, setStartDate] = useState("");
   const [notes, setNotes] = useState("");
   const [voucher, setVoucher] = useState<PromoSelection | null>(null);
   const [error, setError] = useState("");
@@ -106,9 +115,10 @@ export default function BookingWizard({
     return selectedActivities.reduce((sum, activity) => sum + activity.price, 0);
   }, [selectedActivities, selectedBundle]);
 
-  const duration = selectedActivities.length;
-  const serviceFee = calcServiceFee(basePrice, duration, feeConfig);
-  const subtotal = calcTotalWithFee(basePrice, duration, feeConfig);
+  const durationDays = selectedActivities.reduce((sum, activity) => sum + activity.durationDays, 0);
+  const serviceFee = calcServiceFee(basePrice, 1, feeConfig);
+  const subtotal = calcTotalWithFee(basePrice, 1, feeConfig);
+  const endDate = startDate && durationDays > 0 ? addDaysToDateInput(startDate, durationDays) : "";
 
   const discountAmt = (() => {
     if (!voucher) return 0;
@@ -125,7 +135,6 @@ export default function BookingWizard({
     if (selectedBundleId) {
       setSelectedBundleId(null);
       setSelectedIds(new Set([id]));
-      setActivityDates({});
       setError("");
       return;
     }
@@ -133,9 +142,7 @@ export default function BookingWizard({
     const newSet = new Set(selectedIds);
     if (newSet.has(id)) {
       newSet.delete(id);
-      const newDates = { ...activityDates };
-      delete newDates[id];
-      setActivityDates(newDates);
+      setVoucher(null);
     } else {
       newSet.add(id);
     }
@@ -146,24 +153,9 @@ export default function BookingWizard({
   const selectBundle = (bundle: BundleType) => {
     setSelectedBundleId(bundle.id);
     setSelectedIds(new Set(bundle.items.map((item) => item.activityId)));
-    setActivityDates({});
     setError("");
   };
 
-  const setDateForActivity = (id: string, date: string) => {
-    setActivityDates((prev) => ({ ...prev, [id]: date }));
-    setActivityTimes((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    setError("");
-  };
-
-  const setTimeForActivity = (id: string, time: string) => {
-    setActivityTimes((prev) => ({ ...prev, [id]: time }));
-    setError("");
-  };
 
   const handleNext = () => {
     if (step === 1) {
@@ -177,25 +169,12 @@ export default function BookingWizard({
     }
 
     if (step === 2) {
-      const missing = Array.from(selectedIds).filter((id) => !activityDates[id]);
-      if (missing.length > 0) {
-        setError("Lengkapi semua tanggal kegiatan sebelum melanjutkan.");
+      if (!startDate) {
+        setError("Pilih tanggal keberangkatan sebelum melanjutkan.");
         return;
       }
-
-      const datesSet = new Set<string>();
-      for (const id of selectedIds) {
-        const selectedDate = activityDates[id];
-        if (datesSet.has(selectedDate)) {
-          setError(`Tanggal ${selectedDate} dipilih lebih dari satu kali. Setiap tanggal hanya boleh 1 kegiatan.`);
-          return;
-        }
-        datesSet.add(selectedDate);
-      }
-
-      const missingTimes = Array.from(selectedIds).filter((id) => !activityTimes[id]);
-      if (missingTimes.length > 0) {
-        setError("Silakan pilih jam layanan untuk semua tanggal yang telah ditentukan.");
+      if (startDate < todayStr) {
+        setError("Tanggal keberangkatan tidak boleh di masa lalu.");
         return;
       }
 
@@ -223,9 +202,6 @@ export default function BookingWizard({
 
     const items = selectedActivities.map((activity) => ({
       activityId: activity.id,
-      date: new Date(activityDates[activity.id]).toISOString(),
-      timeSlot: activityTimes[activity.id],
-      price: activity.price,
     }));
 
     startTransition(async () => {
@@ -235,6 +211,7 @@ export default function BookingWizard({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             muthawifId,
+            startDate,
             items,
             notes,
             bundleId: selectedBundleId,
@@ -336,9 +313,7 @@ export default function BookingWizard({
                             {activity.location && (
                               <span><MapPin size={13} />{activity.location === "BOTH" ? "Makkah & Madinah" : activity.location}</span>
                             )}
-                            {activity.duration && (
-                              <span><Clock size={13} />{activity.duration}</span>
-                            )}
+                            <span><Clock size={13} />{formatDurationDays(activity.durationDays)}</span>
                           </span>
                         </span>
                         {isSelected && <CheckCircle2 className="selected-check" size={20} />}
@@ -368,9 +343,12 @@ export default function BookingWizard({
                             <b>{formatCurrency(bundle.price)}</b>
                           </span>
                           <span className="option-description">{bundle.description}</span>
+                          <span className="option-meta-row">
+                            <span><Clock size={13} />{formatDurationDays(getBundleDurationDays(bundle))}</span>
+                          </span>
                           <span className="bundle-mini-list">
                             {bundle.items.map((item, itemIndex) => (
-                              <span key={item.id}><i>{itemIndex + 1}</i>{item.activity.name}</span>
+                              <span key={item.id}><i>{itemIndex + 1}</i>{item.activity.name} · {formatDurationDays(item.activity.durationDays)}</span>
                             ))}
                           </span>
                         </span>
@@ -401,7 +379,7 @@ export default function BookingWizard({
                         <span className="mini-timeline-dot">{index + 1}</span>
                         <div>
                           <strong>{activity.name}</strong>
-                          <span>{activity.location === "BOTH" ? "Makkah & Madinah" : activity.location || "Lokasi menyesuaikan"}</span>
+                          <span>{activity.location === "BOTH" ? "Makkah & Madinah" : activity.location || "Lokasi menyesuaikan"} · {formatDurationDays(activity.durationDays)}</span>
                         </div>
                       </div>
                     ))}
@@ -425,201 +403,44 @@ export default function BookingWizard({
           <motion.section key="step2" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}>
             <div className="section-heading">
               <span className="section-kicker">Langkah 2</span>
-              <h2>Atur Jadwal</h2>
-              <p>Pilih tanggal yang tersedia dari jadwal Muthawif untuk setiap kegiatan. Tanggal yang tidak memiliki jadwal tidak dapat dipilih.</p>
+              <h2>Tentukan Tanggal Keberangkatan</h2>
+              <p>Jamaah cukup memilih tanggal mulai. Sistem otomatis menghitung tanggal selesai dari total durasi hari kegiatan yang dipilih.</p>
             </div>
 
             <div className="panel-card schedule-panel">
-              <div className="schedule-list">
-                {selectedActivities.map((activity, index) => {
-                  const today = new Date();
-                  const defMonth = today.getMonth();
-                  const defYear = today.getFullYear();
-                  const calMo = calendarMonths[activity.id]?.month ?? defMonth;
-                  const calYr = calendarMonths[activity.id]?.year ?? defYear;
+              <div className="single-date-card">
+                <div className="single-date-icon">
+                  <Calendar size={24} />
+                </div>
+                <div className="single-date-content">
+                  <label htmlFor="booking-start-date-input">Tanggal Keberangkatan</label>
+                  <input
+                    id="booking-start-date-input"
+                    type="date"
+                    min={todayStr}
+                    value={startDate}
+                    onChange={(event) => { setStartDate(event.target.value); setError(""); }}
+                    className="single-date-input"
+                  />
+                  <div className="single-date-summary">
+                    <span>Total durasi: <strong>{formatDurationDays(durationDays)}</strong></span>
+                    {endDate && <span>Selesai otomatis: <strong>{formatBookingDate(endDate)}</strong></span>}
+                  </div>
+                </div>
+              </div>
 
-                  // Build availability lookup
-                  const availMap = new Map<string, { status: string; timeSlots: string[] }>();
-                  (availabilities ?? []).forEach(a => {
-                    const key = new Date(a.date).toISOString().split('T')[0];
-                    availMap.set(key, { status: a.status, timeSlots: a.timeSlots ?? [] });
-                  });
-
-                  const bookedMap = new Map<string, string[]>();
-                  (bookedItems ?? []).forEach(b => {
-                    const key = new Date(b.date).toISOString().split('T')[0];
-                    if (!bookedMap.has(key)) bookedMap.set(key, []);
-                    if (b.timeSlot) bookedMap.get(key)!.push(b.timeSlot);
-                  });
-
-                  const daysInMonth = new Date(calYr, calMo + 1, 0).getDate();
-                  const firstDay = new Date(calYr, calMo, 1).getDay();
-                  const cells: (number | null)[] = [
-                    ...Array(firstDay).fill(null),
-                    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-                  ];
-                  while (cells.length % 7) cells.push(null);
-
-                  const getDateStr = (d: number) => `${calYr}-${String(calMo + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                  const todayKey = today.toISOString().split('T')[0];
-                  const selectedDate = activityDates[activity.id] || '';
-
-                  const navPrev = () => {
-                    const nm = calMo === 0 ? 11 : calMo - 1;
-                    const ny = calMo === 0 ? calYr - 1 : calYr;
-                    setCalendarMonths(p => ({ ...p, [activity.id]: { month: nm, year: ny } }));
-                  };
-                  const navNext = () => {
-                    const nm = calMo === 11 ? 0 : calMo + 1;
-                    const ny = calMo === 11 ? calYr + 1 : calYr;
-                    setCalendarMonths(p => ({ ...p, [activity.id]: { month: nm, year: ny } }));
-                  };
-
-                  const selectedAvail = selectedDate ? availMap.get(selectedDate) : null;
-                  const selectedBookedTimes = selectedDate ? (bookedMap.get(selectedDate) ?? []) : [];
-
-                  return (
-                    <div key={activity.id} className="schedule-card">
-                      <div className="schedule-index">{index + 1}</div>
-                      <div className="schedule-content">
-                        <div className="schedule-header-row">
-                          <h3>{activity.name}</h3>
-                          {selectedDate && (
-                            <button
-                              type="button"
-                              className="reset-date-btn"
-                              onClick={() => setDateForActivity(activity.id, "")}
-                              aria-label="Hapus tanggal"
-                            >
-                              Reset
-                            </button>
-                          )}
-                        </div>
-
-                        {/* ── Calendar + Time Slot side-by-side ── */}
-                        <div className="cal-time-row">
-                          {/* Calendar */}
-                          <div className="avail-mini-cal">
-                            <div className="avail-mini-nav">
-                              <button type="button" onClick={navPrev} className="avail-mini-nav-btn" aria-label="Bulan sebelumnya">
-                                <ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />
-                              </button>
-                              <span className="avail-mini-month">{MONTH_NAMES_ID[calMo]} {calYr}</span>
-                              <button type="button" onClick={navNext} className="avail-mini-nav-btn" aria-label="Bulan berikutnya">
-                                <ChevronRight size={14} />
-                              </button>
-                            </div>
-
-                            <div className="avail-mini-grid">
-                              {DAY_SHORT_ID.map(d => (
-                                <div key={d} className="avail-mini-day-label">{d}</div>
-                              ))}
-                              {cells.map((day, ci) => {
-                                if (!day) return <div key={`e-${ci}`} />;
-                                const dateStr = getDateStr(day);
-                                const isPast = dateStr < todayKey;
-                                const avail = availMap.get(dateStr);
-                                const isAvailable = !isPast && avail?.status === 'AVAILABLE' && (avail.timeSlots?.length ?? 0) > 0;
-                                const isOff = avail?.status === 'OFF';
-                                const isBooked = avail?.status === 'BOOKED';
-                                const isSelected = dateStr === selectedDate;
-                                const bookedTimesOnDay = bookedMap.get(dateStr) ?? [];
-                                const allSlotsFull = isAvailable && avail!.timeSlots.every((t: string) => bookedTimesOnDay.includes(t));
-                                // Disable if this date is already picked by another activity
-                                const usedByOther = Array.from(selectedIds)
-                                  .filter(sid => sid !== activity.id)
-                                  .some(sid => activityDates[sid] === dateStr);
-                                const canSelect = isAvailable && !allSlotsFull && !usedByOther;
-
-                                let cellClass = 'avail-mini-cell';
-                                if (isSelected) cellClass += ' selected';
-                                else if (usedByOther) cellClass += ' used-by-other';
-                                else if (canSelect) cellClass += ' available';
-                                else if (isOff) cellClass += ' off';
-                                else if (isBooked || allSlotsFull) cellClass += ' full';
-                                else cellClass += ' unavail';
-
-                                return (
-                                  <button
-                                    key={dateStr}
-                                    type="button"
-                                    disabled={!canSelect && !isSelected}
-                                    className={cellClass}
-                                    onClick={() => canSelect && setDateForActivity(activity.id, dateStr)}
-                                    aria-label={`${day} ${MONTH_NAMES_ID[calMo]}${usedByOther ? ' (dipakai kegiatan lain)' : ''}`}
-                                    aria-pressed={isSelected}
-                                  >
-                                    {day}
-                                    {(isOff || isBooked || allSlotsFull) && <span className="avail-mini-dot off-dot" />}
-                                    {canSelect && !isSelected && <span className="avail-mini-dot avail-dot" />}
-                                  </button>
-                                );
-                              })}
-                            </div>
-
-                            {/* Legend */}
-                            <div className="avail-mini-legend">
-                              <span className="legend-item"><span className="legend-dot avail" />Tersedia</span>
-                              <span className="legend-item"><span className="legend-dot off" />Libur / Penuh</span>
-                              <span className="legend-item"><span className="legend-dot unavail" />Belum diatur</span>
-                              <span className="legend-item"><span className="legend-dot used" />Dipakai</span>
-                            </div>
-                          </div>
-
-                          {/* ── Time Slot Picker (right side) ── */}
-                          {selectedDate && (() => {
-                            if (!selectedAvail || selectedAvail.status !== 'AVAILABLE') return null;
-                            if (!selectedAvail.timeSlots || selectedAvail.timeSlots.length === 0) {
-                              return (
-                                <div className="time-slot-panel">
-                                  <p className="time-slot-label"><Clock size={12} />Jam Layanan</p>
-                                  <p style={{ fontSize: '0.82rem', color: C.muted, fontStyle: 'italic' }}>
-                                    Muthawif tersedia namun belum menentukan jam layanan spesifik.
-                                  </p>
-                                </div>
-                              );
-                            }
-                            const allFull = selectedAvail.timeSlots.every((t: string) => selectedBookedTimes.includes(t));
-                            if (allFull) {
-                              return (
-                                <div className="time-slot-panel">
-                                  <p className="time-slot-label"><Clock size={12} />Jam Layanan</p>
-                                  <p style={{ fontSize: '0.82rem', color: C.error, fontWeight: 600 }}>
-                                    Semua jam pada tanggal ini sudah penuh.
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return (
-                              <div className="time-slot-panel">
-                                <p className="time-slot-label"><Clock size={12} />Pilih Jam</p>
-                                <div className="time-chips">
-                                  {(selectedAvail.timeSlots as string[]).map((time: string) => {
-                                    const isTimBooked = selectedBookedTimes.includes(time);
-                                    const isTimSelected = activityTimes[activity.id] === time;
-                                    return (
-                                      <button
-                                        key={time}
-                                        type="button"
-                                        disabled={isTimBooked}
-                                        className={`time-chip ${isTimSelected ? 'active' : ''} ${isTimBooked ? 'booked' : ''}`}
-                                        onClick={() => !isTimBooked && setTimeForActivity(activity.id, time)}
-                                        aria-label={`Jam ${time}${isTimBooked ? ' (Penuh)' : ''}`}
-                                      >
-                                        {time}
-                                        {isTimBooked && <span className="time-chip-badge">Penuh</span>}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      </div>
+              <div className="duration-breakdown">
+                <div className="panel-label">Rincian Durasi Kegiatan</div>
+                {selectedActivities.map((activity, index) => (
+                  <div key={activity.id} className="duration-row">
+                    <span className="timeline-number">{index + 1}</span>
+                    <div>
+                      <strong>{activity.name}</strong>
+                      <p>{activity.location === "BOTH" ? "Makkah & Madinah" : activity.location || "Lokasi menyesuaikan"}</p>
                     </div>
-                  );
-                })}
+                    <b>{formatDurationDays(activity.durationDays)}</b>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.section>
@@ -635,20 +456,32 @@ export default function BookingWizard({
 
             <div className="confirmation-grid">
               <div className="panel-card">
-                <div className="panel-label">Jadwal Kegiatan</div>
+                <div className="panel-label">Jadwal Perjalanan</div>
+                <div className="trip-window-card">
+                  <div>
+                    <span>Mulai</span>
+                    <strong>{formatBookingDate(startDate)}</strong>
+                  </div>
+                  <div>
+                    <span>Selesai</span>
+                    <strong>{formatBookingDate(endDate)}</strong>
+                  </div>
+                  <div>
+                    <span>Total Durasi</span>
+                    <strong>{formatDurationDays(durationDays)}</strong>
+                  </div>
+                </div>
                 <div className="confirmation-timeline">
-                  {[...selectedActivities]
-                    .sort((a, b) => activityDates[a.id].localeCompare(activityDates[b.id]))
-                    .map((activity, index) => (
-                      <div key={activity.id} className="confirmation-row">
-                        <span className="timeline-number">{index + 1}</span>
-                        <div>
-                          <h3>{activity.name}</h3>
-                          <p>{formatBookingDate(activityDates[activity.id])} • {activityTimes[activity.id]}</p>
-                        </div>
-                        {!selectedBundleId && <strong>{formatCurrency(activity.price)}</strong>}
+                  {selectedActivities.map((activity, index) => (
+                    <div key={activity.id} className="confirmation-row">
+                      <span className="timeline-number">{index + 1}</span>
+                      <div>
+                        <h3>{activity.name}</h3>
+                        <p>{formatDurationDays(activity.durationDays)}</p>
                       </div>
-                    ))}
+                      {!selectedBundleId && <strong>{formatCurrency(activity.price)}</strong>}
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -662,7 +495,7 @@ export default function BookingWizard({
                     </div>
                   ) : (
                     <div className="cost-row">
-                      <span>Subtotal ({duration} kegiatan)</span>
+                      <span>Subtotal ({selectedActivities.length} kegiatan)</span>
                       <strong>{formatCurrency(basePrice)}</strong>
                     </div>
                   )}
@@ -1014,6 +847,108 @@ export default function BookingWizard({
         .schedule-panel {
           padding: 1rem 1.1rem;
           margin-bottom: 1rem;
+        }
+        .single-date-card {
+          display: flex;
+          gap: 1rem;
+          align-items: flex-start;
+          padding: 1rem;
+          border: 1px solid ${C.border};
+          border-radius: 18px;
+          background: ${C.ivory};
+          margin-bottom: 1rem;
+        }
+        .single-date-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          background: linear-gradient(135deg, ${C.emerald}, ${C.emeraldLight});
+          flex-shrink: 0;
+        }
+        .single-date-content {
+          flex: 1;
+          min-width: 0;
+        }
+        .single-date-content label {
+          display: block;
+          font-size: 0.78rem;
+          font-weight: 900;
+          color: ${C.charcoal};
+          margin-bottom: 0.45rem;
+        }
+        .single-date-input {
+          width: 100%;
+          min-height: 46px;
+          border: 1px solid ${C.border};
+          border-radius: 12px;
+          padding: 0 0.9rem;
+          font: inherit;
+          font-weight: 700;
+          color: ${C.charcoal};
+          background: white;
+        }
+        .single-date-summary {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem 1rem;
+          margin-top: 0.75rem;
+          color: ${C.muted};
+          font-size: 0.84rem;
+        }
+        .single-date-summary strong {
+          color: ${C.emerald};
+        }
+        .duration-breakdown {
+          display: flex;
+          flex-direction: column;
+          gap: 0.65rem;
+        }
+        .duration-row {
+          display: grid;
+          grid-template-columns: auto 1fr auto;
+          gap: 0.75rem;
+          align-items: center;
+          padding: 0.85rem;
+          border: 1px solid ${C.border};
+          border-radius: 14px;
+          background: white;
+        }
+        .duration-row strong,
+        .duration-row b {
+          color: ${C.charcoal};
+          font-size: 0.92rem;
+        }
+        .duration-row p {
+          margin: 0.15rem 0 0;
+          color: ${C.muted};
+          font-size: 0.78rem;
+        }
+        .trip-window-card {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.7rem;
+          margin-bottom: 1rem;
+        }
+        .trip-window-card div {
+          border: 1px solid ${C.border};
+          border-radius: 14px;
+          padding: 0.85rem;
+          background: ${C.ivory};
+        }
+        .trip-window-card span {
+          display: block;
+          color: ${C.muted};
+          font-size: 0.72rem;
+          font-weight: 800;
+          margin-bottom: 0.35rem;
+        }
+        .trip-window-card strong {
+          color: ${C.charcoal};
+          font-size: 0.88rem;
         }
         .schedule-card {
           display: grid;

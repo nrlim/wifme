@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { z } from "zod";
+
+const activityUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(120).optional(),
+  description: z.string().trim().max(1000).optional().nullable(),
+  price: z.coerce.number().finite().min(0).max(1_000_000_000).optional(),
+  location: z.enum(["MAKKAH", "MADINAH", "BOTH"]).optional().nullable().or(z.literal("")),
+  durationDays: z.coerce.number().int().min(1).max(60).optional(),
+  sortOrder: z.coerce.number().int().min(0).max(100_000).optional(),
+  isActive: z.boolean().optional(),
+});
 
 export async function PUT(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   try {
@@ -10,18 +21,22 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
     }
 
     const { id } = await props.params;
-    const body = await request.json();
-    const { name, description, price, location, duration, sortOrder, isActive } = body;
+    const rawBody: unknown = await request.json();
+    const parsed = activityUpdateSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Data kegiatan tidak valid." }, { status: 400 });
+    }
+    const { name, description, price, location, durationDays, sortOrder, isActive } = parsed.data;
 
     const activity = await prisma.activity.update({
       where: { id },
       data: {
         ...(name !== undefined && { name: String(name).trim() }),
         ...(description !== undefined && { description: description ? String(description).trim() : null }),
-        ...(price !== undefined && { price: Number(price) }),
-        ...(location !== undefined && { location: location ? String(location).trim() : null }),
-        ...(duration !== undefined && { duration: duration ? String(duration).trim() : null }),
-        ...(sortOrder !== undefined && { sortOrder: Number(sortOrder) }),
+        ...(price !== undefined && { price: Math.round(price) }),
+        ...(location !== undefined && { location: location ? location : null }),
+        ...(durationDays !== undefined && { durationDays }),
+        ...(sortOrder !== undefined && { sortOrder }),
         ...(isActive !== undefined && { isActive: Boolean(isActive) }),
       },
     });

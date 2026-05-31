@@ -31,7 +31,7 @@ export default function ActivityManagement({ initialActivities, initialBundles }
   const [actDesc, setActDesc] = useState("");
   const [actPrice, setActPrice] = useState("");
   const [actLocation, setActLocation] = useState("");
-  const [actDuration, setActDuration] = useState("");
+  const [actDurationDays, setActDurationDays] = useState("1");
   const [actIsActive, setActIsActive] = useState(true);
   const [isReorderingAct, setIsReorderingAct] = useState(false);
   const [hasReorderedAct, setHasReorderedAct] = useState(false);
@@ -76,16 +76,22 @@ export default function ActivityManagement({ initialActivities, initialBundles }
   const totalBundlePages = Math.max(1, Math.ceil(totalBundleItems / BUNDLE_PAGE_SIZE));
   const safeBundlePage = Math.min(Math.max(1, currentBundlePage), totalBundlePages);
   const paginatedBundles = bundles.slice((safeBundlePage - 1) * BUNDLE_PAGE_SIZE, safeBundlePage * BUNDLE_PAGE_SIZE);
+  const selectedBundleDurationDays = activities
+    .filter((activity) => bundleActivityIds.includes(activity.id))
+    .reduce((sum, activity) => sum + activity.durationDays, 0);
+
+  const getBundleDurationDays = (bundle: BundleType) =>
+    bundle.items.reduce((sum, item) => sum + item.activity.durationDays, 0);
 
   // == HANDLERS UNTUK KEGIATAN ==
   const resetActForm = () => {
-    setActName(""); setActDesc(""); setActPrice(""); setActLocation(""); setActDuration("");
+    setActName(""); setActDesc(""); setActPrice(""); setActLocation(""); setActDurationDays("1");
     setActIsActive(true); setActEditingId(null);
   };
 
   const handleEditAct = (act: Activity) => {
     setActName(act.name); setActDesc(act.description || ""); setActPrice(act.price.toString());
-    setActLocation(act.location || ""); setActDuration(act.duration || "");
+    setActLocation(act.location || ""); setActDurationDays(act.durationDays.toString());
     setActIsActive(act.isActive);
     setActEditingId(act.id); setShowActModal(true);
   };
@@ -95,7 +101,7 @@ export default function ActivityManagement({ initialActivities, initialBundles }
     setIsSavingAct(true);
     const payload = {
       name: actName, description: actDesc, price: Number(actPrice),
-      location: actLocation, duration: actDuration, isActive: actIsActive
+      location: actLocation, durationDays: Number(actDurationDays), isActive: actIsActive
     };
     try {
       const url = actEditingId ? `/api/activities/${actEditingId}` : `/api/activities`;
@@ -330,7 +336,7 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                         <div className="am-row-body">
                           <div className="am-row-name">{act.name}</div>
                           <div className="am-row-meta">
-                            <span className="am-row-chip"><Clock size={12} /> {act.duration || "\u2014"}</span>
+                            <span className="am-row-chip"><Clock size={12} /> {act.durationDays} hari</span>
                             <span className="am-row-chip"><MapPin size={12} /> {act.location === "BOTH" ? "Makkah & Madinah" : act.location || "\u2014"}</span>
                           </div>
                         </div>
@@ -447,6 +453,7 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                           <div className="am-row-name">{bdl.name}</div>
                           <div className="am-row-meta">
                             <span className="am-row-chip">{bdl.items.length} kegiatan</span>
+                            <span className="am-row-chip"><Clock size={12} /> {getBundleDurationDays(bdl)} hari</span>
                             {bdl.description && <span className="am-row-chip am-chip-desc">{bdl.description}</span>}
                           </div>
                         </div>
@@ -521,8 +528,8 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                 <div className="am-form-section-title">Detail Operasional</div>
                 <div className="am-field-row">
                   <div className="am-field">
-                    <label className="am-label">Estimasi Durasi</label>
-                    <input type="text" value={actDuration} onChange={e => setActDuration(e.target.value)} disabled={isSavingAct} placeholder="misal: 2 Jam" className="am-input" />
+                    <label className="am-label" htmlFor="activity-duration-days-input">Durasi Hari <span className="am-req">*</span></label>
+                    <input id="activity-duration-days-input" type="number" required min="1" max="60" value={actDurationDays} onChange={e => setActDurationDays(e.target.value)} disabled={isSavingAct} placeholder="1" className="am-input" />
                   </div>
                   <div className="am-field">
                     <label className="am-label">Wilayah Layanan</label>
@@ -613,7 +620,7 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                         <div className="am-checklist-meta">
                           <span>Rp {act.price.toLocaleString("id-ID")}</span>
                           <span className="am-checklist-sep">&middot;</span>
-                          <span>{act.duration || "Tanpa durasi"}</span>
+                          <span>{act.durationDays} hari</span>
                           <span className="am-checklist-sep">&middot;</span>
                           <span className="am-checklist-loc"><MapPin size={10} /> {act.location === "BOTH" ? "Makkah & Madinah" : act.location || "\u2014"}</span>
                         </div>
@@ -625,7 +632,7 @@ export default function ActivityManagement({ initialActivities, initialBundles }
                   )}
                 </div>
                 <div className="am-checklist-count">
-                  Terpilih: <strong>{bundleActivityIds.length}</strong> Kegiatan
+                  Terpilih: <strong>{bundleActivityIds.length}</strong> Kegiatan · Total Durasi: <strong>{selectedBundleDurationDays}</strong> hari
                 </div>
               </div>
 

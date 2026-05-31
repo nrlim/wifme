@@ -20,7 +20,6 @@ export default function SearchForm({ initialValues, supportedLocations = ["Makka
 
   const [form, setForm] = useState({
     startDate: initialValues?.startDate || "",
-    duration: initialValues?.duration || "7",
     location: initialValues?.location || "ALL"
   });
   const [loading, setLoading] = useState(false);
@@ -33,7 +32,7 @@ export default function SearchForm({ initialValues, supportedLocations = ["Makka
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const params = new URLSearchParams({ startDate: form.startDate, duration: form.duration, location: form.location });
+    const params = new URLSearchParams({ startDate: form.startDate, location: form.location });
     router.push(`/search?${params.toString()}`);
   };
 
@@ -93,7 +92,7 @@ export default function SearchForm({ initialValues, supportedLocations = ["Makka
       <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", marginBottom: "1rem" }}>
         <div>
           <label htmlFor="sf-date" style={labelStyle}>
-            📅 Tanggal Pelaksanaan
+            Tanggal Keberangkatan
           </label>
           <input
             id="sf-date"
@@ -108,29 +107,10 @@ export default function SearchForm({ initialValues, supportedLocations = ["Makka
           />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-          <div>
-            <label htmlFor="sf-duration" style={labelStyle}>
-              ⏱ Durasi (Hari)
-            </label>
-            <input
-              id="sf-duration"
-              type="number"
-              min="1"
-              max="60"
-              placeholder="7"
-              value={form.duration}
-              onChange={(e) => setForm({ ...form, duration: e.target.value })}
-              required
-              style={inputStyle}
-              onFocus={(e) => (e.target.style.borderColor = "#1B6B4A")}
-              onBlur={(e) => (e.target.style.borderColor = "rgba(0,0,0,0.12)")}
-            />
-          </div>
-
+        <div>
           <div>
             <label htmlFor="sf-location" style={labelStyle}>
-              📍 Lokasi
+              Lokasi
             </label>
             <select
               id="sf-location"
