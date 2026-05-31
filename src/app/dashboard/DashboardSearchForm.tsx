@@ -11,7 +11,6 @@ export default function DashboardSearchForm({
   initialLocation,
   initialSpecialization,
   initialLanguage,
-  initialDate,
   supportedLocations = ["Makkah", "Madinah"],
 }: {
   initialLocation?: string;
