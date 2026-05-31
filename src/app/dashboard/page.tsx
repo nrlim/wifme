@@ -30,7 +30,8 @@ import ActivityManagement from "@/components/admin/ActivityManagement";
 import TableToolbar from "@/components/TableToolbar";
 import Pagination from "@/components/Pagination";
 // Removed unused import
-import { BarChart3, Search, ClipboardList, Users, Banknote, Settings, Tag, MapPin, Briefcase, Languages, ListTodo, CreditCard, UserCog } from "lucide-react";
+import { BarChart3, Search, ClipboardList, Users, Banknote, Settings, Tag, MapPin, Briefcase, Languages, ListTodo, CreditCard, UserCog, Route } from "lucide-react";
+import BookingItineraryDashboard from "@/components/BookingItineraryDashboard";
 
 // Types corresponding to Next.js 15/16 App Router
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -82,6 +83,7 @@ type DashboardBooking = Prisma.BookingGetPayload<{
       };
     };
     review: { select: { id: true } };
+    items: { include: { activity: true } };
   };
 }>;
 
@@ -109,6 +111,7 @@ const TAB_TITLES: Record<string, string> = {
   master_bahasa: "Master Bahasa",
   simulator: "Simulator Pembayaran",
   kegiatan: "Katalog Kegiatan",
+  itinerary: "Itinerary Kegiatan",
 };
 
 async function getBookingsForUser(opts: {
@@ -154,6 +157,7 @@ async function getBookingsForUser(opts: {
         jamaah: { select: { name: true, email: true, whatsappNumber: true } },
         muthawif: { select: { id: true, name: true, photoUrl: true, whatsappNumber: true, profile: { select: { basePrice: true, operatingAreas: true, rating: true, totalReviews: true, experience: true, bio: true, specializations: true, languages: true } } } },
         review: { select: { id: true } },
+        items: { include: { activity: true } },
       },
       orderBy,
       skip,
@@ -226,8 +230,11 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
   const mStatus = typeof searchParams?.status === "string" ? searchParams.status : "ALL";
   const mPage = typeof searchParams?.page === "string" ? Math.max(1, parseInt(searchParams.page, 10) || 1) : 1;
 
-  const searchStartDate = typeof searchParams?.startDate === "string" ? searchParams.startDate : "";
   const searchLocation = typeof searchParams?.location === "string" ? searchParams.location : "";
+  const searchSpec = typeof searchParams?.specialization === "string" ? searchParams.specialization : "";
+  const searchLang = typeof searchParams?.language === "string" ? searchParams.language : "";
+
+  const itineraryBookingId = typeof searchParams?.bookingId === "string" ? searchParams.bookingId : undefined;
 
   const mSort = typeof searchParams?.sort === "string" ? searchParams.sort : "terbaru";
 
@@ -295,40 +302,28 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
     });
 
     // Native inline search for JAMAAH inside dashboard
-    if (currentTab === "cari" && session.role === "JAMAAH" && searchStartDate) {
-      const start = new Date(searchStartDate);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 1);
+    if (currentTab === "cari" && session.role === "JAMAAH") {
+      let whereQuery: any = {
+        verificationStatus: "VERIFIED",
+        isAvailable: true,
+      };
 
-      const locFilters = buildOperatingAreaFilter(searchLocation);
+      if (searchLocation && searchLocation !== "ALL") {
+        const normalized = searchLocation === "MAKKAH" ? "Makkah" : searchLocation === "MADINAH" ? "Madinah" : searchLocation;
+        whereQuery.operatingAreas = { has: normalized };
+      }
+
+      if (searchSpec && searchSpec !== "ALL") {
+        whereQuery.specializations = { has: searchSpec };
+      }
+
+      if (searchLang && searchLang !== "ALL") {
+        whereQuery.languages = { has: searchLang };
+      }
+
 
       foundMuthawifs = await prisma.muthawifProfile.findMany({
-        where: {
-          isAvailable: true,
-          verificationStatus: "VERIFIED",
-          ...locFilters,
-          // Exclude muthawifs who have an overlapping CONFIRMED/PENDING booking in this period
-          user: {
-            bookingsAsMuthawif: {
-              none: {
-                status: { in: ["PENDING", "PAYMENT_REVIEW", "CONFIRMED"] },
-                AND: [
-                  { startDate: { lt: end } },
-                  { endDate: { gt: start } },
-                ],
-              },
-            },
-          },
-          // Exclude muthawifs with explicit OFF/BOOKED availability records in this period
-          availability: {
-            none: {
-              AND: [
-                { status: { in: ["OFF", "BOOKED"] } },
-                { date: { gte: start, lt: end } },
-              ],
-            },
-          },
-        },
+        where: whereQuery,
         include: { user: { select: { id: true, name: true, photoUrl: true, email: true } } },
         orderBy: { rating: "desc" },
         take: 50,
@@ -627,6 +622,18 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                         ? { label: "Review", bg: "#EFF6FF", color: "#2563EB" }
                         : { label: "Belum", bg: "rgba(196,151,59,0.1)", color: "#92700A" };
 
+                    const computedStartDate = booking.items.length > 0
+                      ? booking.items.reduce((min, item) => item.date < min ? item.date : min, booking.items[0].date)
+                      : new Date();
+
+                    const computedEndDate = booking.items.length > 0
+                      ? booking.items.reduce((max, item) => {
+                          const itemEnd = new Date(item.date);
+                          itemEnd.setDate(itemEnd.getDate() + 1); // fallback duration
+                          return itemEnd > max ? itemEnd : max;
+                        }, new Date(0))
+                      : new Date();
+
                     return (
                       <div
                         key={booking.id}
@@ -675,7 +682,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                           </div>
                           {/* Tanggal */}
                           <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-body)" }}>
-                            {new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" })}
+                            {computedStartDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" })}
                           </div>
                           {/* Total + Bayar */}
                           <div>
@@ -711,7 +718,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                               <BookingStatusButton
                                 bookingId={booking.id}
                                 currentStatus={booking.status}
-                                endDate={booking.endDate.toISOString()}
+                                endDate={computedEndDate.toISOString()}
                               />
                             )}
                           </div>
@@ -733,7 +740,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                               <div style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--charcoal)" }}>{booking.jamaah.name}</div>
                               <div style={{ fontSize: "0.75rem", color: "var(--emerald)", fontWeight: 600 }}>→ {booking.muthawif.name}</div>
                               <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                                {new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} · {location === "BOTH" ? "Makkah & Madinah" : location}
+                                {computedStartDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} · {location === "BOTH" ? "Makkah & Madinah" : location}
                               </div>
                             </div>
                             <div style={{ textAlign: "right" }}>
@@ -754,7 +761,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                               <BookingStatusButton
                                 bookingId={booking.id}
                                 currentStatus={booking.status}
-                                endDate={booking.endDate.toISOString()}
+                                endDate={computedEndDate.toISOString()}
                               />
                             )}
                           </div>
@@ -827,8 +834,18 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
               const location = booking.muthawif.profile?.operatingAreas?.join(", ") || "";
               const initials = booking.muthawif.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
               const shortId = booking.id.includes("-") ? booking.id.split("-")[0].toUpperCase() : booking.id.slice(0, 8).toUpperCase();
-              const startDate = new Date(booking.startDate);
-              const duration = Math.max(1, Math.round((new Date(booking.endDate).getTime() - startDate.getTime()) / 86400000));
+              const computedStartDate = booking.items.length > 0
+                ? booking.items.reduce((min, item) => item.date < min ? item.date : min, booking.items[0].date)
+                : new Date();
+              const computedEndDate = booking.items.length > 0
+                ? booking.items.reduce((max, item) => {
+                    const itemEnd = new Date(item.date);
+                    itemEnd.setDate(itemEnd.getDate() + 1); // fallback duration
+                    return itemEnd > max ? itemEnd : max;
+                  }, new Date(0))
+                : new Date();
+              const startDate = computedStartDate;
+              const duration = booking.items.reduce((acc, item) => acc + (item.activity?.durationDays || 1), 0);
               const isPaid = booking.paymentStatus === "PAID";
               const isUnpaid = booking.paymentStatus === "UNPAID" && booking.status !== "CANCELLED";
               const isPaymentReview = booking.paymentStatus === "PAYMENT_REVIEW";
@@ -869,7 +886,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                         {startDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                       </div>
                       <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
-                        {duration} hari · s/d {new Date(booking.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                        {duration} hari · s/d {computedEndDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
                       </div>
                     </div>
 
@@ -897,14 +914,26 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
                     {/* Col 6: Aksi — chat, bayar, atau review */}
                     <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", minWidth: 0, padding: "0 0 0 0.5rem", gap: "0.375rem" }}>
-                      {/* Tombol Chat Drawer — tampil untuk booking CONFIRMED/COMPLETED */}
+                      {/* Tombol Chat Drawer dan Itinerary — tampil untuk booking CONFIRMED/COMPLETED */}
                       {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
-                        <WhatsAppButton
-                          phoneNumber={booking.muthawif.whatsappNumber}
-                          recipientName={booking.muthawif.name}
-                          bookingId={booking.id}
-                          variant="compact"
-                        />
+                        <>
+                          <Link
+                            href={`/dashboard?tab=itinerary&bookingId=${booking.id}`}
+                            style={{
+                              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
+                              padding: "0.3rem 0.75rem", borderRadius: 8, background: "var(--ivory)", color: "var(--emerald)",
+                              border: "1.5px solid var(--emerald)", fontSize: "0.6875rem", fontWeight: 800, textDecoration: "none"
+                            }}
+                          >
+                            Itinerary
+                          </Link>
+                          <WhatsAppButton
+                            phoneNumber={booking.muthawif.whatsappNumber}
+                            recipientName={booking.muthawif.name}
+                            bookingId={booking.id}
+                            variant="compact"
+                          />
+                        </>
                       )}
                       {/* Tombol Verifikasi Pembayaran (AMIR) */}
                       {session.role === "AMIR" && booking.paymentProofUrl && (
@@ -951,14 +980,26 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                         <PaymentVerificationButton bookingId={booking.id} proofUrl={booking.paymentProofUrl} canVerify={isPaymentReview} />
                       </div>
                     )}
-                    {/* Tombol Chat — CONFIRMED atau COMPLETED */}
+                    {/* Tombol Itinerary dan Chat — CONFIRMED atau COMPLETED */}
                     {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
-                      <WhatsAppButton
-                        phoneNumber={booking.muthawif.whatsappNumber}
-                        recipientName={booking.muthawif.name}
-                        bookingId={booking.id}
-                        variant="primary"
-                      />
+                      <>
+                        <Link
+                          href={`/dashboard?tab=itinerary&bookingId=${booking.id}`}
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "center", width: "100%", gap: "0.375rem",
+                            padding: "0.5rem", borderRadius: 8, background: "var(--ivory)", color: "var(--emerald)",
+                            border: "1.5px solid var(--emerald)", fontSize: "0.8125rem", fontWeight: 800, textDecoration: "none", marginBottom: "0.5rem"
+                          }}
+                        >
+                          Itinerary Kegiatan
+                        </Link>
+                        <WhatsAppButton
+                          phoneNumber={booking.muthawif.whatsappNumber}
+                          recipientName={booking.muthawif.name}
+                          bookingId={booking.id}
+                          variant="primary"
+                        />
+                      </>
                     )}
                   </div>
 
@@ -1005,7 +1046,17 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
                           </div>
                         </div>
                         {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
-                          <div style={{ flexShrink: 0 }}>
+                          <div style={{ flexShrink: 0, display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                            <Link
+                              href={`/dashboard?tab=itinerary&bookingId=${booking.id}`}
+                              style={{
+                                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                padding: "0.3rem 0.55rem", borderRadius: 6, background: "var(--ivory)", color: "var(--emerald)",
+                                border: "1px solid var(--emerald)", fontSize: "0.6875rem", fontWeight: 800, textDecoration: "none"
+                              }}
+                            >
+                              Itinerary
+                            </Link>
                             <WhatsAppButton
                               phoneNumber={booking.muthawif.whatsappNumber}
                               recipientName={booking.muthawif.name}
@@ -1135,6 +1186,14 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
       icon: ClipboardList,
       tab: "beranda",
       show: true,
+    },
+    {
+      href: "/dashboard?tab=itinerary",
+      label: "Itinerary",
+      desc: "Agenda kegiatan booking",
+      icon: Route,
+      tab: "itinerary",
+      show: session.role === "JAMAAH",
     },
     {
       href: "/dashboard?tab=muthawif",
@@ -1332,34 +1391,44 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
             {/* TAB CONTENT */}
             {currentTab === "beranda" && renderBookings()}
+            {currentTab === "itinerary" && session.role === "JAMAAH" && (
+              <BookingItineraryDashboard
+                userId={session.id}
+                role="JAMAAH"
+                bookingId={itineraryBookingId}
+                baseHref="/dashboard?tab=itinerary"
+              />
+            )}
             {currentTab === "cari" && session.role === "JAMAAH" && (
               <div className="jamaah-search-layout" style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
-                <div className="jamaah-search-card" style={{ background: "white", padding: "1.25rem 1.5rem", borderRadius: "16px", border: "1px solid var(--border)", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
-                  <DashboardSearchForm
-                    initialStartDate={searchStartDate}
-                    initialLocation={searchLocation}
-                    supportedLocations={supportedLocations}
-                  />
-                </div>
-
-                {!searchStartDate ? (
-                  <div style={{ textAlign: "center", padding: "4rem 2rem", background: "rgba(255,255,255,0.4)", borderRadius: "16px", border: "1px dashed var(--border)" }}>
-                    <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--emerald-pale)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--emerald)", marginBottom: "1rem" }}>
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    </div>
-                    <h3 style={{ fontSize: "1.125rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "0.5rem" }}>Cari Sesuai Rencana Ibadah</h3>
-                    <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", maxWidth: "400px", margin: "0 auto", lineHeight: "1.6" }}>
-                      Tentukan tanggal keberangkatan dan lokasi operasional di filter atas untuk menemukan Muthawif terbaik yang siap mendampingi Anda di Tanah Suci.
+                <div className="section-head" style={{ marginBottom: "1.5rem" }}>
+                  <div>
+                    <h1 style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "0.5rem" }}>
+                      {searchLocation && searchLocation !== "ALL" 
+                        ? `Cari Muthawif di ${searchLocation === "MAKKAH" ? "Makkah" : searchLocation === "MADINAH" ? "Madinah" : searchLocation}`
+                        : "Cari Muthawif"}
+                    </h1>
+                    <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                      Temukan Muthawif yang siap mendampingi ibadah Anda di Tanah Suci.
                     </p>
                   </div>
-                ) : (
-                  <DashboardSearchList
-                    muthawifs={foundMuthawifs}
-                    startDate={searchStartDate}
-                    location={searchLocation}
-                    feeConfig={feeConfig}
+                </div>
+
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <DashboardSearchForm 
+                    initialLocation={searchLocation} 
+                    initialSpecialization={searchSpec}
+                    initialLanguage={searchLang}
+                    supportedLocations={supportedLocations} 
                   />
-                )}
+                </div>
+                <DashboardSearchList
+                  muthawifs={foundMuthawifs}
+                  location={searchLocation}
+                  specialization={searchSpec}
+                  language={searchLang}
+                  feeConfig={feeConfig}
+                />
               </div>
             )}
             {currentTab === "muthawif" && session.role === "AMIR" && (() => {

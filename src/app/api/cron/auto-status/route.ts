@@ -31,20 +31,32 @@ export async function GET(req: NextRequest) {
   const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
 
   try {
-    // ── Rule 1: CONFIRMED + endDate passed → COMPLETED ──────────────────
-    const toComplete = await prisma.booking.findMany({
-      where: { status: "CONFIRMED", endDate: { lte: now } },
-      select: { id: true },
+    // ── Rule 1: CONFIRMED + latest item date passed → COMPLETED ──────────────────
+    const confirmedBookings = await prisma.booking.findMany({
+      where: { status: "CONFIRMED" },
+      include: { items: { include: { activity: true } } },
     });
-    if (toComplete.length > 0) {
-      for (const b of toComplete) {
-        try {
-          await internalSettleEscrow(b.id);
-        } catch (err) {
-          console.error(`Failed to settle escrow for booking ${b.id}:`, err);
+    
+    let toCompleteCount = 0;
+    if (confirmedBookings.length > 0) {
+      for (const b of confirmedBookings) {
+        let latestEndDate = new Date(0);
+        for (const item of b.items) {
+          const itemEnd = new Date(item.date);
+          itemEnd.setDate(itemEnd.getDate() + (item.activity?.durationDays || 1));
+          if (itemEnd > latestEndDate) latestEndDate = itemEnd;
+        }
+
+        if (latestEndDate <= now) {
+          try {
+            await internalSettleEscrow(b.id);
+            toCompleteCount++;
+          } catch (err) {
+            console.error(`Failed to settle escrow for booking ${b.id}:`, err);
+          }
         }
       }
-      results.completed = toComplete.length;
+      results.completed = toCompleteCount;
     }
 
     // ── Rule 2: UNPAID + explicit paymentDeadline passed → CANCELLED ────

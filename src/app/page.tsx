@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import SearchForm from "@/components/SearchForm";
 import Link from "next/link";
+import { Search, User, CreditCard, Zap, CircleDollarSign, MapPin, CheckCircle, Briefcase, Moon, Phone, Mail, Globe, Clock } from "lucide-react";
 
 export default async function HomePage() {
   const session = await getSession();
@@ -66,7 +67,7 @@ export default async function HomePage() {
               {/* Badge */}
               <div className="lp-badge-wrap">
                 <span className="lp-badge">
-                  🕌 Platform Muthawif Pertama di Indonesia
+                  Platform Muthawif Pertama di Indonesia
                 </span>
               </div>
 
@@ -85,7 +86,7 @@ export default async function HomePage() {
               {/* CTA Buttons */}
               <div className="lp-cta-group">
                 <a href="#search" className="lp-btn-primary">
-                  🔍 Cari Muthawif
+                  <Search size={20} /> Cari Muthawif
                 </a>
                 <a href="#cara-kerja" className="lp-btn-secondary">
                   Pelajari Lebih
@@ -113,7 +114,7 @@ export default async function HomePage() {
 
             {/* ── Search Form ── */}
             <div id="search" className="lp-search-wrap">
-              <SearchForm supportedLocations={supportedLocations} />
+              <SearchForm supportedLocations={supportedLocations} variant="hero" />
             </div>
 
           </div>
@@ -421,26 +422,26 @@ export default async function HomePage() {
             {[
               {
                 num: "01",
-                emoji: "🔍",
-                title: "Cari & Filter",
-                desc: "Masukkan jadwal, durasi, dan lokasi. Sistem kami menampilkan Muthawif yang benar-benar tersedia.",
+                icon: <Search size={28} />,
+                title: "Pilih Kegiatan",
+                desc: "Tentukan lokasi, jenis kegiatan ibadah, dan tanggal pelaksanaannya. Sistem akan mencarikan Muthawif yang siap.",
               },
               {
                 num: "02",
-                emoji: "👤",
+                icon: <User size={28} />,
                 title: "Pilih Muthawif",
                 desc: "Lihat profil, pengalaman, bahasa, dan ulasan. Pilih yang paling sesuai kebutuhan Anda.",
               },
               {
                 num: "03",
-                emoji: "💳",
+                icon: <CreditCard size={28} />,
                 title: "Book & Bayar",
-                desc: "Lakukan pemesanan dan pembayaran secara aman. Lacak status perjalanan secara real-time.",
+                desc: "Pesan secara fleksibel (1 hari = 1 kegiatan). Lakukan pembayaran aman via Escrow.",
               },
             ].map((step, i) => (
               <div key={i} style={{ background: "white", borderRadius: "20px", padding: "clamp(1.5rem, 5vw, 2rem)", textAlign: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.05)", border: "1px solid var(--border)" }}>
                 <div className="lp-step-icon">
-                  <span style={{ fontSize: "1.75rem" }}>{step.emoji}</span>
+                  {step.icon}
                 </div>
                 <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--gold)", letterSpacing: "0.1em", marginBottom: "0.5rem", textTransform: "uppercase" }}>
                   LANGKAH {step.num}
@@ -470,13 +471,13 @@ export default async function HomePage() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                 {[
-                  { emoji: "⚡", title: "Ketersediaan Real-Time", desc: "Hanya Muthawif yang benar-benar kosong yang ditampilkan." },
-                  { emoji: "💰", title: "Harga Transparan", desc: "Tidak ada biaya tersembunyi. Semua harga tercantum jelas." },
-                  { emoji: "📍", title: "Tracking Perjalanan", desc: "Pantau status booking dan perjalanan Umrah real-time." },
-                  { emoji: "✅", title: "Muthawif Terverifikasi", desc: "Setiap Muthawif telah melalui verifikasi dokumen & pengalaman." },
+                  { icon: <Zap size={18} />, title: "Ketersediaan Real-Time", desc: "Hanya Muthawif yang benar-benar kosong yang ditampilkan." },
+                  { icon: <CircleDollarSign size={18} />, title: "Harga Transparan", desc: "Tidak ada biaya tersembunyi. Harga per kegiatan tercantum jelas." },
+                  { icon: <MapPin size={18} />, title: "Sistem Fleksibel", desc: "Pesan pendampingan per kegiatan spesifik sesuai jadwal Anda." },
+                  { icon: <CheckCircle size={18} />, title: "Muthawif Terverifikasi", desc: "Setiap Muthawif telah melalui verifikasi dokumen & pengalaman." },
                 ].map((item, i) => (
                   <div key={i} className="lp-feature">
-                    <div className="lp-feature-icon">{item.emoji}</div>
+                    <div className="lp-feature-icon">{item.icon}</div>
                     <div>
                       <h4 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "0.25rem" }}>{item.title}</h4>
                       <p style={{ fontSize: "0.875rem", color: "var(--text-body)", lineHeight: 1.65 }}>{item.desc}</p>
@@ -543,7 +544,9 @@ export default async function HomePage() {
                     {m.photoUrl ? (
                       <img src={m.photoUrl} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
                     ) : (
-                      <div style={{ fontSize: "3rem", color: "rgba(255,255,255,0.2)" }}>👤</div>
+                      <div style={{ color: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+                        <User size={48} />
+                      </div>
                     )}
                     <div style={{ position: "absolute", top: 12, right: 12, width: 26, height: 26, background: "white", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--emerald)", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", zIndex: 2 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
@@ -563,11 +566,11 @@ export default async function HomePage() {
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px", fontSize: "0.8rem", color: "var(--text-muted)" }}>
                       {m.profile?.languages && m.profile.languages.length > 0 && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span>🌍</span> {m.profile.languages.join(", ")}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><Globe size={14} /> {m.profile.languages.join(", ")}</div>
                       )}
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span>⏱️</span> {m.profile?.experience || 0} thn pengalaman</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><Clock size={14} /> {m.profile?.experience || 0} thn pengalaman</div>
                       {m.profile?.operatingAreas && m.profile.operatingAreas.length > 0 && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span>📍</span> {m.profile.operatingAreas.join(" & ")}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><MapPin size={14} /> {m.profile.operatingAreas.join(" & ")}</div>
                       )}
                     </div>
                     <Link href={`/muthawif/${m.id}`} style={{ marginTop: "auto", display: "block", textAlign: "center", background: "var(--emerald-pale)", color: "var(--emerald)", fontWeight: 700, fontSize: "0.875rem", padding: "0.75rem", borderRadius: "12px", textDecoration: "none" }}>
@@ -648,8 +651,8 @@ export default async function HomePage() {
             {/* Jamaah Card */}
             <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "2.5rem 2rem", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg, var(--emerald), #4DB6AC)" }} />
-              <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg, var(--emerald), #004D40)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.75rem", marginBottom: "1.5rem" }}>
-                👤
+              <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg, var(--emerald), #004D40)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.5rem" }}>
+                <User size={28} color="white" />
               </div>
               <h3 style={{ fontSize: "1.5rem", fontWeight: 800, color: "white", marginBottom: "0.75rem" }}>Saya Jamaah</h3>
               <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.9375rem", lineHeight: 1.7, marginBottom: "2rem" }}>
@@ -670,8 +673,8 @@ export default async function HomePage() {
             {/* Muthawif Card */}
             <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "2.5rem 2rem", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg, var(--gold), #F0C040)" }} />
-              <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg, var(--gold), #9a6a10)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.75rem", marginBottom: "1.5rem" }}>
-                💼
+              <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg, var(--gold), #9a6a10)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.5rem" }}>
+                <Briefcase size={28} color="white" />
               </div>
               <h3 style={{ fontSize: "1.5rem", fontWeight: 800, color: "white", marginBottom: "0.75rem" }}>Saya Muthawif</h3>
               <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.9375rem", lineHeight: 1.7, marginBottom: "2rem" }}>
@@ -695,7 +698,7 @@ export default async function HomePage() {
       {/* ── FOOTER CTA BAND ── */}
       <section style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)", padding: "clamp(3.5rem, 8vw, 5rem) 0", textAlign: "center" }}>
         <div className="container">
-          <div style={{ marginBottom: "0.75rem", fontSize: "2rem" }}>🌙</div>
+          <div style={{ marginBottom: "1.25rem", display: "flex", justifyContent: "center", color: "var(--gold)" }}><Moon size={40} /></div>
           <h2 style={{ fontSize: "clamp(1.625rem, 5vw, 2.5rem)", fontWeight: 900, color: "white", marginBottom: "1rem", lineHeight: 1.2 }}>
             Mulai Perjalanan Spiritual Anda
           </h2>
@@ -704,7 +707,7 @@ export default async function HomePage() {
           </p>
           <div className="lp-footer-cta-btns">
             <Link href="/#search" className="lp-footer-btn-primary">
-              🔍 Cari Muthawif Sekarang
+              <Search size={20} /> Cari Muthawif Sekarang
             </Link>
           </div>
         </div>
@@ -759,13 +762,13 @@ export default async function HomePage() {
               <h4 style={{ color: "white", fontWeight: 700, fontSize: "1rem", marginBottom: "1.25rem" }}>Hubungi Kami</h4>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: "var(--emerald)" }}>📞</span> +62 812-3456-7890
+                  <Phone size={16} color="var(--emerald)" /> +62 812-3456-7890
                 </li>
                 <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: "var(--emerald)" }}>✉️</span> halo@wifme.id
+                  <Mail size={16} color="var(--emerald)" /> halo@wifme.id
                 </li>
                 <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: "var(--emerald)" }}>📍</span> Jakarta & Makkah
+                  <MapPin size={16} color="var(--emerald)" /> Jakarta & Makkah
                 </li>
               </ul>
             </div>

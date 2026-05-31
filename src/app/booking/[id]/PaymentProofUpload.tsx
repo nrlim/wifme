@@ -184,7 +184,25 @@ export default function PaymentProofUpload({ bookingId, amount, bankName, bankAc
             transition: "opacity 0.15s"
           }}
         >
-          {isPending ? "Memproses..." : "Sudah Bayar"}
+          {isPending ? (
+            <>
+              <span
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderWidth: 2,
+                  borderStyle: "solid",
+                  borderColor: "rgba(255,255,255,0.3)",
+                  borderTopColor: "white",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite",
+                }}
+              />
+              Memproses...
+            </>
+          ) : (
+            "Sudah Bayar"
+          )}
         </button>
       </div>
 
@@ -205,7 +223,54 @@ export default function PaymentProofUpload({ bookingId, amount, bankName, bankAc
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
       `}</style>
+
+      {/* Full Screen Loading Overlay */}
+      {isPending && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(255,255,255,0.85)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            zIndex: 9999,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            animation: "fadeIn 0.2s ease-out",
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderWidth: 4,
+              borderStyle: "solid",
+              borderColor: "var(--emerald-pale)",
+              borderTopColor: "var(--emerald)",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              marginBottom: "1.25rem",
+              boxShadow: "0 0 20px rgba(27,107,74,0.1)",
+            }}
+          />
+          <h3 style={{ fontSize: "1.25rem", fontWeight: 900, color: "var(--charcoal)", margin: "0 0 0.5rem" }}>
+            Memproses Pembayaran
+          </h3>
+          <p style={{ fontSize: "0.9375rem", color: "var(--text-muted)", margin: 0 }}>
+            Mohon tunggu sebentar, jangan tutup halaman ini.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

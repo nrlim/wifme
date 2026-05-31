@@ -41,14 +41,12 @@ export async function getBookingWizardData(muthawifId: string) {
       where: {
         booking: {
           muthawifId: muthawifId,
-          status: { notIn: ["CANCELLED", "REJECTED"] }
+          status: { in: ["PENDING", "PAYMENT_REVIEW", "CONFIRMED"] },
         },
-        date: { gte: today },
-        timeSlot: { not: null }
+        date: { gte: today }
       },
       select: {
-        date: true,
-        timeSlot: true
+        date: true
       }
     });
 

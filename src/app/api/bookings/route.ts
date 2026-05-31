@@ -6,11 +6,11 @@ import { z } from "zod";
 
 const bookingItemSchema = z.object({
   activityId: z.string().min(1),
+  date: z.string().min(1),
 });
 
 const createBookingSchema = z.object({
   muthawifId: z.string().min(1),
-  startDate: z.string().min(1),
   items: z.array(bookingItemSchema).min(1).max(60),
   notes: z.string().max(1000).optional().nullable(),
   promoCode: z.string().max(64).optional().nullable(),
@@ -23,15 +23,11 @@ function parseDateOnly(value: string): Date | null {
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
-  date.setHours(0, 0, 0, 0);
-  return date;
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 }
 
 function addDays(date: Date, days: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
+  const next = new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
   return next;
 }
 
@@ -47,12 +43,8 @@ export async function POST(req: NextRequest) {
     if (!parsedBody.success) {
       return NextResponse.json({ error: "Data pesanan tidak lengkap atau tidak valid." }, { status: 400 });
     }
-    const { muthawifId, startDate: startDateInput, items, notes, promoCode, bundleId } = parsedBody.data;
+    const { muthawifId, items, notes, promoCode, bundleId } = parsedBody.data;
 
-    const startDate = parseDateOnly(startDateInput);
-    if (!startDate) {
-      return NextResponse.json({ error: "Format tanggal keberangkatan tidak valid." }, { status: 400 });
-    }
     // Prevent self-booking
     if (session.id === muthawifId) {
       return NextResponse.json({ error: "Anda tidak dapat memesan Muthawif untuk diri sendiri." }, { status: 400 });
@@ -68,9 +60,6 @@ export async function POST(req: NextRequest) {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (startDate < today) {
-      return NextResponse.json({ error: "Tanggal keberangkatan tidak boleh di masa lalu." }, { status: 400 });
-    }
 
     const booking = await prisma.$transaction(async (tx) => {
       const muthawif = await tx.user.findFirst({
@@ -86,18 +75,35 @@ export async function POST(req: NextRequest) {
       if (dbActivities.length !== uniqueActivityIds.length) throw new Error("Kegiatan tidak ditemukan");
 
       const activityMap = new Map(dbActivities.map((activity) => [activity.id, activity]));
+      const requestedItemMap = new Map(items.map((item) => [item.activityId, item.date]));
+
+      const assignedDateStrs = new Set<string>();
+
       const parsedItems = uniqueActivityIds.map((activityId) => {
         const activity = activityMap.get(activityId);
         if (!activity) throw new Error("Kegiatan tidak ditemukan");
+        
+        const customDateStr = requestedItemMap.get(activityId);
+        if (!customDateStr) throw new Error("Tanggal kegiatan harus diisi.");
+
+        const assignedDate = parseDateOnly(customDateStr);
+        if (!assignedDate) throw new Error("Format tanggal kegiatan tidak valid.");
+        
+        if (assignedDate < today) throw new Error("Tanggal kegiatan tidak boleh di masa lalu.");
+
+        const dateStr = assignedDate.toISOString().split("T")[0];
+        if (assignedDateStrs.has(dateStr)) {
+          throw new Error("Tidak boleh ada kegiatan yang dimulai di hari yang sama (1 hari = 1 kegiatan).");
+        }
+        assignedDateStrs.add(dateStr);
+
         return {
           activityId,
           price: activity.price,
           durationDays: activity.durationDays,
+          assignedDate,
         };
       });
-
-      const totalDurationDays = parsedItems.reduce((sum, item) => sum + item.durationDays, 0);
-      const endDate = addDays(startDate, totalDurationDays);
 
       // 2. Pricing and availability validation
       const settings = await tx.globalSetting.findUnique({ where: { id: "singleton" } });
@@ -119,21 +125,30 @@ export async function POST(req: NextRequest) {
         baseFee = parsedItems.reduce((sum, item) => sum + item.price, 0);
       }
 
-      const conflictingBooking = await tx.booking.findFirst({
+      // Check day-by-day conflicts for scheduled activities
+      const requestedDates: Date[] = [];
+      for (const item of parsedItems) {
+        for (let i = 0; i < item.durationDays; i++) {
+          requestedDates.push(addDays(item.assignedDate, i));
+        }
+      }
+      
+      const conflictingItem = await tx.bookingItem.findFirst({
         where: {
-          muthawifId,
-          status: { in: ["PENDING", "PAYMENT_REVIEW", "CONFIRMED"] },
-          startDate: { lt: endDate },
-          endDate: { gt: startDate },
+          booking: {
+            muthawifId,
+            status: { in: ["PENDING", "PAYMENT_REVIEW", "CONFIRMED"] },
+          },
+          date: { in: requestedDates },
         },
         select: { id: true },
       });
-      if (conflictingBooking) throw new Error("CONFLICT");
+      if (conflictingItem) throw new Error("CONFLICT");
 
       const blockedAvailability = await tx.availability.findFirst({
         where: {
           profileId: muthawif.profile.id,
-          date: { gte: startDate, lt: endDate },
+          date: { in: requestedDates },
           status: { in: ["OFF", "BOOKED"] },
         },
         select: { id: true },
@@ -173,8 +188,6 @@ export async function POST(req: NextRequest) {
         data: {
           jamaahId: session.id,
           muthawifId,
-          startDate,
-          endDate,
           totalFee,
           baseFee,
           discountAmount,
@@ -185,11 +198,10 @@ export async function POST(req: NextRequest) {
           paymentStatus: "UNPAID",
           paymentDeadline,
           items: {
-            create: parsedItems.map((item, index) => {
-              const previousDays = parsedItems.slice(0, index).reduce((sum, previousItem) => sum + previousItem.durationDays, 0);
+            create: parsedItems.map((item) => {
               return {
                 activityId: item.activityId,
-                date: addDays(startDate, previousDays),
+                date: item.assignedDate,
                 timeSlot: null,
                 price: item.price,
               };

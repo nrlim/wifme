@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source "../components";
+@source "../actions";
 
 :root {
   --ivory: #FAF7F2;

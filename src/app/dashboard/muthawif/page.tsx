@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { LayoutGrid, CalendarDays, ClipboardList, UserCheck, Wallet, BarChart3 } from "lucide-react";
+import { LayoutGrid, CalendarDays, ClipboardList, UserCheck, Wallet, BarChart3, Route } from "lucide-react";
 import { ProfileForm } from "./ProfileForm";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { DocumentUpload } from "./DocumentUpload";
@@ -13,6 +13,7 @@ import MuthawifWallet from "@/components/wallet/MuthawifWallet";
 import { getWallet } from "@/actions/finance";
 import EarningsDashboard from "@/components/earnings/EarningsDashboard";
 import MuthawifMobileNav from "./MuthawifMobileNav";
+import BookingItineraryDashboard from "@/components/BookingItineraryDashboard";
 
 function VerificationTimeline({ currentStep }: { currentStep: number }) {
   const steps = [
@@ -111,15 +112,16 @@ function VerificationTimeline({ currentStep }: { currentStep: number }) {
 export default async function MuthawifDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; step?: string }>;
+  searchParams: Promise<{ tab?: string; step?: string; bookingId?: string }>;
 }) {
   const session = await getSession();
   if (!session || session.role !== "MUTHAWIF") {
     redirect("/auth/login?redirect=/dashboard/muthawif");
   }
 
-  const { tab, step } = await searchParams;
+  const { tab, step, bookingId } = await searchParams;
   let currentTab = typeof tab === "string" ? tab : "earnings";
+  const itineraryBookingId = typeof bookingId === "string" ? bookingId : undefined;
   const urlStep = typeof step === "string" ? parseInt(step, 10) : null;
 
   // Fetch all necessary data in parallel to reduce connection pool pressure
@@ -274,6 +276,7 @@ export default async function MuthawifDashboardPage({
     bookings: "Riwayat Pesanan Saya",
     profile: "Pengaturan Profil & Layanan",
     wallet: "Dompet Muthawif",
+    itinerary: "Itinerary Kegiatan",
   };
 
   return (
@@ -306,6 +309,7 @@ export default async function MuthawifDashboardPage({
               { id: "earnings", href: "/dashboard/muthawif?tab=earnings",  label: "Dashboard",           desc: "Pendapatan & analytics",  icon: BarChart3,     sub: false },
               { id: "schedule", href: "/dashboard/muthawif?tab=schedule",  label: "Jadwal",              desc: "Kelola ketersediaan",    icon: CalendarDays,  sub: false },
               { id: "bookings", href: "/dashboard/muthawif/bookings",      label: "Pesanan",              desc: "Riwayat pesanan masuk",  icon: ClipboardList, sub: false },
+              { id: "itinerary", href: "/dashboard/muthawif?tab=itinerary", label: "Itinerary",            desc: "Agenda kegiatan booking", icon: Route,         sub: false },
 
               { id: "wallet",   href: "/dashboard/muthawif?tab=wallet",    label: "Dompet Muthawif",     desc: "Balans & penarikan",     icon: Wallet,        sub: false },
             ].map((t) => {
@@ -403,6 +407,15 @@ export default async function MuthawifDashboardPage({
 
         {currentTab === "wallet" && walletData && (
           <MuthawifWallet wallet={walletData} userId={session.id} />
+        )}
+
+        {currentTab === "itinerary" && (
+          <BookingItineraryDashboard
+            userId={session.id}
+            role="MUTHAWIF"
+            bookingId={itineraryBookingId}
+            baseHref="/dashboard/muthawif?tab=itinerary"
+          />
         )}
 
         {currentTab === "earnings" && (

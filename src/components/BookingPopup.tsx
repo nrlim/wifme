@@ -23,8 +23,8 @@ export default function BookingPopup({ muthawifId, muthawifName, onClose }: Book
     activities: Activity[];
     bundles: BundleType[];
     feeConfig: FeeConfig;
-    availabilities: any[];
-    bookedItems: any[];
+    availabilities?: any[];
+    bookedItems?: any[];
   } | null>(null);
   const [error, setError] = useState<string>("");
 

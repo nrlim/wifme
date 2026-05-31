@@ -68,6 +68,7 @@ export async function internalProcessPayment(bookingId: string) {
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
       include: {
+        items: { include: { activity: true } },
         muthawif: {
           select: {
             profile: { select: { basePrice: true } }
@@ -79,10 +80,8 @@ export async function internalProcessPayment(bookingId: string) {
     if (!booking) throw new Error('Booking not found');
     if (booking.paymentStatus === 'PAID') throw new Error('Already paid');
 
-    // Calculate the duration in days
-    const durationDays = Math.max(1, Math.round(
-      (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24)
-    ));
+    // Calculate the duration in days based on items
+    const durationDays = booking.items.reduce((sum, item) => sum + (item.activity?.durationDays || 1), 0);
 
     const muthawifBaseFee =
       (booking as any).baseFee > 0
@@ -150,11 +149,20 @@ export async function internalSettleEscrow(bookingId: string) {
   return await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
+      include: { items: { include: { activity: true } } }
     });
 
     if (!booking) throw new Error('Booking not found');
     if (booking.paymentStatus !== 'PAID') throw new Error('Booking payment is not paid');
-    if (booking.endDate > new Date()) throw new Error('Booking end date has not passed');
+    
+    let latestEndDate = new Date(0);
+    for (const item of booking.items) {
+      const itemEnd = new Date(item.date);
+      itemEnd.setDate(itemEnd.getDate() + (item.activity?.durationDays || 1));
+      if (itemEnd > latestEndDate) latestEndDate = itemEnd;
+    }
+
+    if (latestEndDate > new Date()) throw new Error('Booking end date has not passed');
 
     const existingSettlement = await tx.transaction.findFirst({
       where: {

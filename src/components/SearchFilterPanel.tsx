@@ -4,13 +4,11 @@ import { useState } from "react";
 import SearchForm from "./SearchForm";
 
 interface SearchFilterPanelProps {
-  startDate?: string;
-  duration?: string;
   location?: string;
   forceOpen?: boolean;
 }
 
-export default function SearchFilterPanel({ startDate, duration, location, forceOpen = false }: SearchFilterPanelProps) {
+export default function SearchFilterPanel({ location, forceOpen = false }: SearchFilterPanelProps) {
   const [isOpen, setIsOpen] = useState(forceOpen);
 
   return (
@@ -49,7 +47,7 @@ export default function SearchFilterPanel({ startDate, duration, location, force
           display: "flex",
           justifyContent: "center"
         }}>
-          <SearchForm initialValues={{ startDate, duration, location }} />
+          <SearchForm initialValues={{ location }} />
           <style>{`
             @keyframes fadeInDown {
               from { opacity: 0; transform: translateY(-10px); }

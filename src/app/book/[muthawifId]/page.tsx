@@ -13,8 +13,9 @@ export async function generateMetadata({ params }: { params: Promise<{ muthawifI
   return { title: `Pesan ${muthawif.name} | Wifme` };
 }
 
-export default async function BookingPage({ params }: { params: Promise<{ muthawifId: string }> }) {
+export default async function BookingPage({ params, searchParams }: { params: Promise<{ muthawifId: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const { muthawifId } = await params;
+  const sParams = await searchParams;
   const session = await getSession();
 
   if (!session) {
@@ -53,6 +54,29 @@ export default async function BookingPage({ params }: { params: Promise<{ muthaw
 
   const feeConfig = await getFeeConfig();
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const availabilities = await prisma.availability.findMany({
+    where: {
+      profile: { userId: muthawifId },
+      date: { gte: today }
+    }
+  });
+
+  const bookedItems = await prisma.bookingItem.findMany({
+    where: {
+      booking: {
+        muthawifId: muthawifId,
+        status: { in: ["PENDING", "PAYMENT_REVIEW", "CONFIRMED"] }
+      },
+      date: { gte: today }
+    },
+    select: {
+      date: true
+    }
+  });
+
   return (
     <div style={{ background: "var(--ivory)", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <BookingWizard
@@ -61,6 +85,9 @@ export default async function BookingPage({ params }: { params: Promise<{ muthaw
         activities={activities}
         bundles={bundles}
         feeConfig={feeConfig}
+        availabilities={availabilities}
+        bookedItems={bookedItems}
+        initialLocation={typeof sParams?.location === "string" ? sParams.location : undefined}
       />
     </div>
   );

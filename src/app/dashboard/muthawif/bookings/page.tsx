@@ -9,7 +9,7 @@ import { AmirHeaderPanel } from "../../AmirHeaderPanel";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import MuthawifMobileNav from "../MuthawifMobileNav";
 import TableToolbar from "@/components/TableToolbar";
-import { CalendarDays, ClipboardList, Wallet, BarChart3 } from "lucide-react";
+import { CalendarDays, ClipboardList, Wallet, BarChart3, Route } from "lucide-react";
 
 /* ─── Types ─── */
 interface PageProps {
@@ -177,7 +177,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
   const [bookings, total, allStats] = await Promise.all([
     prisma.booking.findMany({
       where,
-      include: { jamaah: { select: { id: true, name: true, email: true, photoUrl: true } } },
+      include: { jamaah: { select: { id: true, name: true, email: true, photoUrl: true } }, items: { include: { activity: true } } },
       orderBy,
       skip,
       take: PAGE_SIZE,
@@ -227,6 +227,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
               { href: "/dashboard/muthawif?tab=earnings", label: "Dashboard",         desc: "Pendapatan & analytics", icon: BarChart3,     sub: false },
               { href: "/dashboard/muthawif?tab=schedule", label: "Jadwal",            desc: "Kelola ketersediaan",    icon: CalendarDays,  sub: false },
               { href: "/dashboard/muthawif/bookings",     label: "Pesanan",            desc: "Riwayat pesanan masuk",  icon: ClipboardList, sub: false, active: true },
+              { href: "/dashboard/muthawif?tab=itinerary", label: "Itinerary",         desc: "Agenda kegiatan booking", icon: Route,         sub: false },
               { href: "/dashboard/muthawif?tab=wallet",   label: "Dompet Muthawif",    desc: "Balans & penarikan",     icon: Wallet,        sub: false },
             ].map((t) => (
               <Link
@@ -346,9 +347,13 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
               {bookings.map((booking, idx) => {
                 const sc = STATUS_COLORS[booking.status] || STATUS_COLORS["PENDING"];
                 const pc = PAYMENT_LABELS[booking.paymentStatus || "UNPAID"] || PAYMENT_LABELS["UNPAID"];
-                const durationDays = Math.max(1, Math.round(
-                  (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / 86400000
-                ));
+                const durationDays = booking.items.reduce((acc, item) => acc + (item.activity?.durationDays || 1), 0);
+                const computedStartDate = booking.items.length > 0 ? booking.items.reduce((min, item) => item.date < min ? item.date : min, booking.items[0].date) : new Date();
+                const computedEndDate = booking.items.length > 0 ? booking.items.reduce((max, item) => {
+                  const itemEnd = new Date(item.date);
+                  itemEnd.setDate(itemEnd.getDate() + (item.activity?.durationDays || 1));
+                  return itemEnd > max ? itemEnd : max;
+                }, new Date(0)) : new Date();
                 const initials = booking.jamaah.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
                 const shortId = booking.id.slice(0, 8).toUpperCase();
                 const isPending = booking.status === "PENDING";
@@ -395,10 +400,10 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                     {/* Col 2: Tanggal */}
                     <div>
                       <div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--charcoal)" }}>
-                        {new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                        {computedStartDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                       </div>
                       <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
-                        {durationDays} hari · s/d {new Date(booking.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                        {durationDays} hari · s/d {computedEndDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
                       </div>
                       <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
                         Order: {new Date(booking.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
@@ -466,13 +471,26 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                           Menunggu Konfirmasi Admin
                         </div>
                       ) : (booking.status === "CONFIRMED" || booking.status === "COMPLETED") ? (
-                        <WhatsAppButton
-                          phoneNumber={null}
-                          recipientName={booking.jamaah.name}
-                          bookingId={booking.id}
-                          variant="compact"
-                          isMuthawifView={true}
-                        />
+                        <>
+                          <Link
+                            href={`/dashboard/muthawif?tab=itinerary&bookingId=${booking.id}`}
+                            style={{
+                              display: "inline-flex", alignItems: "center", justifyContent: "center",
+                              padding: "0.375rem 0.75rem", borderRadius: 8,
+                              border: "1.5px solid var(--emerald)", background: "var(--ivory)", color: "var(--emerald)",
+                              fontSize: "0.6875rem", fontWeight: 800, textDecoration: "none", whiteSpace: "nowrap"
+                            }}
+                          >
+                            Itinerary
+                          </Link>
+                          <WhatsAppButton
+                            phoneNumber={null}
+                            recipientName={booking.jamaah.name}
+                            bookingId={booking.id}
+                            variant="compact"
+                            isMuthawifView={true}
+                          />
+                        </>
                       ) : (
                         <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontStyle: "italic" }}>—</span>
                       )}
@@ -485,7 +503,7 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.625rem 0.875rem", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                          <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--charcoal)" }}>Jamaah • {new Date(booking.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
+                          <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--charcoal)" }}>Jamaah • {computedStartDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
                         </div>
                         <span style={{ padding: "0.15rem 0.4rem", borderRadius: 4, fontSize: "0.625rem", fontWeight: 800, background: sc.bg, color: sc.color, flexShrink: 0 }}>
                           {STATUS_LABELS[booking.status] || booking.status}
@@ -509,7 +527,18 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                             </div>
                           </div>
                           {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
-                            <div style={{ flexShrink: 0 }}>
+                            <div style={{ flexShrink: 0, display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                              <Link
+                                href={`/dashboard/muthawif?tab=itinerary&bookingId=${booking.id}`}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                  padding: "0.3rem 0.55rem", borderRadius: 6,
+                                  border: "1px solid var(--emerald)", background: "var(--ivory)", color: "var(--emerald)",
+                                  fontSize: "0.6875rem", fontWeight: 800, textDecoration: "none"
+                                }}
+                              >
+                                Itinerary
+                              </Link>
                               <WhatsAppButton
                                 phoneNumber={null}
                                 recipientName={booking.jamaah.name}
@@ -549,7 +578,18 @@ export default async function MuthawifBookingsPage({ searchParams }: PageProps) 
                           </div>
                         )}
                         {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
-                          <div style={{ padding: "0 0.875rem 0.875rem" }}>
+                          <div style={{ padding: "0 0.875rem 0.875rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                            <Link
+                              href={`/dashboard/muthawif?tab=itinerary&bookingId=${booking.id}`}
+                              style={{
+                                display: "flex", alignItems: "center", justifyContent: "center", width: "100%",
+                                padding: "0.5rem", borderRadius: 8,
+                                border: "1.5px solid var(--emerald)", background: "var(--ivory)", color: "var(--emerald)",
+                                fontSize: "0.8125rem", fontWeight: 800, textDecoration: "none"
+                              }}
+                            >
+                              Itinerary Kegiatan
+                            </Link>
                             <WhatsAppButton
                                 phoneNumber={null}
                                 recipientName={booking.jamaah.name}

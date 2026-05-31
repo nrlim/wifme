@@ -3,8 +3,6 @@
 import Link from "next/link";
 
 interface EmptySearchStateProps {
-  startDate?: string;
-  duration?: string;
   location?: string;
 }
 
@@ -12,17 +10,17 @@ const SUGGESTIONS = [
   {
     icon: "📅",
     title: "Coba tanggal berbeda",
-    desc: "Muthawif mungkin tersedia di tanggal lain. Coba geser tanggal keberangkatan beberapa hari.",
+    desc: "Muthawif mungkin sudah dipesan pada tanggal tersebut. Kosongkan filter tanggal untuk melihat semua jadwal.",
   },
   {
     icon: "📍",
-    title: "Perluas area lokasi",
-    desc: "Pilih 'Semua Lokasi' atau coba lokasi lain seperti Makkah & Madinah sekaligus.",
+    title: "Perluas area & spesialisasi",
+    desc: "Pilih 'Semua Lokasi' atau 'Semua Kegiatan' untuk menemukan lebih banyak pilihan muthawif.",
   },
   {
-    icon: "⏱",
-    title: "Sesuaikan durasi",
-    desc: "Muthawif dengan jadwal penuh mungkin tersedia untuk durasi yang lebih pendek atau lebih panjang.",
+    icon: "🌐",
+    title: "Fleksibel dengan bahasa",
+    desc: "Ubah filter bahasa ke 'Semua Bahasa' jika kesulitan menemukan muthawif.",
   },
 ];
 
@@ -32,13 +30,9 @@ const QUICK_LINKS = [
   { label: "✨ Daftar Sebagai Muthawif", href: "/auth/register?role=muthawif", desc: "Daftarkan diri Anda" },
 ];
 
-export default function EmptySearchState({ startDate, duration, location }: EmptySearchStateProps) {
+export default function EmptySearchState({ location }: EmptySearchStateProps) {
   const locLabel = location && location !== "ALL"
     ? location === "BOTH" ? "Makkah & Madinah" : location.charAt(0) + location.slice(1).toLowerCase()
-    : null;
-
-  const dateLabel = startDate
-    ? new Date(startDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
     : null;
 
   return (
@@ -61,15 +55,12 @@ export default function EmptySearchState({ startDate, duration, location }: Empt
           </div>
 
           <h2 className="empty-title">
-            Muthawif Tidak <span className="empty-title-accent">Tersedia</span>
+            Muthawif Tidak <span className="empty-title-accent">Ditemukan</span>
           </h2>
 
           <p className="empty-subtitle">
-            Tidak ada muthawif yang tersedia
-            {dateLabel && <> pada <strong>{dateLabel}</strong></>}
-            {duration && <> · <strong>{duration} hari</strong></>}
-            {locLabel && <> di <strong>{locLabel}</strong></>}.
-            {" "}Coba sesuaikan kriteria pencarian Anda.
+            Tidak ada muthawif yang tersedia dengan kombinasi kriteria pencarian Anda.
+            {" "}Coba sesuaikan atau hapus beberapa filter pencarian.
           </p>
 
           <div className="empty-actions">

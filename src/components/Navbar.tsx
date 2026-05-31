@@ -285,7 +285,7 @@ export default function Navbar({ user }: NavbarProps) {
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
           border: 1px solid rgba(255, 255, 255, 0.5);
-          border-radius: 16px;
+          border-radius: 12px;
           padding: 0.5rem 0.5rem 0.5rem 1.25rem;
           box-shadow: 0 4px 24px rgba(27, 107, 74, 0.08), 0 1px 3px rgba(0,0,0,0.02);
         }
@@ -300,7 +300,7 @@ export default function Navbar({ user }: NavbarProps) {
         .nav-logo-img {
           width: 36px;
           height: 36px;
-          border-radius: 10px;
+          border-radius: 8px;
           overflow: hidden;
           box-shadow: 0 2px 10px rgba(0,0,0,0.1);
           transition: transform 0.2s;
@@ -377,7 +377,7 @@ export default function Navbar({ user }: NavbarProps) {
           font-weight: 600;
           font-size: 0.9375rem;
           padding: 0.5rem 1rem;
-          border-radius: 16px;
+          border-radius: 8px;
           transition: all 0.2s;
         }
         
@@ -392,7 +392,7 @@ export default function Navbar({ user }: NavbarProps) {
           align-items: center;
           gap: 0.5rem;
           padding: 0.375rem 1rem 0.375rem 0.375rem;
-          border-radius: 16px;
+          border-radius: 8px;
           text-decoration: none;
           transition: all 0.2s;
         }
@@ -424,7 +424,7 @@ export default function Navbar({ user }: NavbarProps) {
         }
         .nav-login-btn {
           padding: 0.625rem 1.5rem;
-          border-radius: 16px;
+          border-radius: 8px;
           font-weight: 800;
           font-size: 0.9375rem;
           text-decoration: none;
@@ -452,7 +452,7 @@ export default function Navbar({ user }: NavbarProps) {
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.6);
-          border-radius: 20px;
+          border-radius: 12px;
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0,0,0,0.04);
           justify-content: space-between;
           align-items: center;
@@ -539,7 +539,7 @@ export default function Navbar({ user }: NavbarProps) {
           right: 0;
           z-index: 220;
           background: var(--white);
-          border-radius: 32px 32px 0 0;
+          border-radius: 20px 20px 0 0;
           padding: 2rem 1.5rem calc(2rem + env(safe-area-inset-bottom));
           box-shadow: 0 -12px 40px rgba(0,0,0,0.15);
           transform: translateY(100%);
@@ -599,7 +599,7 @@ export default function Navbar({ user }: NavbarProps) {
         .bs-icon-wrap {
           width: 56px;
           height: 56px;
-          border-radius: 18px;
+          border-radius: 12px;
           background: var(--ivory);
           border: 1.5px solid var(--border);
           display: flex;

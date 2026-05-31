@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ClipboardList, LayoutGrid, LogIn, CalendarClock, X, Wallet } from "lucide-react";
+import { ClipboardList, LayoutGrid, LogIn, CalendarClock, X, Wallet, Route } from "lucide-react";
 
 interface Props {
   currentTab: string;
@@ -12,6 +12,7 @@ interface Props {
 const menuItems = [
   { href: "/dashboard/muthawif?tab=earnings", label: "Dashboard", desc: "Pendapatan & Statistik", icon: LayoutGrid, tab: "earnings" },
   { href: "/dashboard/muthawif/bookings?status=ALL&page=1", label: "Pesanan", desc: "Riwayat pesanan masuk", icon: ClipboardList, tab: "bookings" },
+  { href: "/dashboard/muthawif?tab=itinerary", label: "Itinerary", desc: "Agenda kegiatan booking", icon: Route, tab: "itinerary" },
   { href: "/dashboard/muthawif?tab=schedule", label: "Jadwal", desc: "Kelola ketersediaan", icon: CalendarClock, tab: "schedule" },
   { href: "/dashboard/muthawif?tab=wallet", label: "Dompet", desc: "Saldo & Penarikan", icon: Wallet, tab: "wallet" },
 ];
@@ -212,25 +213,27 @@ export default function MuthawifMobileNav({ currentTab }: Props) {
             z-index: 250;
             background: #fff;
             border-radius: 24px 24px 0 0;
-            padding: 0.7rem 1rem calc(1rem + env(safe-area-inset-bottom));
+            padding: 1.75rem 1.5rem calc(3rem + env(safe-area-inset-bottom)) 1.5rem;
             box-shadow: 0 -18px 52px rgba(0,0,0,0.18);
             transform: translateY(105%);
             transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+            box-sizing: border-box;
+            width: 100%;
           }
           .mm-menu-sheet-open { transform: translateY(0); }
           .mm-sheet-handle {
-            width: 42px;
+            width: 48px;
             height: 4px;
             border-radius: 999px;
             background: #D7D1C7;
-            margin: 0 auto 0.9rem;
+            margin: 0 auto 1.5rem;
           }
           .mm-sheet-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
-            margin-bottom: 1rem;
+            margin-bottom: 2.5rem;
           }
           .mm-sheet-header h3 {
             margin: 0;

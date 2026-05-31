@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Activity, Prisma } from "@prisma/client";
 import { AnimatePresence, motion } from "framer-motion";
@@ -28,8 +28,9 @@ interface Props {
   activities: Activity[];
   bundles: BundleType[];
   feeConfig: FeeConfig;
-  availabilities?: unknown[];
-  bookedItems?: unknown[];
+  availabilities?: { date: Date; status: string }[];
+  bookedItems?: { date: Date }[];
+  initialLocation?: string;
   onClose?: () => void;
 }
 
@@ -75,7 +76,10 @@ const getBundleDurationDays = (bundle: BundleType) =>
 const addDaysToDateInput = (value: string, days: number) => {
   const date = new Date(`${value}T00:00:00`);
   date.setDate(date.getDate() + days);
-  return date.toISOString().split("T")[0];
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 export default function BookingWizard({
@@ -86,6 +90,7 @@ export default function BookingWizard({
   feeConfig,
   availabilities,
   bookedItems,
+  initialLocation,
   onClose,
 }: Props) {
   const router = useRouter();
@@ -95,15 +100,30 @@ export default function BookingWizard({
   const [actTab, setActTab] = useState<"satuan" | "paket">("satuan");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedBundleId, setSelectedBundleId] = useState<string | null>(null);
+  const [locationFilter, setLocationFilter] = useState<string>(
+    initialLocation === "Makkah" || initialLocation === "Madinah" ? initialLocation : "ALL"
+  );
 
-  const [startDate, setStartDate] = useState("");
+  const [itemDates, setItemDates] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
   const [voucher, setVoucher] = useState<PromoSelection | null>(null);
   const [error, setError] = useState("");
 
   const selectedActivities = useMemo(() => {
-    return activities.filter((activity) => selectedIds.has(activity.id));
+    return Array.from(selectedIds)
+      .map(id => activities.find(a => a.id === id))
+      .filter((a): a is Activity => a !== undefined);
   }, [activities, selectedIds]);
+
+  const filteredActivities = useMemo(() => {
+    if (locationFilter === "ALL") return activities;
+    return activities.filter(a => a.location === locationFilter);
+  }, [activities, locationFilter]);
+
+  const filteredBundles = useMemo(() => {
+    if (locationFilter === "ALL") return bundles;
+    return bundles.filter(b => b.items.some(i => i.activity.location === locationFilter));
+  }, [bundles, locationFilter]);
 
   const selectedBundle = useMemo(() => {
     if (!selectedBundleId) return null;
@@ -115,10 +135,73 @@ export default function BookingWizard({
     return selectedActivities.reduce((sum, activity) => sum + activity.price, 0);
   }, [selectedActivities, selectedBundle]);
 
+  const scheduledActivities = useMemo(() => {
+    if (selectedActivities.length === 0) return [];
+
+    // Auto-fill dates starting from tomorrow if not explicitly set
+    const tomorrowStr = addDaysToDateInput(new Date().toISOString().split("T")[0], 1);
+    let currentSequentialDate = tomorrowStr;
+
+    return selectedActivities.map((activity) => {
+      const customDateStr = itemDates[activity.id];
+      let assignedDate = customDateStr || currentSequentialDate;
+
+      currentSequentialDate = addDaysToDateInput(assignedDate, activity.durationDays);
+
+      return {
+        ...activity,
+        assignedDate,
+      };
+    });
+  }, [selectedActivities, itemDates]);
+
   const durationDays = selectedActivities.reduce((sum, activity) => sum + activity.durationDays, 0);
   const serviceFee = calcServiceFee(basePrice, 1, feeConfig);
   const subtotal = calcTotalWithFee(basePrice, 1, feeConfig);
-  const endDate = startDate && durationDays > 0 ? addDaysToDateInput(startDate, durationDays) : "";
+
+  const computedStartDate = scheduledActivities.length > 0
+    ? scheduledActivities.reduce((min, act) => act.assignedDate < min ? act.assignedDate : min, scheduledActivities[0].assignedDate)
+    : "";
+
+  const computedEndDate = scheduledActivities.length > 0
+    ? scheduledActivities.reduce((max, act) => {
+      const actEnd = addDaysToDateInput(act.assignedDate, act.durationDays);
+      return actEnd > max ? actEnd : max;
+    }, scheduledActivities[0].assignedDate)
+    : "";
+
+  // Conflict validation: check if any scheduled activity date clashes with bookedItems or availabilities
+  const dateConflictError = useMemo(() => {
+    if (scheduledActivities.length === 0) return null;
+
+    for (const activity of scheduledActivities) {
+      for (let i = 0; i < activity.durationDays; i++) {
+        const actDate = addDaysToDateInput(activity.assignedDate, i);
+
+        if (bookedItems) {
+          for (const item of bookedItems) {
+            const bDateString = new Date(item.date).toISOString().split("T")[0];
+            if (bDateString === actDate) {
+              return `Kegiatan "${activity.name}" di tanggal ${formatBookingDate(actDate)} bentrok dengan pesanan jamaah lain.`;
+            }
+          }
+        }
+
+        if (availabilities) {
+          for (const avail of availabilities) {
+            const aDateString = new Date(avail.date).toISOString().split("T")[0];
+            if (aDateString === actDate) {
+              if (avail.status === "OFF" || avail.status === "BOOKED") {
+                return `Muthawif tidak tersedia pada tanggal ${formatBookingDate(actDate)} untuk kegiatan "${activity.name}".`;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return null;
+  }, [scheduledActivities, bookedItems, availabilities]);
 
   const discountAmt = (() => {
     if (!voucher) return 0;
@@ -169,12 +252,17 @@ export default function BookingWizard({
     }
 
     if (step === 2) {
-      if (!startDate) {
-        setError("Pilih tanggal keberangkatan sebelum melanjutkan.");
+      // Pastikan semua kegiatan memiliki tanggal (walaupun sudah ada default)
+      if (scheduledActivities.some(a => !a.assignedDate)) {
+        setError("Pilih tanggal untuk semua kegiatan sebelum melanjutkan.");
         return;
       }
-      if (startDate < todayStr) {
-        setError("Tanggal keberangkatan tidak boleh di masa lalu.");
+      if (computedStartDate < todayStr) {
+        setError("Tanggal kegiatan tidak boleh di masa lalu.");
+        return;
+      }
+      if (dateConflictError) {
+        setError(dateConflictError);
         return;
       }
 
@@ -200,8 +288,9 @@ export default function BookingWizard({
     if (step !== 3) return;
     setError("");
 
-    const items = selectedActivities.map((activity) => ({
+    const items = scheduledActivities.map((activity) => ({
       activityId: activity.id,
+      date: activity.assignedDate,
     }));
 
     startTransition(async () => {
@@ -211,7 +300,6 @@ export default function BookingWizard({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             muthawifId,
-            startDate,
             items,
             notes,
             bundleId: selectedBundleId,
@@ -275,6 +363,23 @@ export default function BookingWizard({
               </div>
             </div>
 
+            <div style={{ padding: "0 0 1rem 0" }}>
+              <label htmlFor="location-filter" style={{ display: "block", fontSize: "0.85rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "0.5rem" }}>
+                Filter Lokasi
+              </label>
+              <select
+                id="location-filter"
+                className="form-input form-select"
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+              >
+                <option value="ALL">Semua Lokasi</option>
+                {Array.from(new Set(activities.map(a => a.location).filter(Boolean))).map((loc) => (
+                  <option key={loc} value={loc as string}>{loc === "BOTH" ? "Makkah & Madinah" : loc}</option>
+                ))}
+              </select>
+            </div>
+
             {bundles.length > 0 && (
               <div className="picker-tabs" role="tablist" aria-label="Jenis pilihan kegiatan" style={{ padding: "0 0 1rem 0" }}>
                 <button id="booking-tab-satuan" type="button" role="tab" aria-selected={actTab === "satuan"} className={actTab === "satuan" ? "active" : ""} onClick={() => setActTab("satuan")}>
@@ -291,7 +396,9 @@ export default function BookingWizard({
             <div className="picker-content" style={{ padding: "0 0 1.5rem 0" }}>
               {actTab === "satuan" && (
                 <div className="timeline-picker-list">
-                  {activities.map((activity, index) => {
+                  {filteredActivities.length === 0 ? (
+                    <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }}>Tidak ada kegiatan untuk lokasi ini.</div>
+                  ) : filteredActivities.map((activity, index) => {
                     const isSelected = selectedIds.has(activity.id) && !selectedBundleId;
                     return (
                       <button
@@ -325,7 +432,9 @@ export default function BookingWizard({
 
               {actTab === "paket" && (
                 <div className="timeline-picker-list">
-                  {bundles.map((bundle, index) => {
+                  {filteredBundles.length === 0 ? (
+                    <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }}>Tidak ada paket bundling untuk lokasi ini.</div>
+                  ) : filteredBundles.map((bundle, index) => {
                     const isSelected = selectedBundleId === bundle.id;
                     return (
                       <button
@@ -403,44 +512,52 @@ export default function BookingWizard({
           <motion.section key="step2" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}>
             <div className="section-heading">
               <span className="section-kicker">Langkah 2</span>
-              <h2>Tentukan Tanggal Keberangkatan</h2>
-              <p>Jamaah cukup memilih tanggal mulai. Sistem otomatis menghitung tanggal selesai dari total durasi hari kegiatan yang dipilih.</p>
+              <h2>Tentukan Tanggal Kegiatan</h2>
+              <p>Atur tanggal untuk masing-masing kegiatan. Tanggal yang bentrok dengan pesanan lain akan otomatis ditandai error saat Anda mencoba melanjutkan.</p>
             </div>
 
             <div className="panel-card schedule-panel">
-              <div className="single-date-card">
-                <div className="single-date-icon">
-                  <Calendar size={24} />
-                </div>
-                <div className="single-date-content">
-                  <label htmlFor="booking-start-date-input">Tanggal Keberangkatan</label>
-                  <input
-                    id="booking-start-date-input"
-                    type="date"
-                    min={todayStr}
-                    value={startDate}
-                    onChange={(event) => { setStartDate(event.target.value); setError(""); }}
-                    className="single-date-input"
-                  />
-                  <div className="single-date-summary">
-                    <span>Total durasi: <strong>{formatDurationDays(durationDays)}</strong></span>
-                    {endDate && <span>Selesai otomatis: <strong>{formatBookingDate(endDate)}</strong></span>}
-                  </div>
-                </div>
-              </div>
-
               <div className="duration-breakdown">
-                <div className="panel-label">Rincian Durasi Kegiatan</div>
-                {selectedActivities.map((activity, index) => (
+                <div className="panel-label">Jadwal Kegiatan (Total {formatDurationDays(durationDays)})</div>
+                {scheduledActivities.map((activity, index) => (
                   <div key={activity.id} className="duration-row">
                     <span className="timeline-number">{index + 1}</span>
-                    <div>
-                      <strong>{activity.name}</strong>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.name}</strong>
                       <p>{activity.location === "BOTH" ? "Makkah & Madinah" : activity.location || "Lokasi menyesuaikan"}</p>
                     </div>
-                    <b>{formatDurationDays(activity.durationDays)}</b>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end', flexShrink: 0 }}>
+                      <b>{formatDurationDays(activity.durationDays)}</b>
+                      <input
+                        type="date"
+                        min={todayStr}
+                        value={activity.assignedDate}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setItemDates(prev => ({ ...prev, [activity.id]: val }));
+                        }}
+                        style={{
+                          fontSize: '0.85rem',
+                          padding: '0.4rem 0.5rem',
+                          border: '1px solid var(--border)',
+                          borderRadius: '8px',
+                          background: 'var(--ivory)',
+                          fontWeight: 700,
+                          color: 'var(--emerald)',
+                          cursor: 'pointer',
+                          minWidth: '140px',
+                          outline: 'none',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
+                {dateConflictError && (
+                  <div style={{ color: "var(--error)", fontSize: "0.8125rem", marginTop: "1rem", fontWeight: 600, padding: "0.75rem", background: "var(--errorBg)", borderRadius: "8px" }}>
+                    ⚠️ {dateConflictError}
+                  </div>
+                )}
               </div>
             </div>
           </motion.section>
@@ -460,24 +577,24 @@ export default function BookingWizard({
                 <div className="trip-window-card">
                   <div>
                     <span>Mulai</span>
-                    <strong>{formatBookingDate(startDate)}</strong>
+                    <strong>{formatBookingDate(computedStartDate)}</strong>
                   </div>
                   <div>
                     <span>Selesai</span>
-                    <strong>{formatBookingDate(endDate)}</strong>
+                    <strong>{formatBookingDate(computedEndDate)}</strong>
                   </div>
                   <div>
-                    <span>Total Durasi</span>
+                    <span>Total Kegiatan</span>
                     <strong>{formatDurationDays(durationDays)}</strong>
                   </div>
                 </div>
                 <div className="confirmation-timeline">
-                  {selectedActivities.map((activity, index) => (
+                  {scheduledActivities.map((activity, index) => (
                     <div key={activity.id} className="confirmation-row">
                       <span className="timeline-number">{index + 1}</span>
                       <div>
                         <h3>{activity.name}</h3>
-                        <p>{formatDurationDays(activity.durationDays)}</p>
+                        <p>{formatBookingDate(activity.assignedDate)} · {formatDurationDays(activity.durationDays)}</p>
                       </div>
                       {!selectedBundleId && <strong>{formatCurrency(activity.price)}</strong>}
                     </div>
@@ -485,7 +602,7 @@ export default function BookingWizard({
                 </div>
               </div>
 
-              <div className="panel-card">
+              <div className="panel-card cost-card">
                 <div className="panel-label">Rincian Biaya</div>
                 <div className="cost-list">
                   {selectedBundleId ? (
@@ -675,7 +792,7 @@ export default function BookingWizard({
         .notes-field {
           background: rgba(255, 255, 255, 0.92);
           border: 1px solid ${C.border};
-          border-radius: 24px;
+          border-radius: 16px;
           box-shadow: 0 18px 45px rgba(27, 107, 74, 0.08);
         }
         .selection-hero {
@@ -724,6 +841,10 @@ export default function BookingWizard({
         .panel-card,
         .notes-field {
           padding: 1rem;
+        }
+        .panel-card {
+          display: flex;
+          flex-direction: column;
         }
         .summary-card-head {
           display: flex;
@@ -914,7 +1035,7 @@ export default function BookingWizard({
           align-items: center;
           padding: 0.85rem;
           border: 1px solid ${C.border};
-          border-radius: 14px;
+          border-radius: 12px;
           background: white;
         }
         .duration-row strong,
@@ -935,7 +1056,7 @@ export default function BookingWizard({
         }
         .trip-window-card div {
           border: 1px solid ${C.border};
-          border-radius: 14px;
+          border-radius: 12px;
           padding: 0.85rem;
           background: ${C.ivory};
         }
@@ -1256,6 +1377,13 @@ export default function BookingWizard({
           display: flex;
           flex-direction: column;
           gap: 0.85rem;
+          flex: 1;
+        }
+        .cost-list > *:not(.cost-total) {
+          margin-bottom: 0;
+        }
+        .cost-list > .cost-total {
+          margin-top: auto;
         }
         .cost-row,
         .cost-total {
@@ -1325,7 +1453,7 @@ export default function BookingWizard({
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          border-radius: 28px 28px 0 0;
+          border-radius: 16px 16px 0 0;
           background: ${C.ivory};
           box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.22);
         }
@@ -1352,7 +1480,7 @@ export default function BookingWizard({
         .picker-tabs button {
           min-height: 46px;
           border: 1px solid ${C.border};
-          border-radius: 14px;
+          border-radius: 12px;
           background: ${C.white};
           color: ${C.muted};
           font-weight: 900;
@@ -1390,7 +1518,7 @@ export default function BookingWizard({
           gap: 0.75rem;
           text-align: left;
           border: 2px solid transparent;
-          border-radius: 20px;
+          border-radius: 12px;
           background: ${C.white};
           padding: 0.9rem;
           cursor: pointer;
@@ -1594,7 +1722,7 @@ export default function BookingWizard({
         }
         .error-banner {
           padding: 0.75rem 0.9rem;
-          border-radius: 14px;
+          border-radius: 12px;
           background: ${C.errorBg};
           color: ${C.error};
           font-size: 0.88rem;
@@ -1632,7 +1760,7 @@ export default function BookingWizard({
           }
           .confirmation-grid {
             grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-            align-items: start;
+            align-items: stretch;
           }
           .picker-overlay {
             align-items: center;
@@ -1641,7 +1769,7 @@ export default function BookingWizard({
           .picker-sheet {
             max-width: 820px;
             max-height: min(760px, calc(100dvh - 2.5rem));
-            border-radius: 30px;
+            border-radius: 16px;
           }
           .picker-head,
           .picker-tabs,

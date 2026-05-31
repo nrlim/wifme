@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ClipboardList, LayoutGrid, LogIn, Search, X, User } from "lucide-react";
+import { ClipboardList, LayoutGrid, LogIn, Search, X, User, Route } from "lucide-react";
 
 interface Props {
   currentTab: string;
@@ -13,6 +13,7 @@ interface Props {
 const menuItems = [
   { href: "/dashboard?tab=beranda", label: "Pesanan", desc: "Riwayat dan status Booking", icon: ClipboardList, tab: "beranda" },
   { href: "/dashboard?tab=cari", label: "Cari Muthawif", desc: "Temukan Muthawif tersedia", icon: Search, tab: "cari" },
+  { href: "/dashboard?tab=itinerary", label: "Itinerary", desc: "Agenda kegiatan booking", icon: Route, tab: "itinerary" },
 ];
 
 export default function JamaahMobileNav({ currentTab }: Props) {
@@ -66,15 +67,20 @@ export default function JamaahMobileNav({ currentTab }: Props) {
 
           <section
             id="jamaah-mobile-menu-sheet"
-            className={`fixed inset-x-0 bottom-0 z-[9001] rounded-t-[var(--radius-lg)] bg-[var(--white)] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-[var(--shadow-lg)] transition-transform duration-300 ease-out md:hidden ${
+            className={`fixed inset-x-0 bottom-0 z-[9001] rounded-t-[var(--radius-lg)] bg-[var(--white)] shadow-[var(--shadow-lg)] transition-transform duration-300 ease-out md:hidden ${
               open ? "translate-y-0" : "translate-y-full"
             }`}
+            style={{ 
+              boxSizing: "border-box", 
+              padding: "1.75rem 1.5rem calc(3rem + env(safe-area-inset-bottom)) 1.5rem",
+              width: "100%"
+            }}
             role="dialog"
             aria-modal="true"
             aria-label="Semua menu Jamaah"
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--sand)]" />
-            <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="mx-auto h-1 w-12 rounded-full bg-[var(--sand)]" style={{ marginBottom: "1.5rem" }} />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", marginBottom: "2.5rem" }}>
               <div>
                 <h3 className="m-0 text-[1.05rem] font-black text-[var(--charcoal)]">Menu Jamaah</h3>
                 <p className="m-0 mt-1 text-[0.78rem] text-[var(--text-muted)]">Akses cepat fitur utama Wifme</p>

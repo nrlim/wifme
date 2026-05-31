@@ -79,6 +79,7 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
         },
       },
       jamaah: { select: { id: true, name: true, email: true } },
+      items: { include: { activity: true } },
     },
   });
 
@@ -90,13 +91,19 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
     redirect("/dashboard");
   }
 
-  const duration = Math.max(
-    1,
-    Math.round(
-      (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) /
-        86400000
-    )
-  );
+  const duration = booking.items.reduce((acc, item) => acc + (item.activity?.durationDays || 1), 0);
+  
+  const computedStartDate = booking.items.length > 0
+    ? booking.items.reduce((min, item) => item.date < min ? item.date : min, booking.items[0].date)
+    : new Date();
+
+  const computedEndDate = booking.items.length > 0
+    ? booking.items.reduce((max, item) => {
+        const itemEnd = new Date(item.date);
+        itemEnd.setDate(itemEnd.getDate() + (item.activity?.durationDays || 1));
+        return itemEnd > max ? itemEnd : max;
+      }, new Date(0))
+    : new Date();
 
   const isPaid = booking.paymentStatus === "PAID";
   const isCancelled = booking.status === "CANCELLED";
@@ -130,8 +137,8 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
         </svg>
       ),
-      label: "Tanggal Mulai",
-      value: new Date(booking.startDate).toLocaleDateString("id-ID", {
+      label: "Tanggal Kegiatan Pertama",
+      value: computedStartDate.toLocaleDateString("id-ID", {
         day: "numeric", month: "long", year: "numeric",
       }),
     },
@@ -150,8 +157,8 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
         </svg>
       ),
-      label: "Tanggal Selesai",
-      value: new Date(booking.endDate).toLocaleDateString("id-ID", {
+      label: "Tanggal Kegiatan Terakhir",
+      value: computedEndDate.toLocaleDateString("id-ID", {
         day: "numeric", month: "long", year: "numeric",
       }),
     },

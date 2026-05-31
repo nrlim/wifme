@@ -25,8 +25,6 @@ interface MuthawifProfile {
 
 interface MuthawifCardProps {
   muthawif: MuthawifProfile;
-  startDate?: string;
-  duration?: string;
   isLoggedIn: boolean;
   /** Href dashboard untuk post-booking navigation — sesuai role user */
   dashboardHref?: string;
@@ -66,7 +64,7 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
 }
 
 export default function MuthawifCard({
-  muthawif, startDate, duration, isLoggedIn,
+  muthawif, isLoggedIn,
   dashboardHref = "/dashboard",
   searchLocation = "ALL",
   feeConfig,
@@ -80,7 +78,7 @@ export default function MuthawifCard({
   const handleBook = async () => {
     if (!isLoggedIn) {
       // Belum login: simpan URL profil muthawif sebagai tujuan redirect setelah registrasi
-      const muthawifUrl = `/muthawif/${muthawif.user.id}${startDate ? `?startDate=${startDate}&duration=${duration}&location=${searchLocation}` : ''}`;
+      const muthawifUrl = `/muthawif/${muthawif.user.id}`;
       router.push(`/auth/register?redirect=${encodeURIComponent(muthawifUrl)}`);
       return;
     }
@@ -94,11 +92,8 @@ export default function MuthawifCard({
     router.push(`/book/${muthawif.user.id}`);
   };
 
-  const durationNum = parseInt(duration || "1");
   const fee: FeeConfig = feeConfig ?? { feeType: "PERCENT", feeValue: 0 };
-  const totalFee = duration
-    ? calcTotalWithFee(muthawif.basePrice, durationNum, fee)
-    : muthawif.basePrice;
+  const totalFee = calcTotalWithFee(muthawif.basePrice, 1, fee);
   const initials = muthawif.user.name
     .split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
@@ -187,7 +182,7 @@ export default function MuthawifCard({
         </div>
 
         {/* Rating */}
-        <Link href={`/muthawif/${muthawif.user.id}${startDate ? `?startDate=${startDate}&duration=${duration}&location=${searchLocation}` : ""}`} style={{ textDecoration: "none", flexShrink: 0, textAlign: "right" }}>
+        <Link href={`/muthawif/${muthawif.user.id}`} style={{ textDecoration: "none", flexShrink: 0, textAlign: "right" }}>
           {muthawif.rating > 0 ? (
             <StarRating rating={muthawif.rating} count={muthawif.totalReviews} />
           ) : (
@@ -254,17 +249,17 @@ export default function MuthawifCard({
         }}>
           <div>
             <div style={{ fontSize: "0.5625rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>
-              {duration ? `Paket ${duration} hari` : "Per hari"}
+              Per hari
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: "0.2rem" }}>
               <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--emerald)" }}>Rp</span>
               <span style={{ fontSize: "1.1875rem", fontWeight: 900, color: "var(--emerald)", letterSpacing: "-0.02em" }}>
-                {(duration ? totalFee : muthawif.basePrice).toLocaleString("id-ID")}
+                {totalFee.toLocaleString("id-ID")}
               </span>
             </div>
           </div>
           <Link
-            href={`/muthawif/${muthawif.user.id}${startDate ? `?startDate=${startDate}&duration=${duration}&location=${searchLocation}` : ""}`}
+            href={`/muthawif/${muthawif.user.id}`}
             style={{
               display: "flex", alignItems: "center", gap: "0.25rem",
               fontSize: "0.75rem", fontWeight: 700,

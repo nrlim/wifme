@@ -194,7 +194,8 @@ wifme/
 
 ### 6.4 Styling
 - **Tailwind CSS v4** is the primary styling tool — use utility classes in JSX.
-- **STATIC INLINE STYLE BAN**: Do **NOT** use inline `style={{ ... }}` blocks for static properties (margins, padding, positions, borders, text, colors). Inline styles are ONLY allowed for highly dynamic runtime calculations (e.g. progress bar widths).
+- **STATIC INLINE STYLE BAN**: Do **NOT** use inline `style={{ ... }}` blocks for static properties (margins, padding, positions, borders, text, colors). Inline styles are ONLY allowed for highly dynamic runtime calculations (e.g. progress bar widths). **Always prioritize Tailwind CSS.**
+- **Anti-AI Slop Design**: Avoid generic "AI" visual tropes. Do **NOT** use excessively rounded components (e.g., pill shapes or `rounded-full` on large cards); stick to standard `rounded-xl` or `rounded-2xl`. Do **NOT** use emojis or emoticons anywhere in the UI or copy. Do **NOT** use generic AI dark themes, deep purples/blues, or high-contrast neon styling; strictly adhere to the brand's Ivory, Emerald, and Gold color palette for a premium, professional look.
 - **CSS Custom Properties**: Always use design token variables from `src/app/globals.css` via arbitrary Tailwind classes (e.g., `text-[var(--emerald)]` rather than raw `#1B6B4A`).
 - **Framer Motion**: Prefer `motion.div` over raw CSS transitions for complex layout or state animations.
 - **Color palette**: Emerald (`#1B6B4A`) as primary, Gold (`#C4973B`) as accent, Ivory (`#FAF7F2`) as background.
@@ -322,3 +323,4 @@ Available skills:
 10. Do **NOT** invent domain terms outside the glossary (Section 2) without explicit approval.
 11. Do **NOT** hallucinate brand features, services, or business logic not documented here.
 12. Do **NOT** skip input validation — always validate with Zod.
+13. Do **NOT** use "AI slop" designs: avoid exaggerated pill shapes/border radiuses, emojis/emoticons in UI, and generic AI dark themes or neon colors. Strictly use standard radiuses (`rounded-xl`), the defined Ivory/Emerald palette, and professional typography.

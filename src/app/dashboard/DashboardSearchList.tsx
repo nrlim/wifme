@@ -25,13 +25,20 @@ interface Muthawif {
 
 interface Props {
   muthawifs: Muthawif[];
-  startDate: string;
   location?: string;
+  specialization?: string;
+  language?: string;
   feeConfig?: FeeConfig;
 }
 
-export default function DashboardSearchList({ muthawifs, startDate, location, feeConfig }: Props) {
+export default function DashboardSearchList({ muthawifs, location, specialization, language, feeConfig }: Props) {
   const [selectedMuthawif, setSelectedMuthawif] = useState<Muthawif | null>(null);
+
+  const activeFilters = [
+    location && location !== "ALL" ? (location === "BOTH" ? "Makkah & Madinah" : location) : null,
+    specialization && specialization !== "ALL" ? specialization : null,
+    language && language !== "ALL" ? language : null,
+  ].filter(Boolean);
 
   if (muthawifs.length === 0) {
     return (
@@ -39,7 +46,7 @@ export default function DashboardSearchList({ muthawifs, startDate, location, fe
         textAlign: "center",
         padding: "4rem 2rem",
         background: "white",
-        borderRadius: 20,
+        borderRadius: 16,
         border: "1px dashed var(--border)",
         boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
       }}>
@@ -54,10 +61,10 @@ export default function DashboardSearchList({ muthawifs, startDate, location, fe
           </svg>
         </div>
         <h3 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "0.5rem" }}>
-          Muthawif Tidak Tersedia
+          Muthawif Tidak Ditemukan
         </h3>
         <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", maxWidth: 320, margin: "0 auto" }}>
-          Tidak ada Muthawif yang tersedia untuk tanggal dan lokasi tersebut. Coba ubah filter pencarian.
+          Tidak ada muthawif yang tersedia dengan kombinasi kriteria pencarian Anda. Coba sesuaikan atau hapus beberapa filter pencarian.
         </p>
       </div>
     );
@@ -69,6 +76,8 @@ export default function DashboardSearchList({ muthawifs, startDate, location, fe
       <div className="dashboard-results-header" style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         marginBottom: "1.25rem",
+        flexWrap: "wrap",
+        gap: "0.5rem",
       }}>
         <div style={{
           display: "flex", alignItems: "center", gap: "0.5rem",
@@ -77,13 +86,27 @@ export default function DashboardSearchList({ muthawifs, startDate, location, fe
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--emerald)" }} />
           {muthawifs.length} muthawif tersedia
         </div>
-        <span style={{
-          fontSize: "0.8125rem", color: "var(--text-muted)",
-          background: "var(--ivory-dark)", padding: "0.25rem 0.75rem",
-          borderRadius: 99, border: "1px solid var(--border)", fontWeight: 600,
-        }}>
-          {location && location !== "ALL" ? `Lokasi: ${location === "BOTH" ? "Makkah & Madinah" : location}` : "Semua Lokasi"}
-        </span>
+        <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+          {activeFilters.length > 0 ? (
+            activeFilters.map((f, i) => (
+              <span key={i} style={{
+                fontSize: "0.75rem", color: "var(--emerald)",
+                background: "var(--emerald-pale)", padding: "0.25rem 0.625rem",
+                borderRadius: 8, border: "1px solid rgba(27,107,74,0.15)", fontWeight: 700,
+              }}>
+                {f}
+              </span>
+            ))
+          ) : (
+            <span style={{
+              fontSize: "0.75rem", color: "var(--text-muted)",
+              background: "var(--ivory-dark)", padding: "0.25rem 0.625rem",
+              borderRadius: 8, border: "1px solid var(--border)", fontWeight: 600,
+            }}>
+              Semua Filter
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Card grid similar to Search page */}
@@ -96,7 +119,6 @@ export default function DashboardSearchList({ muthawifs, startDate, location, fe
           <MuthawifCard
             key={m.id}
             muthawif={m}
-            startDate={startDate}
             isLoggedIn={true}
             dashboardHref="/dashboard?tab=beranda"
             searchLocation="ALL"
@@ -117,7 +139,7 @@ export default function DashboardSearchList({ muthawifs, startDate, location, fe
         @media (max-width: 768px) {
           .dashboard-search-empty {
             padding: 2.5rem 1rem !important;
-            border-radius: 20px !important;
+            border-radius: 16px !important;
           }
           .dashboard-results-header {
             align-items: flex-start !important;

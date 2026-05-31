@@ -105,8 +105,6 @@ model Booking {
   muthawifId      String
   jamaah          User          @relation("JamaahBookings", fields: [jamaahId], references: [id])
   muthawif        User          @relation("MuthawifBookings", fields: [muthawifId], references: [id])
-  startDate       DateTime
-  endDate         DateTime
   status          BookingStatus @default(PENDING)
   totalFee        Float
   baseFee         Float         @default(0)

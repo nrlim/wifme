@@ -29,7 +29,10 @@ export async function PATCH(
     }
 
     // Fetch booking
-    const booking = await prisma.booking.findUnique({ where: { id } });
+    const booking = await prisma.booking.findUnique({ 
+      where: { id },
+      include: { items: { include: { activity: true } } }
+    });
     if (!booking) {
       return NextResponse.json({ error: "Booking tidak ditemukan." }, { status: 404 });
     }
@@ -48,7 +51,15 @@ export async function PATCH(
       if (booking.paymentStatus !== "PAID") {
         return NextResponse.json({ error: "Booking belum lunas sehingga dana escrow belum bisa dicairkan." }, { status: 422 });
       }
-      if (booking.endDate > new Date()) {
+      // Calculate dynamic endDate from items
+      let latestEndDate = new Date(0);
+      for (const item of booking.items) {
+        const itemEnd = new Date(item.date);
+        itemEnd.setDate(itemEnd.getDate() + (item.activity?.durationDays || 1));
+        if (itemEnd > latestEndDate) latestEndDate = itemEnd;
+      }
+
+      if (latestEndDate > new Date()) {
         return NextResponse.json({ error: "Perjalanan belum melewati tanggal selesai. Booking belum bisa ditandai selesai." }, { status: 422 });
       }
 

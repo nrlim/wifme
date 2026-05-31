@@ -2,36 +2,42 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, MapPin, Search } from "lucide-react";
+import { Calendar, MapPin, Search, Briefcase, Globe } from "lucide-react";
+
+const SPEC_OPTIONS = ["Semua Kegiatan", "Umrah", "Haji", "Ziarah Makkah", "Ziarah Madinah", "City Tour", "Pendampingan Lansia"];
+const LANG_OPTIONS = ["Semua Bahasa", "Indonesia", "Sunda", "Jawa", "Inggris", "Arab"];
 
 export default function DashboardSearchForm({
-  initialStartDate,
   initialLocation,
+  initialSpecialization,
+  initialLanguage,
+  initialDate,
   supportedLocations = ["Makkah", "Madinah"],
 }: {
-  initialStartDate?: string;
   initialLocation?: string;
+  initialSpecialization?: string;
+  initialLanguage?: string;
   supportedLocations?: string[];
 }) {
   const router = useRouter();
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   const locationOptions = ["ALL", ...supportedLocations.filter((loc) => loc.trim().length > 0)];
 
   const [form, setForm] = useState({
-    startDate: initialStartDate || "",
     location: initialLocation || "ALL",
+    specialization: initialSpecialization || "ALL",
+    language: initialLanguage || "ALL",
   });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const params = new URLSearchParams({
-      startDate: form.startDate,
-      location: form.location,
-    });
+    const params = new URLSearchParams();
+    if (form.location !== "ALL") params.set("location", form.location);
+    if (form.specialization !== "ALL") params.set("specialization", form.specialization);
+    if (form.language !== "ALL") params.set("language", form.language);
+    
     router.push(`/dashboard?tab=cari&${params.toString()}`);
     setLoading(false);
   };
@@ -39,22 +45,7 @@ export default function DashboardSearchForm({
   return (
     <form className="dashboard-search-form native-mobile-form" onSubmit={handleSubmit}>
       <div className="nmf-grid">
-        <div className="nmf-input-group">
-          <div className="nmf-icon"><Calendar size={18} /></div>
-          <div className="nmf-field">
-            <label htmlFor="dashboard-search-start-date">Tanggal Keberangkatan</label>
-            <input 
-              id="dashboard-search-start-date" 
-              type="date" 
-              min={today} 
-              value={form.startDate} 
-              onChange={(e) => setForm({ ...form, startDate: e.target.value })} 
-              required 
-            />
-          </div>
-        </div>
-
-
+        {/* Location Filter */}
         <div className="nmf-input-group">
           <div className="nmf-icon"><MapPin size={18} /></div>
           <div className="nmf-field">
@@ -70,6 +61,42 @@ export default function DashboardSearchForm({
             </select>
           </div>
         </div>
+
+        {/* Specialization Filter */}
+        <div className="nmf-input-group">
+          <div className="nmf-icon"><Briefcase size={18} /></div>
+          <div className="nmf-field">
+            <label htmlFor="dashboard-search-spec">Kegiatan</label>
+            <select 
+              id="dashboard-search-spec" 
+              value={form.specialization} 
+              onChange={(e) => setForm({ ...form, specialization: e.target.value })}
+            >
+              {SPEC_OPTIONS.map((spec) => (
+                <option key={spec} value={spec === "Semua Kegiatan" ? "ALL" : spec}>{spec}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Language Filter */}
+        <div className="nmf-input-group">
+          <div className="nmf-icon"><Globe size={18} /></div>
+          <div className="nmf-field">
+            <label htmlFor="dashboard-search-lang">Bahasa</label>
+            <select 
+              id="dashboard-search-lang" 
+              value={form.language} 
+              onChange={(e) => setForm({ ...form, language: e.target.value })}
+            >
+              {LANG_OPTIONS.map((lang) => (
+                <option key={lang} value={lang === "Semua Bahasa" ? "ALL" : lang}>{lang}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+
       </div>
 
       <button id="dashboard-search-submit" type="submit" className="nmf-submit-btn" disabled={loading}>
@@ -78,7 +105,7 @@ export default function DashboardSearchForm({
         ) : (
           <>
             <Search size={18} strokeWidth={2.5} />
-            <span>Cari Muthawif</span>
+            <span>Cari</span>
           </>
         )}
       </button>
@@ -95,7 +122,7 @@ export default function DashboardSearchForm({
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           gap: 0.75rem;
           background: var(--ivory);
-          border-radius: 20px;
+          border-radius: 16px;
           border: 1px solid var(--border);
           padding: 0.5rem;
         }
@@ -103,9 +130,9 @@ export default function DashboardSearchForm({
           display: flex;
           align-items: center;
           gap: 0.75rem;
-          padding: 0.75rem 1rem;
+          padding: 0.5rem 0.875rem;
           background: white;
-          border-radius: 14px;
+          border-radius: 12px;
           border: 1px solid var(--border);
           box-shadow: 0 2px 8px rgba(0,0,0,0.02);
           transition: border-color 0.2s, box-shadow 0.2s;
@@ -121,7 +148,7 @@ export default function DashboardSearchForm({
           justify-content: center;
           width: 32px;
           height: 32px;
-          border-radius: 10px;
+          border-radius: 8px;
           background: var(--emerald-pale);
           flex-shrink: 0;
         }
@@ -151,7 +178,8 @@ export default function DashboardSearchForm({
           outline: none;
           appearance: none;
         }
-        .nmf-field select {
+        .nmf-field select,
+        .nmf-field input[type="date"] {
           cursor: pointer;
         }
         .nmf-submit-btn {
@@ -159,11 +187,12 @@ export default function DashboardSearchForm({
           align-items: center;
           justify-content: center;
           gap: 0.5rem;
-          height: 52px;
+          height: 44px;
+          padding: 0 1.5rem;
           background: linear-gradient(135deg, var(--emerald), #27956A);
           color: white;
           border: none;
-          border-radius: 16px;
+          border-radius: 12px;
           font-size: 0.9375rem;
           font-weight: 800;
           cursor: pointer;
@@ -192,18 +221,22 @@ export default function DashboardSearchForm({
             border: none;
           }
           .nmf-input-group {
-            padding: 0.875rem 1rem;
-            border-radius: 16px;
+            padding: 0.625rem 0.875rem;
+            border-radius: 12px;
+          }
+          .nmf-submit-btn {
+            width: 100%;
+            height: 48px;
           }
         }
 
         /* Desktop view (> 900px) */
         @media (min-width: 901px) {
           .native-mobile-form {
-            flex-direction: row;
-            align-items: center;
+            flex-direction: column;
+            align-items: stretch;
             background: var(--ivory);
-            border-radius: 24px;
+            border-radius: 16px;
             border: 1px solid var(--border);
             padding: 0.5rem;
             gap: 0.5rem;
@@ -211,25 +244,32 @@ export default function DashboardSearchForm({
           }
           .nmf-grid {
             flex: 1;
-            grid-template-columns: 1.2fr 0.8fr 1fr;
+            grid-template-columns: 1fr 1.2fr 1fr;
             background: transparent;
             border: none;
             padding: 0;
             gap: 0.5rem;
           }
           .nmf-input-group {
-            background: white;
-            border-radius: 18px;
-            border: 1px solid rgba(0,0,0,0.04);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+            border: 1px solid var(--border);
           }
           .nmf-submit-btn {
-            height: 56px;
+            width: 100%;
+            height: 40px;
+            border-radius: 10px;
+          }
+        }
+        
+        @media (min-width: 1200px) {
+          .native-mobile-form {
+            flex-direction: row;
+            align-items: center;
+          }
+          .nmf-submit-btn {
+            width: auto;
+            height: 48px;
             padding: 0 2rem;
-            border-radius: 18px;
-            margin: 0;
-            flex-shrink: 0;
-            white-space: nowrap;
+            border-radius: 12px;
           }
         }
       `}</style>

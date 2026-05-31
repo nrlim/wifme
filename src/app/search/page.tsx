@@ -11,9 +11,9 @@ import EmptySearchState from "@/components/EmptySearchState";
 
 interface SearchPageProps {
   searchParams: Promise<{
-    startDate?: string;
-    duration?: string;
     location?: string;
+    specialization?: string;
+    language?: string;
   }>;
 }
 
@@ -33,41 +33,33 @@ function buildOperatingAreaFilter(location?: string) {
   return { operatingAreas: { has: normalized } };
 }
 
-async function fetchMuthawifs(startDate?: string, location?: string) {
-  if (!startDate) {
-    return prisma.muthawifProfile.findMany({
-      where: { isAvailable: true, verificationStatus: "VERIFIED" },
-      include: { user: { select: { id: true, name: true, email: true, photoUrl: true } } },
-      orderBy: { rating: "desc" },
-    });
-  }
+interface FetchFilters {
+  location?: string;
+  specialization?: string;
+  language?: string;
+}
 
-  const start = new Date(startDate);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-
+async function fetchMuthawifs(filters: FetchFilters) {
+  const { location, specialization, language } = filters;
   const locationFilter = buildOperatingAreaFilter(location);
 
+  const where: any = {
+    isAvailable: true,
+    verificationStatus: "VERIFIED",
+    ...locationFilter,
+  };
+
+  if (specialization && specialization !== "ALL") {
+    where.specializations = { has: specialization };
+  }
+
+  if (language && language !== "ALL") {
+    where.languages = { has: language };
+  }
+
+
   return prisma.muthawifProfile.findMany({
-    where: {
-      isAvailable: true,
-      verificationStatus: "VERIFIED",
-      ...locationFilter,
-      user: {
-        bookingsAsMuthawif: {
-          none: {
-            status: { in: ["PENDING", "PAYMENT_REVIEW", "CONFIRMED"] },
-            AND: [{ startDate: { lt: end } }, { endDate: { gt: start } }],
-          },
-        },
-      },
-      availability: {
-        none: {
-          status: { in: ["OFF", "BOOKED"] },
-          date: { gte: start, lt: end },
-        },
-      },
-    },
+    where,
     include: { user: { select: { id: true, name: true, email: true, photoUrl: true } } },
     orderBy: { rating: "desc" },
   });
@@ -97,11 +89,9 @@ function SkeletonCard() {
 
 /* ── Cards Component ─────────────────────────────── */
 function MuthawifCards({
-  muthawifs, startDate, duration, isLoggedIn, dashboardHref, searchLocation, feeConfig,
+  muthawifs, isLoggedIn, dashboardHref, searchLocation, feeConfig,
 }: {
   muthawifs: any[];
-  startDate?: string;
-  duration?: string;
   isLoggedIn: boolean;
   dashboardHref: string;
   searchLocation?: string;
@@ -113,8 +103,6 @@ function MuthawifCards({
         <MuthawifCard
           key={m.id}
           muthawif={m}
-          startDate={startDate}
-          duration={duration}
           isLoggedIn={isLoggedIn}
           dashboardHref={dashboardHref}
           searchLocation={searchLocation}
@@ -201,7 +189,7 @@ function GuestSidebarWidget() {
 /* ── Main Page ──────────────────────────────────────── */
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
-  const { startDate, duration, location } = params;
+  const { location, specialization, language } = params;
 
   const [session, feeConfig, globalSet] = await Promise.all([
     getSession(),
@@ -215,13 +203,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ? "/dashboard/muthawif"
     : "/dashboard";
 
-  const hasFilters = !!(startDate || (location && location !== "ALL"));
+  const hasFilters = !!((location && location !== "ALL") || (specialization && specialization !== "ALL") || (language && language !== "ALL"));
 
-  // Fetch at page level — determines which layout to render
   let muthawifs: Awaited<ReturnType<typeof fetchMuthawifs>> = [];
   let fetchError = false;
   try {
-    muthawifs = await fetchMuthawifs(startDate, location);
+    muthawifs = await fetchMuthawifs({ location, specialization, language });
   } catch {
     fetchError = true;
   }
@@ -234,10 +221,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
       <div style={{ minHeight: "100vh", background: "var(--ivory)", paddingTop: "4.5rem" }}>
 
-        {/* ─── Guest Banner ─── */}
         {!isLoggedIn && <GuestSearchBanner />}
 
-        {/* ─── Page Header + Filter ─── */}
         <div style={{
           background: "linear-gradient(160deg, #ffffff 0%, var(--emerald-pale) 100%)",
           borderBottom: "1px solid var(--border)",
@@ -274,21 +259,20 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               </h1>
               <p style={{ color: "var(--text-muted)", fontSize: "0.9375rem", lineHeight: 1.65, maxWidth: 560, margin: "0 auto" }}>
                 {hasFilters
-                  ? `Menampilkan Muthawif tersedia${startDate ? ` mulai ${new Date(startDate).toLocaleDateString("id-ID", { day: "numeric", month: "long" })}` : ""}${location && location !== "ALL" ? ` · ${LOCATION_LABELS[location] || location}` : ""}`
+                  ? `Menampilkan Muthawif tersedia berdasarkan filter Anda.`
                   : "Muthawif berpengalaman & berlisensi siap mendampingi ibadah Anda di Tanah Suci."
                 }
               </p>
             </div>
-            <SearchFilterBar
-              startDate={startDate}
-              duration={duration}
-              location={location}
-              supportedLocations={supportedLocations}
-            />
+                <SearchFilterBar 
+                  location={location} 
+                  specialization={specialization}
+                  language={language}
+                  supportedLocations={supportedLocations} 
+                />
           </div>
         </div>
 
-        {/* ─── Main Content ─── */}
         <div style={{ padding: "2rem 1.5rem 5rem" }}>
           <div className="sp-container">
 
@@ -299,8 +283,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             ) : isEmpty ? (
               /* Full-width empty state — no sidebar */
               <EmptySearchState
-                startDate={startDate}
-                duration={duration}
                 location={location}
               />
             ) : (
@@ -322,8 +304,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     <div className="sp-cards-grid">
                       <MuthawifCards
                         muthawifs={muthawifs}
-                        startDate={startDate}
-                        duration={duration}
                         isLoggedIn={isLoggedIn}
                         dashboardHref={dashboardHref}
                         searchLocation={location}
